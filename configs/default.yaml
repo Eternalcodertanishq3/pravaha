@@ -1,0 +1,45 @@
+# Pravāha Engine Configuration
+# ─────────────────────────────
+
+model:
+  # HuggingFace model name or local path
+  model_path: "gpt2"
+  # Data type: float16, bfloat16, float32
+  dtype: "float16"
+  # Device: auto (picks CUDA if available), cuda, cpu
+  device: "auto"
+  # Maximum sequence length (prompt + generation)
+  max_seq_len: 1024
+
+cache:
+  # Number of tokens per KV-cache block (PagedAttention)
+  block_size: 16
+  # Number of GPU KV-cache blocks (0 = auto-calculate)
+  num_gpu_blocks: 0
+  # Number of CPU swap blocks
+  num_cpu_blocks: 256
+  # CPU swap space in GB
+  swap_space_gb: 4.0
+  # Phase 2: use our managed NaiveKVCache (true) or HF's built-in (false)
+  use_naive_cache: true
+
+scheduler:
+  # Maximum number of sequences in a batch
+  max_batch_size: 32
+  # Maximum number of waiting requests in the queue
+  max_waiting_requests: 256
+  # Scheduling policy: fcfs (first-come-first-served)
+  policy: "fcfs"
+
+sampling:
+  # Default sampling parameters
+  temperature: 1.0
+  top_k: 50
+  top_p: 1.0
+  max_new_tokens: 256
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  # Maximum concurrent requests
+  max_concurrent: 64

@@ -1,0 +1,29 @@
+# Pravāha Engine Configuration (Phase 1 Simulation)
+# ─────────────────────────────
+# This config disables the custom KV-cache to simulate "Phase 1" behavior.
+
+model:
+  model_path: "gpt2"
+  dtype: "float16"
+  device: "auto"
+  max_seq_len: 1024
+
+cache:
+  # Disable Naive KV-Cache to show "Phase 1" performance
+  use_naive_cache: false
+
+scheduler:
+  max_batch_size: 32
+  max_waiting_requests: 256
+  policy: "fcfs"
+
+sampling:
+  temperature: 1.0
+  top_k: 50
+  top_p: 1.0
+  max_new_tokens: 256
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  max_concurrent: 64

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "pravaha"
+version = "0.1.0"
+description = "Pravāha — A vLLM-inspired LLM inference engine with continuous batching and PagedAttention"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Pravāha Contributors"},
+]
+
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.36.0",
+    "safetensors>=0.4.0",
+    "tokenizers>=0.15.0",
+    "pydantic>=2.5.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+]
+server = [
+    "fastapi>=0.108.0",
+    "uvicorn[standard]>=0.25.0",
+    "sse-starlette>=1.8.0",
+]
+metrics = [
+    "prometheus-client>=0.19.0",
+]
+quantization = [
+    "auto-gptq>=0.6.0",
+    "autoawq>=0.1.8",
+    "bitsandbytes>=0.41.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["pravaha*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
+markers = [
+    "slow: marks tests as slow (model download/loading required)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
