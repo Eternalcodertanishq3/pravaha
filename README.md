@@ -28,6 +28,14 @@ graph TD
 - ✅ **Configurable Dtype**: FP16/BF16/FP32 support.
 - ✅ **Sampling Pipeline**: Temperature, Top-K, Top-P, Repetition Penalty.
 
+## 🎥 Demos
+
+**Phase 1: Foundation** (Baseline Inference)
+https://github.com/user-attachments/assets/32ba41bb-b0ea-45ff-b167-ae13927faeaf
+
+**Phase 2: Acceleration** (Naive KV-Cache + Streaming)
+https://github.com/user-attachments/assets/ea9071da-2285-4f15-a385-c551eada8882
+
 ## Roadmap
 
 - ✅ **Phase 1: Foundation (Loader & Inference)**
