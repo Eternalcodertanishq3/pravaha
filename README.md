@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/32ba41bb-b0ea-45ff-b167-ae13927faeaf
 https://github.com/user-attachments/assets/ea9071da-2285-4f15-a385-c551eada8882
 
 **Phase 3: Continuous Batching** (Dynamic Slot Allocation)
-_(Recording Pending)_
+https://github.com/user-attachments/assets/9b882e99-75bc-453c-947a-fa6e9b51a447
 
 ## Quick Start
 
