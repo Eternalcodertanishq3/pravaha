@@ -41,7 +41,8 @@ https://github.com/user-attachments/assets/ea9071da-2285-4f15-a385-c551eada8882
 - ✅ **Phase 1: Foundation (Loader & Inference)**
 - ✅ **Phase 2: Naive KV-Cache + Streaming Generation**
   - _Implemented_: A custom, pre-allocated KV-cache that provides 100% visibility into memory usage (e.g., 36MB for GPT-2). This replaces the opaque HuggingFace cache, giving us full control over state management.
-- 🔲 **Phase 3: Continuous Batching Scheduler**
+- ✅ **Phase 3: Continuous Batching Scheduler**
+  - _Implemented_: A slot-based dynamic scheduler operating in a background thread with an `asyncio` frontend. It handles disjoint batched prefill and batched decode passes for multiple concurrent users.
 - 🔲 **Phase 4: Paged KV-Cache + BlockAllocator**
 - 🔲 **Phase 5: INT8/INT4 Quantization (GPTQ/AWQ)**
 - 🔲 Phase 6: API Server + Streaming

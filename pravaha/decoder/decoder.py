@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 
 
 class DecoderEngine:
-    """Single-request autoregressive decoder.
+    """Autoregressive decoder for continuous batching (Phase 3).
 
-    Generates tokens one at a time, yielding each decoded token for streaming.
-    Supports both HuggingFace's built-in cache and our NaiveKVCache.
+    Executes forward passes for batches of sequences.
+    Supports Disjoint Execution Strategy:
+      - Batch Prefill (new requests)
+      - Batch Decode (running requests)
     """
 
     def __init__(
@@ -47,7 +49,7 @@ class DecoderEngine:
             tokenizer: Tokenizer for encoding/decoding.
             sampler: Token sampler. Defaults to a new Sampler instance.
             device: Device the model is on.
-            kv_cache: Optional NaiveKVCache. If None, uses HF's cache.
+            kv_cache: Required NaiveKVCache for Phase 3 batching.
         """
         self.model = model
         self.tokenizer = tokenizer
@@ -55,183 +57,144 @@ class DecoderEngine:
         self.device = device
         self.kv_cache = kv_cache
 
-    @torch.inference_mode()
-    def generate(
-        self,
-        prompt: str,
-        params: Optional[SamplingParams] = None,
-    ) -> Generator[str, None, None]:
-        """Generate tokens autoregressively, yielding each token as a string.
-
-        This is a streaming generator — each yielded value is one decoded token.
-        The caller can collect all tokens or stream them to a client.
-
-        Args:
-            prompt: Input text prompt.
-            params: Sampling parameters. Defaults to SamplingParams().
-
-        Yields:
-            Decoded token strings, one at a time.
-        """
-        if params is None:
-            params = SamplingParams()
-
-        # 1. Encode prompt
-        input_ids = self.tokenizer.encode(prompt)
-        input_tensor = torch.tensor([input_ids], dtype=torch.long, device=self.device)
-        prompt_len = len(input_ids)
-
-        logger.debug(f"Prompt length: {prompt_len} tokens")
-
-        # 2. Reset cache if using NaiveKVCache
-        if self.kv_cache is not None:
-            self.kv_cache.clear()
-
-        # 3. Prefill: forward pass on full prompt
-        t_prefill_start = time.perf_counter()
-        logits, past_key_values = self._prefill(input_tensor)
-        t_prefill_end = time.perf_counter()
-
-        logger.debug(
-            f"Prefill: {t_prefill_end - t_prefill_start:.3f}s "
-            f"({prompt_len} tokens)"
-        )
-
-        # If using NaiveKVCache, capture the prefill output into our cache
-        if self.kv_cache is not None:
-            self.kv_cache.update_from_hf_past_key_values(
-                past_key_values, num_new_tokens=prompt_len
-            )
-            # From now on, use our cache
-            past_key_values = self.kv_cache.to_hf_past_key_values()
-
-        # 4. Decode loop
-        generated_ids: list[int] = []
-        all_stop_ids = {self.tokenizer.eos_token_id} | set(params.stop_token_ids)
-
-        t_decode_start = time.perf_counter()
-
-        for step in range(params.max_new_tokens):
-            # Sample next token from last logits
-            generated_tensor = (
-                torch.tensor(generated_ids, dtype=torch.long, device=self.device)
-                if generated_ids
-                else None
-            )
-            next_token_id = self.sampler.sample(
-                logits, params, generated_ids=generated_tensor
-            )
-
-            token_id = next_token_id.item()
-            generated_ids.append(token_id)
-
-            # Check stopping criteria
-            if token_id in all_stop_ids:
-                logger.debug(
-                    f"Stopped at step {step + 1}: "
-                    f"token_id={token_id} (stop token)"
-                )
-                break
-
-            # Yield the decoded token text
-            token_text = self.tokenizer.decode_token(token_id)
-            yield token_text
-
-            # Forward pass with single new token
-            next_input = torch.tensor(
-                [[token_id]], dtype=torch.long, device=self.device
-            )
-            logits, past_key_values = self._decode_step(
-                next_input, past_key_values
-            )
-
-            # If using NaiveKVCache, capture the new token into our cache
-            if self.kv_cache is not None:
-                self.kv_cache.update_from_hf_past_key_values(
-                    past_key_values, num_new_tokens=1
-                )
-                past_key_values = self.kv_cache.to_hf_past_key_values()
-
-        t_decode_end = time.perf_counter()
-        decode_time = t_decode_end - t_decode_start
-        tokens_per_sec = len(generated_ids) / decode_time if decode_time > 0 else 0
-
-        cache_mode = "naive" if self.kv_cache is not None else "hf"
-        logger.info(
-            f"Generation complete: {len(generated_ids)} tokens in "
-            f"{decode_time:.3f}s ({tokens_per_sec:.1f} tok/s) "
-            f"[cache={cache_mode}]"
-        )
-
-        # Log cache stats if using NaiveKVCache
-        if self.kv_cache is not None:
-            mem = self.kv_cache.memory_usage_bytes()
-            logger.debug(
-                f"KV-cache: {self.kv_cache.get_seq_len()} tokens cached, "
-                f"{mem['kv_cache_used_mb']:.1f} MB used / "
-                f"{mem['kv_cache_allocated_mb']:.1f} MB allocated"
-            )
+        if self.kv_cache is None:
+            raise ValueError("Phase 3 Continuous Batching requires NaiveKVCache.")
 
     @torch.inference_mode()
-    def generate_text(
-        self,
-        prompt: str,
-        params: Optional[SamplingParams] = None,
-    ) -> str:
-        """Generate and return the full response as a single string.
-
-        Non-streaming convenience method.
+    def step_prefill(self, input_ids_list: list[list[int]], slot_indices: list[int]) -> list[int]:
+        """Perform a batched prefill forward pass for new requests.
 
         Args:
-            prompt: Input text prompt.
-            params: Sampling parameters.
+            input_ids_list: List of tokenized prompts.
+            slot_indices: The physical KV-cache slots assigned to these requests.
 
         Returns:
-            Complete generated text.
+            List of generated next-token IDs (one per request).
         """
-        return "".join(self.generate(prompt, params))
+        batch_size = len(input_ids_list)
+        assert batch_size == len(slot_indices)
 
-    def _prefill(
-        self,
-        input_ids: torch.Tensor,
-    ) -> tuple[torch.Tensor, tuple]:
-        """Run model forward on the full prompt.
+        # 1. Pad prompts to the longest in the current batch
+        max_prompt_len = max(len(p) for p in input_ids_list)
+        pad_token_id = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
 
-        Args:
-            input_ids: Shape (1, seq_len) — the tokenized prompt.
+        # Shape: (batch_size, max_prompt_len)
+        padded_inputs = torch.full((batch_size, max_prompt_len), pad_token_id, dtype=torch.long, device=self.device)
+        attention_mask = torch.zeros((batch_size, max_prompt_len), dtype=torch.long, device=self.device)
 
-        Returns:
-            Tuple of (last_token_logits, past_key_values).
-            last_token_logits shape: (vocab_size,)
-        """
+        # We also need to track the *true* last token index to extract logits
+        # because the model outputs logits for all positions (including padding).
+        last_token_indices = []
+
+        for i, prompt_ids in enumerate(input_ids_list):
+            seq_len = len(prompt_ids)
+            padded_inputs[i, :seq_len] = torch.tensor(prompt_ids, dtype=torch.long, device=self.device)
+            attention_mask[i, :seq_len] = 1
+            last_token_indices.append(seq_len - 1)
+
+        # 2. Reset the assigned cache slots
+        self.kv_cache.clear_slots(slot_indices)
+
+        # 3. Model Forward Pass
+        logger.debug(f"Prefill step: batch_size={batch_size}, max_len={max_prompt_len}")
         outputs = self.model(
-            input_ids=input_ids,
+            input_ids=padded_inputs,
+            attention_mask=attention_mask,
             use_cache=True,
         )
-        # Extract logits for the last position only
-        last_logits = outputs.logits[:, -1, :]  # (1, vocab_size)
-        last_logits = last_logits.squeeze(0)  # (vocab_size,)
-        return last_logits, outputs.past_key_values
 
-    def _decode_step(
-        self,
-        token_id: torch.Tensor,
-        past_key_values: tuple,
-    ) -> tuple[torch.Tensor, tuple]:
-        """Single decode step with KV-cache reuse.
+        # 4. Extract logits exactly at the last *valid* prompt token
+        # logits shape: (batch_size, max_prompt_len, vocab_size)
+        all_logits = outputs.logits
+        last_valid_logits = []
+        for i, last_idx in enumerate(last_token_indices):
+            last_valid_logits.append(all_logits[i, last_idx, :])
+        
+        # Shape: (batch_size, vocab_size)
+        stacked_logits = torch.stack(last_valid_logits)
+
+        # 5. Capture the prefill output into our cache slots
+        # `num_new_tokens` is `max_prompt_len` because that's what we just ran through the model
+        self.kv_cache.update_from_hf_past_key_values(
+            outputs.past_key_values, num_new_tokens=max_prompt_len, slot_indices=slot_indices
+        )
+
+        # We need to correct the sequence lengths in the naive cache. 
+        # The prompt lengths varied, but HF appended max_prompt_len representations for all.
+        # This is a limitation of patching NaiveCache over HF forward passes.
+        # For Phase 3, we force the _seq_lens to the *actual* prompt length for each slot
+        for ptr_idx, s_idx in enumerate(slot_indices):
+            actual_len = len(input_ids_list[ptr_idx])
+            self.kv_cache._seq_lens[s_idx] = actual_len
+
+        # 6. Sample next tokens (currently uses uniform SamplingParams for simplicity)
+        # In a full implementation, we'd pass per-request SamplingParams
+        next_tokens = []
+        for i in range(batch_size):
+            # Extract 1D logits for single sequence
+            single_logits = stacked_logits[i]
+            # No generated_ids history available yet at prefill boundary
+            next_id = self.sampler.sample(single_logits, SamplingParams())
+            next_tokens.append(next_id.item())
+
+        return next_tokens
+
+    @torch.inference_mode()
+    def step_decode(self, token_ids: list[int], slot_indices: list[int]) -> list[int]:
+        """Perform a batched decode step for running requests.
 
         Args:
-            token_id: Shape (1, 1) — the last generated token.
-            past_key_values: Cached key-value states from previous steps.
+            token_ids: The last generated token ID for each running request.
+            slot_indices: The physical KV-cache slots assigned.
 
         Returns:
-            Tuple of (next_logits, updated_past_key_values).
-            next_logits shape: (vocab_size,)
+            List of generated next-token IDs.
         """
+        batch_size = len(token_ids)
+        assert batch_size == len(slot_indices)
+
+        # Shape: (batch_size, 1) - One new token per sequence
+        input_tensor = torch.tensor(token_ids, dtype=torch.long, device=self.device).unsqueeze(1)
+
+        # 1. Retrieve padded KV-cache for active slots
+        # Retrieves (k, v) padded to the maximum active seq_len in this batch
+        past_key_values = self.kv_cache.to_hf_past_key_values(slot_indices)
+
+        # 2. Construct 2D attention mask covering the FULL sequence length (past tokens + 1 new token)
+        seq_lens = self.kv_cache.get_seq_lens(slot_indices)
+        max_seq_len = max(seq_lens)
+        
+        # New sequence length includes the token we are about to process
+        total_len = max_seq_len + 1
+        
+        attention_mask = torch.zeros((batch_size, total_len), dtype=torch.long, device=self.device)
+        for i, slen in enumerate(seq_lens):
+            # Valid tokens = past length + 1 (the current input token)
+            attention_mask[i, :slen + 1] = 1
+
+        # 3. Model Forward Pass
         outputs = self.model(
-            input_ids=token_id,
+            input_ids=input_tensor,
+            attention_mask=attention_mask,
             past_key_values=past_key_values,
             use_cache=True,
         )
-        next_logits = outputs.logits[:, -1, :].squeeze(0)  # (vocab_size,)
-        return next_logits, outputs.past_key_values
+
+        # 4. Extract logits (only 1 sequence dimension, so take the last one)
+        # logits shape: (batch_size, 1, vocab_size)
+        stacked_logits = outputs.logits[:, -1, :]
+
+        # 5. Capture the single new token into our cache slots
+        self.kv_cache.update_from_hf_past_key_values(
+            outputs.past_key_values, num_new_tokens=1, slot_indices=slot_indices
+        )
+
+        # 6. Sample next tokens
+        next_tokens = []
+        for i in range(batch_size):
+            single_logits = stacked_logits[i]
+            # Simplified sampler (lacks full generated history context)
+            next_id = self.sampler.sample(single_logits, SamplingParams())
+            next_tokens.append(next_id.item())
+
+        return next_tokens
