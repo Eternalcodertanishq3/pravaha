@@ -20,9 +20,12 @@ graph TD
     style KVCache fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
-## ✨ Features (Phases 1-3 Completed)
+## ✨ Features (Phases 1-4 Completed)
 
-- ✅ **Continuous Batching Scheduler (Phase 3)**: A dynamic, slot-based execution engine that maximizes GPU utilization by grouping incoming requests in an asynchronous `asyncio` background loop. Features disjoint phase execution for efficient batched prefill and decoding passes without mixed-task kernel complexity.
+- ✅ **Hybrid Paged Attention (Phase 4)**: Transitions from contiguous slots to a high-performance paged memory system. Uses a **Rust-based BlockAllocator** for O(1) memory management and **PagedKVCache** for efficient GPU/CPU block movements.
+- ✅ **LRU Swapping & Preemption**: Automatically handles memory pressure by swapping least-recently-used KV-cache blocks to system RAM, enabling much higher sequence counts than physical VRAM allowed.
+- ✅ **Prefix Sharing**: Radical memory optimization that allows multiple concurrent requests to share physical memory blocks for identical prompt prefixes.
+- ✅ **Continuous Batching Scheduler (Phase 3)**: A dynamic, slot-based execution engine that maximizes GPU utilization by grouping incoming requests in an asynchronous `asyncio` background loop.
 - ✅ **Custom KV-Cache Management (Phase 2)**: 100% Python-based pre-allocated Key-Value cache for multi-layered transformer blocks. Provides precise visibility into memory allocation (e.g., exactly 144MB for a 4-slot GPT-2 cache) and fully replaces opaque native HF caching.
 - ✅ **HuggingFace Native Interoperability (Phase 1)**: Zero-friction model loading for state-of-the-art architectures (GPT-2, Llama, Mistral) through dynamic state conversion, bringing advanced batching to standard huggingface checkpoints without kernel modification.
 - ✅ **High-Performance Streaming Generation**: Fully unblocked end-to-end token streaming driven by decoupled background threads queueing natively to `asyncio` event loops.
@@ -43,7 +46,10 @@ graph TD
   - _Goal:_ Substantially increase hardware throughput via concurrent inference.
   - _Achievement:_ Designed an asynchronous frontend wrapped around a synchronous PyTorch thread-loop. The `ContinuousScheduler` handles concurrent inputs by employing **Disjoint Execution Phases**. It waits to batch un-allocated requests together for an isolated _Batched Prefill Pass_, and then cleanly executes multi-sequence _Batched Decode Passes_, dynamically hiding single-batch latency to near zero (e.g., executing 4 concurrent GPT-2 blocks in just 1.10 seconds total).
 
-- 🔲 **Phase 4: Paged KV-Cache + BlockAllocator**
+- ✅ **Phase 4: Paged KV-Cache + BlockAllocator**
+  - _Goal:_ Implement industrial-grade memory management.
+  - _Achievement:_ Built a hybrid Rust/Python memory plane. Implemented `PagedKVCache` with fixed-size 16-token blocks and a Rust-powered `BlockAllocator` for O(1) allocation. Added **LRU Swapping** (preempting requests to CPU) and **Prefix Sharing** (reusing blocks for common prefixes), enabling the engine to handle memory pressure gracefully and process 4 concurrent requests in just 1.02 seconds.
+
 - 🔲 **Phase 5: INT8/INT4 Quantization (GPTQ/AWQ)**
 - 🔲 Phase 6: API Server + FastAPI Streaming
 - 🔲 Phase 7: Real-time Telemetry & Profiling
@@ -59,6 +65,9 @@ https://github.com/user-attachments/assets/ea9071da-2285-4f15-a385-c551eada8882
 
 **Phase 3: Continuous Batching** (Dynamic Slot Allocation)
 https://github.com/user-attachments/assets/9b882e99-75bc-453c-947a-fa6e9b51a447
+
+**Phase 4: Paged Attention** (Hybrid Rust/Python + Swapping)
+https://github.com/user-attachments/assets/0f6459ac-16cf-4324-bf41-ee045a752c70
 
 ## Quick Start
 

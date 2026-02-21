@@ -16,7 +16,7 @@ from typing import AsyncGenerator, Optional
 from pravaha.config import EngineConfig
 from pravaha.decoder.decoder import DecoderEngine
 from pravaha.decoder.sampling import Sampler, SamplingParams
-from pravaha.kv_cache.naive_cache import NaiveKVCache
+from pravaha.kv_cache.paged_cache import PagedKVCache
 from pravaha.models.loader import ModelLoader
 from pravaha.scheduler.request import InferenceRequest, FinishReason
 from pravaha.scheduler.scheduler import ContinuousScheduler
@@ -46,22 +46,26 @@ class AsyncPravahaEngine:
         # 2. Tokenizer
         self.tokenizer = PravahaTokenizer(self.config.model.model_path)
 
-        # 3. Cache & Scheduler Setup (Phase 3 requires NaiveKVCache)
-        if not self.config.cache.use_naive_cache:
-            logger.warning("Phase 3 Continuous Batching requires NaiveKVCache. Overriding config.")
-            self.config.cache.use_naive_cache = True
+        # 3. Cache & Scheduler Setup (Phase 4 requires PagedKVCache)
+        if self.config.cache.use_naive_cache:
+            logger.info("Switching to PagedKVCache for Phase 4.")
+            self.config.cache.use_naive_cache = False
 
-        self.max_batch_size = 4  # Default Phase 3 batch size
-        self.kv_cache = NaiveKVCache.from_model_config(
+        self.max_batch_size = 4
+        self.block_size = 16
+        # Balanced allocation for stability
+        self.kv_cache = PagedKVCache.from_model_config(
             arch_config=self.arch_config,
-            max_seq_len=self.config.model.max_seq_len,
+            num_blocks=64,
+            block_size=self.block_size,
             dtype=self.config.model.torch_dtype,
             device=self._device,
-            batch_size=self.max_batch_size,
         )
         
         # 4. Scheduler
         self.scheduler = ContinuousScheduler(
+            num_blocks=64,
+            block_size=self.block_size,
             max_batch_size=self.max_batch_size,
             max_seq_len=self.config.model.max_seq_len,
         )
@@ -176,41 +180,63 @@ class AsyncPravahaEngine:
     def _engine_step(self):
         """Perform one step (prefill OR decode) using the continuous scheduler."""
         with self._lock:
-            prefill_reqs, decode_reqs = self.scheduler.step()
+            scheduled = self.scheduler.step()
+            
+            prefill_reqs = scheduled["prefill"]
+            decode_reqs = scheduled["decode"]
+            swap_out_reqs = scheduled["swap_out"]
+            swap_in_reqs = scheduled["swap_in"]
 
-            # We must explicitly define these copies because we release the lock during the model forward pass,
-            # and the scheduler might mutate its internal state if called from somewhere else.
-            # In purely thread-isolated designs this is safer, but our disjoint phases approach is relatively clean here.
+        # 0. Handle Swapping
+        if swap_out_reqs:
+            block_ids = []
+            for req in swap_out_reqs:
+                block_ids.extend(req.block_table)
+            self.kv_cache.swap_out(block_ids)
+            logger.info(f"Engine: Swapped out {len(swap_out_reqs)} requests ({len(block_ids)} blocks).")
+
+        if swap_in_reqs:
+            block_ids = []
+            for req in swap_in_reqs:
+                block_ids.extend(req.block_table)
+            self.kv_cache.swap_in(block_ids)
+            logger.info(f"Engine: Swapped in {len(swap_in_reqs)} requests ({len(block_ids)} blocks).")
 
         # 1. Batched Prefill Phase
         if prefill_reqs:
             input_ids_list = [req.prompt_token_ids for req in prefill_reqs]
-            slot_indices = [self.scheduler.get_slot_for_request(req.request_id) for req in prefill_reqs]
+            request_ids = [req.request_id for req in prefill_reqs]
+            block_tables = [req.block_table for req in prefill_reqs]
             
             # Run model prefill
             try:
-                next_tokens = self.decoder.step_prefill(input_ids_list, slot_indices)
+                next_tokens = self.decoder.step_prefill(input_ids_list, request_ids, block_tables)
             except Exception as e:
-                logger.error(f"Prefill failed: {e}")
+                logger.error(f"Prefill failed: {e}", exc_info=True)
                 for req in prefill_reqs:
                     self._abort_request(req, e)
                 return
 
             # Route outputs
+            # Note: We use the lock for marking finished but not for process_token unless needed
             for i, req in enumerate(prefill_reqs):
                 self._process_token(req, next_tokens[i])
-            return # Disjoint phase: exit step
+            return # Disjoint phase
 
         # 2. Batched Decode Phase
         if decode_reqs:
-            last_tokens = [req.generated_token_ids[-1] if req.generated_token_ids else req.prompt_token_ids[-1] for req in decode_reqs]
-            slot_indices = [self.scheduler.get_slot_for_request(req.request_id) for req in decode_reqs]
+            last_tokens = [req.get_last_token_id() for req in decode_reqs]
+            request_ids = [req.request_id for req in decode_reqs]
+            block_tables = [req.block_table for req in decode_reqs]
+            context_lens = [req.total_tokens for req in decode_reqs]
             
             # Run model decode
             try:
-                next_tokens = self.decoder.step_decode(last_tokens, slot_indices)
+                next_tokens = self.decoder.step_decode(
+                    last_tokens, request_ids, block_tables, context_lens
+                )
             except Exception as e:
-                logger.error(f"Decode failed: {e}")
+                logger.error(f"Decode failed: {e}", exc_info=True)
                 for req in decode_reqs:
                     self._abort_request(req, e)
                 return
@@ -233,7 +259,13 @@ class AsyncPravahaEngine:
         is_max_length = len(request.generated_token_ids) >= (request.sampling_params.max_new_tokens if request.sampling_params else 100)
         
         if is_stop_token or is_max_length:
-            reason = FinishReason.STOP if is_stop_token else FinishReason.MAX_TOKENS
+            if is_max_length:
+                reason = FinishReason.MAX_TOKENS
+            elif token_id == self.tokenizer.eos_token_id:
+                reason = FinishReason.EOS
+            else:
+                reason = FinishReason.STOP_TOKEN
+                
             with self._lock:
                 request.mark_finished(reason)
             
@@ -254,8 +286,8 @@ async def main():
     """Integration test for continuous batching."""
     import time
     
-    # Enable debug logging to see batching in action
-    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
+    # Default to INFO to keep logs clean. Change to DEBUG for deeper inspection.
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
     
     engine = AsyncPravahaEngine(config_path="configs/default.yaml")
     

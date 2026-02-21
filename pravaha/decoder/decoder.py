@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 
 from pravaha.decoder.sampling import Sampler, SamplingParams
-from pravaha.kv_cache.naive_cache import NaiveKVCache
+from pravaha.kv_cache.paged_cache import PagedKVCache
 from pravaha.tokenizer.tokenizer import PravahaTokenizer
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class DecoderEngine:
         tokenizer: PravahaTokenizer,
         sampler: Optional[Sampler] = None,
         device: str = "cuda",
-        kv_cache: Optional[NaiveKVCache] = None,
+        kv_cache: Optional[PagedKVCache] = None,
     ):
         """Initialize the decoder engine.
 
@@ -58,21 +58,27 @@ class DecoderEngine:
         self.kv_cache = kv_cache
 
         if self.kv_cache is None:
-            raise ValueError("Phase 3 Continuous Batching requires NaiveKVCache.")
+            raise ValueError("Phase 4 Paged Attention requires PagedKVCache.")
 
     @torch.inference_mode()
-    def step_prefill(self, input_ids_list: list[list[int]], slot_indices: list[int]) -> list[int]:
-        """Perform a batched prefill forward pass for new requests.
+    def step_prefill(
+        self,
+        input_ids_list: list[list[int]],
+        request_ids: list[str],
+        block_tables: list[list[int]],
+    ) -> list[int]:
+        """Perform a batched prefill forward pass for new requests (Paged).
 
         Args:
             input_ids_list: List of tokenized prompts.
-            slot_indices: The physical KV-cache slots assigned to these requests.
+            request_ids: Unique identifier for each request.
+            block_tables: Physical block IDs assigned by scheduler.
 
         Returns:
             List of generated next-token IDs (one per request).
         """
         batch_size = len(input_ids_list)
-        assert batch_size == len(slot_indices)
+        assert batch_size == len(block_tables)
 
         # 1. Pad prompts to the longest in the current batch
         max_prompt_len = max(len(p) for p in input_ids_list)
@@ -92,9 +98,6 @@ class DecoderEngine:
             attention_mask[i, :seq_len] = 1
             last_token_indices.append(seq_len - 1)
 
-        # 2. Reset the assigned cache slots
-        self.kv_cache.clear_slots(slot_indices)
-
         # 3. Model Forward Pass
         logger.debug(f"Prefill step: batch_size={batch_size}, max_len={max_prompt_len}")
         outputs = self.model(
@@ -113,19 +116,14 @@ class DecoderEngine:
         # Shape: (batch_size, vocab_size)
         stacked_logits = torch.stack(last_valid_logits)
 
-        # 5. Capture the prefill output into our cache slots
-        # `num_new_tokens` is `max_prompt_len` because that's what we just ran through the model
+        # 5. Capture the prefill output into our physical blocks
         self.kv_cache.update_from_hf_past_key_values(
-            outputs.past_key_values, num_new_tokens=max_prompt_len, slot_indices=slot_indices
+            outputs.past_key_values,
+            num_new_tokens=max_prompt_len,
+            request_ids=request_ids,
+            block_tables=block_tables,
+            slot_offsets=[0] * batch_size  # Prefill starts at pos 0
         )
-
-        # We need to correct the sequence lengths in the naive cache. 
-        # The prompt lengths varied, but HF appended max_prompt_len representations for all.
-        # This is a limitation of patching NaiveCache over HF forward passes.
-        # For Phase 3, we force the _seq_lens to the *actual* prompt length for each slot
-        for ptr_idx, s_idx in enumerate(slot_indices):
-            actual_len = len(input_ids_list[ptr_idx])
-            self.kv_cache._seq_lens[s_idx] = actual_len
 
         # 6. Sample next tokens (currently uses uniform SamplingParams for simplicity)
         # In a full implementation, we'd pass per-request SamplingParams
@@ -140,37 +138,41 @@ class DecoderEngine:
         return next_tokens
 
     @torch.inference_mode()
-    def step_decode(self, token_ids: list[int], slot_indices: list[int]) -> list[int]:
-        """Perform a batched decode step for running requests.
+    def step_decode(
+        self,
+        token_ids: list[int],
+        request_ids: list[str],
+        block_tables: list[list[int]],
+        context_lens: list[int],
+    ) -> list[int]:
+        """Perform a batched decode step (Paged).
 
         Args:
-            token_ids: The last generated token ID for each running request.
-            slot_indices: The physical KV-cache slots assigned.
+            token_ids: Last generated token ID for each request.
+            request_ids: Unique identifier for each request.
+            block_tables: Physical block IDs.
+            context_lens: Current number of tokens ALREADY computed in KV-cache.
 
         Returns:
             List of generated next-token IDs.
         """
         batch_size = len(token_ids)
-        assert batch_size == len(slot_indices)
+        assert batch_size == len(request_ids)
 
         # Shape: (batch_size, 1) - One new token per sequence
         input_tensor = torch.tensor(token_ids, dtype=torch.long, device=self.device).unsqueeze(1)
 
-        # 1. Retrieve padded KV-cache for active slots
-        # Retrieves (k, v) padded to the maximum active seq_len in this batch
-        past_key_values = self.kv_cache.to_hf_past_key_values(slot_indices)
+        # 1. Retrieve padded KV-cache for active blocks
+        # This performs a gather from the physical pool to a contiguous HF-compatible batch
+        past_key_values = self.kv_cache.to_hf_past_key_values(block_tables, context_lens)
 
         # 2. Construct 2D attention mask covering the FULL sequence length (past tokens + 1 new token)
-        seq_lens = self.kv_cache.get_seq_lens(slot_indices)
-        max_seq_len = max(seq_lens)
-        
-        # New sequence length includes the token we are about to process
+        max_seq_len = max(context_lens)
         total_len = max_seq_len + 1
         
         attention_mask = torch.zeros((batch_size, total_len), dtype=torch.long, device=self.device)
-        for i, slen in enumerate(seq_lens):
-            # Valid tokens = past length + 1 (the current input token)
-            attention_mask[i, :slen + 1] = 1
+        for i, clen in enumerate(context_lens):
+            attention_mask[i, :clen + 1] = 1
 
         # 3. Model Forward Pass
         outputs = self.model(
@@ -184,9 +186,13 @@ class DecoderEngine:
         # logits shape: (batch_size, 1, vocab_size)
         stacked_logits = outputs.logits[:, -1, :]
 
-        # 5. Capture the single new token into our cache slots
+        # 5. Store the new token KV-cache in physical blocks
         self.kv_cache.update_from_hf_past_key_values(
-            outputs.past_key_values, num_new_tokens=1, slot_indices=slot_indices
+            outputs.past_key_values,
+            num_new_tokens=1,
+            request_ids=request_ids,
+            block_tables=block_tables,
+            slot_offsets=context_lens,
         )
 
         # 6. Sample next tokens
