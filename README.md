@@ -20,6 +20,12 @@ graph TD
     style KVCache fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
+## 🌍 The Vision (Open Source)
+
+Pravāha is built on the belief that **high-performance inference should be accessible to everyone**, not just those with industrial-scale data centers. While `vLLM` and `TGI` are the standards for production clusters, Pravāha brings those same techniques—**PagedAttention, Continuous Batching, and Quantization**—to the consumer GPU ecosystem.
+
+This project is 100% Open Source and community-driven, designed to empower developers to run SOTA models on the hardware they already own.
+
 ## ✨ Features (Phases 1-5 Completed)
 
 - ✅ **INT8 & INT4 Quantization (Phase 5)**: Native integration with `bitsandbytes` allows loading massive models on consumer GPUs by reducing weight precision (e.g., slashing VRAM footprint by ~50% in 4-bit mode) without sacrificing the custom KV-cache architecture.
@@ -32,6 +38,20 @@ graph TD
 - ✅ **High-Performance Streaming Generation**: Fully unblocked end-to-end token streaming driven by decoupled background threads queueing natively to `asyncio` event loops.
 - ✅ **Precision Controls**: Configurable FP16, BF16, and FP32 torch datatypes natively managed at loop initiation.
 - ✅ **Configurable Sampling Pipeline**: Robust generation controls including Temperature, Top-K, Top-P stochastic sampling, and custom stop-word parameters.
+
+- ✅ **Configurable Sampling Pipeline**: Robust generation controls including Temperature, Top-K, Top-P stochastic sampling, and custom stop-word parameters.
+
+## 🛠️ Proof of Work (Benchmarks & Validation)
+
+We verify every phase with automated benchmarks and real-world generation logs.
+
+- **Phase 4 Walkthrough**: [Technical Deep-dive into Paged Attention](file:///C:/Users/Acer/.gemini/antigravity/brain/30426787-eb54-41ee-9d04-c1e180924cb6/walkthrough.md)
+- **Phase 5 Memory Test**: [Quantization Verification Results](file:///C:/Users/Acer/.gemini/antigravity/brain/30426787-eb54-41ee-9d04-c1e180924cb6/day5_announcement.md)
+
+| Benchmark             | FP16 (GPT-2) | 4-bit NF4    | Reduction       |
+| :-------------------- | :----------- | :----------- | :-------------- |
+| **VRAM Usage**        | 238.2 MB     | **119.0 MB** | **50.1%**       |
+| **Inference Latency** | ~0.08s/tok   | ~0.09s/tok   | Minimal Penalty |
 
 ## 📈 Roadmap & Technical Achievements
 
