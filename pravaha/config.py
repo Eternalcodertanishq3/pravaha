@@ -7,7 +7,7 @@ Each subsystem has its own config, composed into a top-level EngineConfig.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import yaml
 from pydantic import BaseModel, Field
@@ -22,6 +22,7 @@ class ModelConfig(BaseModel):
     dtype: Literal["float16", "bfloat16", "float32"] = "float16"
     device: str = "auto"  # "auto" detects CUDA availability; or "cuda", "cpu"
     max_seq_len: int = 1024
+    quantization: Optional[Literal["8bit", "4bit"]] = None
 
     @property
     def resolved_device(self) -> str:

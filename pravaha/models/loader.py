@@ -42,6 +42,7 @@ class ModelLoader:
         dtype: torch.dtype = torch.float16,
         device: str = "cuda",
         max_memory: Optional[dict] = None,
+        quantization: Optional[str] = None,
     ) -> tuple[nn.Module, ModelArchConfig]:
         """Load a HuggingFace causal LM for inference.
 
@@ -50,6 +51,7 @@ class ModelLoader:
             dtype: Target dtype (torch.float16, torch.bfloat16, torch.float32).
             device: Target device ("cuda", "cpu", "cuda:0", etc.).
             max_memory: Optional per-device memory limits for device_map="auto".
+            quantization: "8bit" or "4bit" to use bitsandbytes quantization.
 
         Returns:
             Tuple of (model in eval mode, architecture config).
@@ -95,7 +97,7 @@ class ModelLoader:
         has_accelerate = _has_accelerate()
 
         load_kwargs: dict = {
-            "dtype": dtype,  # transformers v5+; older versions use "torch_dtype"
+            "dtype": dtype,
             "trust_remote_code": False,
         }
 
@@ -108,6 +110,25 @@ class ModelLoader:
                 "'accelerate' not installed — using basic model loading. "
                 "Install with: python -m pip install accelerate"
             )
+
+        if quantization:
+            try:
+                from transformers import BitsAndBytesConfig
+                if quantization == "8bit":
+                    load_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
+                elif quantization == "4bit":
+                    load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_compute_dtype=dtype,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4",
+                    )
+                else:
+                    logger.warning(f"Unknown quantization mode: {quantization}")
+                logger.info(f"Enabled {quantization} quantization via bitsandbytes.")
+            except ImportError:
+                logger.error("bitsandbytes must be installed to use quantization. Run: pip install bitsandbytes")
+                raise
 
         model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
 

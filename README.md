@@ -20,8 +20,9 @@ graph TD
     style KVCache fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
-## ✨ Features (Phases 1-4 Completed)
+## ✨ Features (Phases 1-5 Completed)
 
+- ✅ **INT8 & INT4 Quantization (Phase 5)**: Native integration with `bitsandbytes` allows loading massive models on consumer GPUs by reducing weight precision (e.g., slashing VRAM footprint by ~50% in 4-bit mode) without sacrificing the custom KV-cache architecture.
 - ✅ **Hybrid Paged Attention (Phase 4)**: Transitions from contiguous slots to a high-performance paged memory system. Uses a **Rust-based BlockAllocator** for O(1) memory management and **PagedKVCache** for efficient GPU/CPU block movements.
 - ✅ **LRU Swapping & Preemption**: Automatically handles memory pressure by swapping least-recently-used KV-cache blocks to system RAM, enabling much higher sequence counts than physical VRAM allowed.
 - ✅ **Prefix Sharing**: Radical memory optimization that allows multiple concurrent requests to share physical memory blocks for identical prompt prefixes.
@@ -50,7 +51,10 @@ graph TD
   - _Goal:_ Implement industrial-grade memory management.
   - _Achievement:_ Built a hybrid Rust/Python memory plane. Implemented `PagedKVCache` with fixed-size 16-token blocks and a Rust-powered `BlockAllocator` for O(1) allocation. Added **LRU Swapping** (preempting requests to CPU) and **Prefix Sharing** (reusing blocks for common prefixes), enabling the engine to handle memory pressure gracefully and process 4 concurrent requests in just 1.02 seconds.
 
-- 🔲 **Phase 5: INT8/INT4 Quantization (GPTQ/AWQ)**
+- ✅ **Phase 5: INT8/INT4 Quantization (GPTQ/AWQ)**
+  - _Goal:_ Expand accessibility by allowing massive models to fit on consumer GPUs.
+  - _Achievement:_ Seamlessly integrated `bitsandbytes` into the custom `ModelLoader`. By exposing `quantization="8bit"` and `quantization="4bit"` in the global configuration, users can instantly slash memory footprints (verified 50% reduction for 4-bit NF4) while retaining full compatibility with the custom Rust/Python Paged Attention cache.
+
 - 🔲 Phase 6: API Server + FastAPI Streaming
 - 🔲 Phase 7: Real-time Telemetry & Profiling
 - 🔲 Phase 8: FlashAttention & Speculative Decoding Integration
@@ -68,6 +72,9 @@ https://github.com/user-attachments/assets/9b882e99-75bc-453c-947a-fa6e9b51a447
 
 **Phase 4: Paged Attention** (Hybrid Rust/Python + Swapping)
 https://github.com/user-attachments/assets/0f6459ac-16cf-4324-bf41-ee045a752c70
+
+**Phase 5: INT8/INT4 Quantization** (bitsandbytes + Memory Benchmarks)
+https://github.com/user-attachments/assets/8c616abd-821b-4ba9-872c-9bdf28c25d84
 
 ## Quick Start
 

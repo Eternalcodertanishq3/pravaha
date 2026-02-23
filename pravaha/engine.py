@@ -7,11 +7,15 @@ into a single clean API. This is the main entry point for using Pravāha.
 from __future__ import annotations
 
 import logging
+import sys
 import time
 from pathlib import Path
 from typing import Generator, Optional
 
 import torch
+
+# Add workspace root to sys.path to allow running as script directly
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from pravaha.config import EngineConfig
 from pravaha.decoder.decoder import DecoderEngine
@@ -83,6 +87,7 @@ class PravahaEngine:
             model_path=self.config.model.model_path,
             dtype=self.config.model.torch_dtype,
             device=self._device,
+            quantization=self.config.model.quantization,
         )
 
         # 3. Initialize tokenizer
@@ -197,27 +202,37 @@ class PravahaEngine:
 
 if __name__ == "__main__":
     import argparse
+    import asyncio
+    from pravaha.engine_async import AsyncPravahaEngine
     
     parser = argparse.ArgumentParser(description="Pravāha Inference Engine")
     parser.add_argument("--config", type=str, default="configs/default.yaml", help="Path to config file")
     parser.add_argument("--prompt", type=str, default="The future of AI is", help="Prompt to generate")
     args = parser.parse_args()
 
-    # Initialize Engine
-    engine = PravahaEngine(config_path=args.config)
+    async def main():
+        # Initialize Async Engine (Phase 4 PagedAttention ready)
+        engine = AsyncPravahaEngine(config_path=args.config)
 
-    print(f"\nExample 1: Streaming Generation (Prompt: '{args.prompt}')")
-    print("-" * 50)
-    
-    t0 = time.perf_counter()
-    # Streaming loop
-    for token in engine.generate(args.prompt):
-        print(token, end="", flush=True)
-    t1 = time.perf_counter()
-    
-    print(f"\n\n" + "-" * 50)
-    print(f"Total time: {t1 - t0:.2f}s")
-    
-    # Optional: Memory Stats
-    print("\nMemory Stats:")
-    print(engine.get_memory_stats())
+        print(f"\nExample 1: Streaming Generation (Prompt: '{args.prompt}')")
+        print("-" * 50)
+        
+        t0 = time.perf_counter()
+        
+        # Async Streaming loop
+        async for token in engine.generate(args.prompt):
+            print(token, end="", flush=True)
+            
+        t1 = time.perf_counter()
+        
+        print(f"\n\n" + "-" * 50)
+        print(f"Total time: {t1 - t0:.2f}s")
+        
+        # Optional: Memory Stats
+        print("\nMemory Stats:")
+        print(engine.get_memory_stats())
+
+        # Cleanup
+        engine.stop()
+
+    asyncio.run(main())

@@ -41,6 +41,7 @@ class AsyncPravahaEngine:
             model_path=self.config.model.model_path,
             dtype=self.config.model.torch_dtype,
             device=self._device,
+            quantization=self.config.model.quantization,
         )
 
         # 2. Tokenizer
@@ -280,6 +281,32 @@ class AsyncPravahaEngine:
         queue = self._output_queues.get(request.request_id)
         if queue and self._async_loop:
             self._async_loop.call_soon_threadsafe(queue.put_nowait, error)
+
+    def get_memory_stats(self) -> dict:
+        """Return current GPU memory usage breakdown."""
+        import torch
+        if not torch.cuda.is_available():
+            return {"device": "cpu", "note": "No GPU available"}
+
+        device = torch.device(self._device)
+        allocated = torch.cuda.memory_allocated(device)
+        reserved = torch.cuda.memory_reserved(device)
+        props = torch.cuda.get_device_properties(device)
+        total = getattr(props, "total_memory", None) or getattr(props, "total_mem", 0)
+
+        return {
+            "device": str(device),
+            "gpu_name": torch.cuda.get_device_name(device),
+            "allocated_gb": allocated / (1024**3),
+            "reserved_gb": reserved / (1024**3),
+            "total_gb": total / (1024**3),
+            "free_gb": (total - allocated) / (1024**3),
+            "utilization_pct": (allocated / total) * 100,
+        }
+
+    def stop(self):
+        """Alias for stop_background_loop."""
+        self.stop_background_loop()
 
 
 async def main():

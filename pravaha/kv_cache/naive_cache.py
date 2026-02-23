@@ -301,8 +301,9 @@ class NaiveKVCache:
         )
 
     def __repr__(self) -> str:
+        active = (self._seq_lens > 0).sum().item()
         return (
             f"NaiveKVCache(layers={self.num_layers}, kv_heads={self.num_kv_heads}, "
-            f"head_dim={self.head_dim}, seq_len={self._seq_len}/{self.max_seq_len}, "
+            f"head_dim={self.head_dim}, active_slots={active}/{self.batch_size}, "
             f"device={self.device})"
         )

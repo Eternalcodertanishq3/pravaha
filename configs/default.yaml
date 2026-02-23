@@ -10,6 +10,8 @@ model:
   device: "auto"
   # Maximum sequence length (prompt + generation)
   max_seq_len: 1024
+  # Quantization: 8bit, 4bit, or omit for none
+  quantization: "4bit"
 
 cache:
   # Number of tokens per KV-cache block (PagedAttention)
