@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import time
 import uuid
 from typing import AsyncGenerator, Optional
 
@@ -92,6 +93,12 @@ class AsyncPravahaEngine:
         
         # We need the event loop that the generator will run in
         self._async_loop: Optional[asyncio.AbstractEventLoop] = None 
+
+        # Telemetry counters
+        self._total_requests_served: int = 0
+        self._total_tokens_generated: int = 0
+        self._total_ttft_ms: float = 0.0  # Cumulative time-to-first-token
+        self._ttft_count: int = 0
 
     def start_background_loop(self):
         """Start the continuous batching scheduler in a background thread."""
@@ -249,6 +256,13 @@ class AsyncPravahaEngine:
     def _process_token(self, request: InferenceRequest, token_id: int):
         """Append a newly generated token and check stopping conditions."""
         request.generated_token_ids.append(token_id)
+        self._total_tokens_generated += 1
+        
+        # Track TTFT on first generated token
+        if len(request.generated_token_ids) == 1 and request.start_time is not None:
+            ttft_ms = (time.time() - request.start_time) * 1000
+            self._total_ttft_ms += ttft_ms
+            self._ttft_count += 1
         
         # Enqueue token thread-safely
         queue = self._output_queues.get(request.request_id)
@@ -269,6 +283,7 @@ class AsyncPravahaEngine:
                 
             with self._lock:
                 request.mark_finished(reason)
+                self._total_requests_served += 1
             
             if queue and self._async_loop:
                 self._async_loop.call_soon_threadsafe(queue.put_nowait, reason)
@@ -307,6 +322,40 @@ class AsyncPravahaEngine:
     def stop(self):
         """Alias for stop_background_loop."""
         self.stop_background_loop()
+
+    def get_telemetry(self) -> dict:
+        """Return live throughput and request telemetry."""
+        avg_ttft_ms = 0.0
+        if self._ttft_count > 0:
+            avg_ttft_ms = self._total_ttft_ms / self._ttft_count
+
+        tokens_per_sec = 0.0
+        if self._total_tokens_generated > 0 and self._total_requests_served > 0:
+            # Rough estimate based on total output
+            tokens_per_sec = self._total_tokens_generated / max(1, self._total_requests_served)
+
+        return {
+            "active_requests": len(self._output_queues),
+            "total_requests_served": self._total_requests_served,
+            "total_tokens_generated": self._total_tokens_generated,
+            "avg_time_to_first_token_ms": round(avg_ttft_ms, 2),
+        }
+
+    def get_model_info(self) -> dict:
+        """Return loaded model metadata."""
+        return {
+            "model_path": self.config.model.model_path,
+            "quantization": self.config.model.quantization or "none",
+            "dtype": self.config.model.dtype,
+            "device": self._device,
+            "architecture": {
+                "num_layers": self.arch_config.num_layers,
+                "hidden_size": self.arch_config.hidden_size,
+                "num_heads": self.arch_config.num_heads,
+                "num_kv_heads": self.arch_config.num_kv_heads,
+                "vocab_size": self.arch_config.vocab_size,
+            },
+        }
 
 
 async def main():

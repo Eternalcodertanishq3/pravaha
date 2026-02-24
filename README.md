@@ -20,14 +20,39 @@ graph TD
     style KVCache fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
-## 🌍 The Vision (Open Source)
+## 🌍 Why Pravāha? (The Problem We Solve)
 
-Pravāha is built on the belief that **high-performance inference should be accessible to everyone**, not just those with industrial-scale data centers. While `vLLM` and `TGI` are the standards for production clusters, Pravāha brings those same techniques—**PagedAttention, Continuous Batching, and Quantization**—to the consumer GPU ecosystem.
+Most developers use HuggingFace `transformers` to run LLMs:
 
-This project is 100% Open Source and community-driven, designed to empower developers to run SOTA models on the hardware they already own.
+```python
+# The "raw" way — painfully slow and wasteful
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3-8B")
+output = model.generate(input_ids, max_new_tokens=100)  # 💀 16GB VRAM, one user at a time
+```
 
-## ✨ Features (Phases 1-5 Completed)
+**This doesn't scale.** Here's what Pravāha fixes:
 
+| Problem                    |     Raw HuggingFace     |               **Pravāha**                |
+| :------------------------- | :---------------------: | :--------------------------------------: |
+| 💾 **Memory**              | Full 16GB model in VRAM |         **4-bit quant → 5.5GB**          |
+| 👥 **2+ users at once?**   |  ❌ Crashes or queues   |  ✅ **Continuous batching (4+ users)**   |
+| 🧠 **KV-Cache**            |   Rebuilt every token   |   ✅ **PagedAttention reuses blocks**    |
+| 🔁 **Same prompt prefix?** |   Recomputed per user   |  ✅ **Prefix sharing — computed once**   |
+| 💥 **GPU full?**           |  "Out of Memory" crash  |        ✅ **LRU swap to CPU RAM**        |
+| 🌐 **API for apps?**       |     Write your own      | ✅ **OpenAI-compatible server built in** |
+| ⚡ **Speed (4 users)**     |   ~4.4s (sequential)    |           **~1.0s (batched)**            |
+
+> **Think of it this way:**
+>
+> - **LLaMA** = the car engine 🛠️
+> - **CUDA** = the fuel ⛽
+> - **Pravāha** = the entire race car 🏎️ (chassis + turbo + pit crew + dashboard)
+
+This project is **100% Open Source** and designed to let you run SOTA models on the hardware you already own.
+
+## ✨ Features (Phases 1-6 Completed)
+
+- ✅ **Production API Server (Phase 6)**: FastAPI-based OpenAI-compatible inference server with SSE token streaming, live telemetry (`/metrics`), health probes, CORS, and request tracing. Drop-in replacement for OpenAI's API — just change the `base_url`.
 - ✅ **INT8 & INT4 Quantization (Phase 5)**: Native integration with `bitsandbytes` allows loading massive models on consumer GPUs by reducing weight precision (e.g., slashing VRAM footprint by ~50% in 4-bit mode) without sacrificing the custom KV-cache architecture.
 - ✅ **Hybrid Paged Attention (Phase 4)**: Transitions from contiguous slots to a high-performance paged memory system. Uses a **Rust-based BlockAllocator** for O(1) memory management and **PagedKVCache** for efficient GPU/CPU block movements.
 - ✅ **LRU Swapping & Preemption**: Automatically handles memory pressure by swapping least-recently-used KV-cache blocks to system RAM, enabling much higher sequence counts than physical VRAM allowed.
@@ -39,14 +64,9 @@ This project is 100% Open Source and community-driven, designed to empower devel
 - ✅ **Precision Controls**: Configurable FP16, BF16, and FP32 torch datatypes natively managed at loop initiation.
 - ✅ **Configurable Sampling Pipeline**: Robust generation controls including Temperature, Top-K, Top-P stochastic sampling, and custom stop-word parameters.
 
-- ✅ **Configurable Sampling Pipeline**: Robust generation controls including Temperature, Top-K, Top-P stochastic sampling, and custom stop-word parameters.
-
 ## 🛠️ Proof of Work (Benchmarks & Validation)
 
 We verify every phase with automated benchmarks and real-world generation logs.
-
-- **Phase 4 Walkthrough**: [Technical Deep-dive into Paged Attention](file:///C:/Users/Acer/.gemini/antigravity/brain/30426787-eb54-41ee-9d04-c1e180924cb6/walkthrough.md)
-- **Phase 5 Memory Test**: [Quantization Verification Results](file:///C:/Users/Acer/.gemini/antigravity/brain/30426787-eb54-41ee-9d04-c1e180924cb6/day5_announcement.md)
 
 | Benchmark             | FP16 (GPT-2) | 4-bit NF4    | Reduction       |
 | :-------------------- | :----------- | :----------- | :-------------- |
@@ -75,7 +95,10 @@ We verify every phase with automated benchmarks and real-world generation logs.
   - _Goal:_ Expand accessibility by allowing massive models to fit on consumer GPUs.
   - _Achievement:_ Seamlessly integrated `bitsandbytes` into the custom `ModelLoader`. By exposing `quantization="8bit"` and `quantization="4bit"` in the global configuration, users can instantly slash memory footprints (verified 50% reduction for 4-bit NF4) while retaining full compatibility with the custom Rust/Python Paged Attention cache.
 
-- 🔲 Phase 6: API Server + FastAPI Streaming
+- ✅ **Phase 6: Production API Server + FastAPI Streaming**
+  - _Goal:_ Expose the engine as an OpenAI-compatible inference service.
+  - _Achievement:_ Built a FastAPI server with full OpenAI API compatibility (`/v1/completions`, `/v1/chat/completions`, `/v1/models`). Includes SSE token streaming, live GPU telemetry via `/metrics`, health/readiness probes, CORS middleware, request ID tracing, and chat template support. The server works as a drop-in replacement for OpenAI's API.
+
 - 🔲 Phase 7: Real-time Telemetry & Profiling
 - 🔲 Phase 8: FlashAttention & Speculative Decoding Integration
 
@@ -95,6 +118,9 @@ https://github.com/user-attachments/assets/0f6459ac-16cf-4324-bf41-ee045a752c70
 
 **Phase 5: INT8/INT4 Quantization** (bitsandbytes + Memory Benchmarks)
 https://github.com/user-attachments/assets/8c616abd-821b-4ba9-872c-9bdf28c25d84
+
+**Phase 6: API Server** (OpenAI-Compatible Inference Server + Live Telemetry)
+https://github.com/user-attachments/assets/efe325c8-50ca-498c-a6a5-59b18cd6f635
 
 ## Quick Start
 
