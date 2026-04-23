@@ -37,7 +37,7 @@ class BlockManager:
             block_size: Tokens per block (must match KV cache layout).
         """
         try:
-            from pravaha_core import BlockAllocator
+            from pravaha.pravaha_core import BlockAllocator
             self.allocator = BlockAllocator(num_blocks)
             self._rust_available = True
         except ImportError:

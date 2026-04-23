@@ -79,8 +79,7 @@ dev = [
 pravaha = "pravaha.cli.main:app"
 
 [tool.maturin]
-python-source = "."
-module-name = "pravaha_core"
+module-name = "pravaha.pravaha_core"
 manifest-path = "rust/Cargo.toml"
 
 [tool.ruff]
