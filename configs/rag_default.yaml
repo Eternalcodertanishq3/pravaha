@@ -1,0 +1,22 @@
+# Pravaha v3 — RAG Default Configuration
+rag:
+  enabled: true
+  embedding_model: all-MiniLM-L6-v2
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k: 5
+  similarity_threshold: 0.7
+  max_documents: 1000
+  max_chunks: 50000
+  vector_store:
+    type: faiss
+    index_type: flat_l2
+    save_path: ./data/rag/index.faiss
+  ingestion:
+    supported_formats: [pdf, txt, md, html, url]
+    max_file_size_mb: 50
+    batch_size: 32
+  retrieval:
+    rerank: false
+    context_window: 3
+    include_metadata: true

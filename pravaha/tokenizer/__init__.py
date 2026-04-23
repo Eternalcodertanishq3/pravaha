@@ -1,1 +1,1 @@
-"""Tokenizer and preprocessing."""
+"""Pravaha Tokenizer — Unified tokenizer wrapping HuggingFace tokenizers."""

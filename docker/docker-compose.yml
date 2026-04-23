@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  pravaha:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL: gpt2
+      QUANTIZE: "4bit"
+      SWARM: "true"
+      RAG: "true"
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ../data/rag:/app/data/rag
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - pravaha
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: pravaha
+    volumes:
+      - ../configs/grafana_dashboard.json:/var/lib/grafana/dashboards/pravaha.json
+    depends_on:
+      - prometheus

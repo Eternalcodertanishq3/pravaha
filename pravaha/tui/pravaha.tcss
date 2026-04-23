@@ -1,0 +1,98 @@
+Screen {
+    background: #0a0a0a;
+    color: #00e676;
+}
+
+.header {
+    background: #111111;
+    border-bottom: solid #00e676 1;
+    height: 3;
+    dock: top;
+}
+
+.panel {
+    border: solid #1a2a1a 1;
+    background: #0a0a0a;
+    padding: 1;
+}
+
+.panel-title {
+    color: #00e676;
+    text-style: bold;
+}
+
+.metric-value {
+    color: #00e676;
+    text-style: bold;
+}
+
+.metric-label {
+    color: #446644;
+}
+
+.agent-active {
+    color: #00e676;
+    text-style: bold;
+}
+
+.agent-audit {
+    color: #ff6b35;
+    text-style: bold;
+}
+
+.agent-idle {
+    color: #2a3a2a;
+}
+
+.log-info {
+    color: #4fc3f7;
+}
+
+.log-warn {
+    color: #ffb300;
+}
+
+.log-error {
+    color: #ef5350;
+}
+
+.log-audit {
+    color: #ff6b35;
+}
+
+.gauge-fill {
+    color: #00e676;
+}
+
+.gauge-empty {
+    color: #1a2a1a;
+}
+
+Input {
+    background: #111111;
+    border: solid #00e676 1;
+}
+
+#chat-input {
+    dock: bottom;
+    height: 3;
+}
+
+#main-content {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+}
+
+#chat-area {
+    row-span: 2;
+}
+
+#metrics-area {
+    height: 100%;
+}
+
+#agent-bar {
+    height: 5;
+    dock: bottom;
+}

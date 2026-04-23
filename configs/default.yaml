@@ -1,47 +1,79 @@
-# Pravāha Engine Configuration
-# ─────────────────────────────
+# ════════════════════════════════════════════════════════════
+# Pravāha v3 — Default Configuration
+# "The self-healing, swarm-ready inference engine."
+# ════════════════════════════════════════════════════════════
 
+# ── Model ──
 model:
-  # HuggingFace model name or local path
   model_path: "gpt2"
-  # Data type: float16, bfloat16, float32
-  dtype: "float16"
-  # Device: auto (picks CUDA if available), cuda, cpu
   device: "auto"
-  # Maximum sequence length (prompt + generation)
-  max_seq_len: 1024
-  # Quantization: 8bit, 4bit, or omit for none
-  quantization: "4bit"
+  torch_dtype: "float16"
+  quantization: null
+  max_seq_len: 2048
+  trust_remote_code: false
 
-cache:
-  # Number of tokens per KV-cache block (PagedAttention)
-  block_size: 16
-  # Number of GPU KV-cache blocks (0 = auto-calculate)
-  num_gpu_blocks: 0
-  # Number of CPU swap blocks
-  num_cpu_blocks: 256
-  # CPU swap space in GB
-  swap_space_gb: 4.0
-  # Phase 2: use our managed NaiveKVCache (true) or HF's built-in (false)
-  use_naive_cache: true
-
-scheduler:
-  # Maximum number of sequences in a batch
-  max_batch_size: 32
-  # Maximum number of waiting requests in the queue
-  max_waiting_requests: 256
-  # Scheduling policy: fcfs (first-come-first-served)
-  policy: "fcfs"
-
+# ── Sampling (hot-reloadable) ──
 sampling:
-  # Default sampling parameters
-  temperature: 1.0
+  temperature: 0.7
   top_k: 50
-  top_p: 1.0
+  top_p: 0.9
   max_new_tokens: 256
+  repetition_penalty: 1.1
 
+# ── KV Cache ──
+cache:
+  block_size: 16
+  num_gpu_blocks: 0
+  num_cpu_blocks: 32
+  max_sessions: 100
+  session_ttl_seconds: 1800
+
+# ── Scheduler ──
+scheduler:
+  max_batch_size: 16
+  policy: "fcfs"
+  enable_adaptive_batching: true
+  target_latency_ms: 100
+
+# ── Guardrails (hot-reloadable) ──
+guardrails:
+  blocked_patterns: []
+  per_request_token_limit: 0
+  per_session_token_limit: 0
+
+# ── Server ──
 server:
   host: "0.0.0.0"
   port: 8000
-  # Maximum concurrent requests
-  max_concurrent: 64
+  workers: 1
+  cors_origins: ["*"]
+  api_key: null
+  rate_limit_rpm: 0
+
+# ── Swarm ──
+swarm:
+  enabled: false
+  max_agents: 32
+  default_pipeline: "plan-execute-audit"
+  audit_loop:
+    max_iterations: 3
+    min_score: 70.0
+  enabled_agents: null
+
+# ── RAG ──
+rag:
+  enabled: false
+  embedding_model: "all-MiniLM-L6-v2"
+  embedding_device: "cpu"
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k: 5
+  score_threshold: 0.3
+  persist_path: "data/rag"
+
+# ── Observability ──
+observability:
+  prometheus_enabled: false
+  tracing_enabled: false
+  self_benchmark_on_start: false
+  log_level: "INFO"

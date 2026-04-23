@@ -35,5 +35,21 @@ venv.bak/
 .vscode/
 *.code-workspace
 
-# PyTest
+# PyTest & Coverage
 .pytest_cache/
+.coverage
+coverage.xml
+
+# Rust / Maturin
+target/
+Cargo.lock
+
+# Data & RAG
+data/
+*.faiss
+*.pkl
+
+# Env & Temp
+.env
+.env.*
+test_*.txt

@@ -1,0 +1,53 @@
+# Pravaha v3 — Swarm Default Configuration
+swarm:
+  enabled: true
+  max_iterations: 3
+  min_score: 70.0
+  agent_roles:
+    - planner
+    - researcher
+    - coder
+    - debugger
+    - critic
+    - validator
+    - summarizer
+    - expander
+    - translator
+    - reasoning
+    - merger
+    - router
+    - memory
+    - tool
+    - judge
+    - refiner
+    - classifier
+    - extractor
+    - narrator
+    - ensemble
+  audit_roles:
+    - syntax_audit
+    - type_safety
+    - security_audit
+    - logic_flaw
+    - consistency_guard
+    - hallucination_hunter
+    - edge_case_hunter
+    - performance_profiler
+    - output_verifier
+    - self_reflection
+    - test_generator
+    - patch_applier
+  default_pipeline: plan-execute-audit
+  pipelines:
+    plan-execute-audit:
+      workers: [planner, coder, critic]
+      auditors: [syntax_audit, security_audit, output_verifier]
+    research-write:
+      workers: [researcher, expander, narrator]
+      auditors: [hallucination_hunter, output_verifier]
+    code-review:
+      workers: [coder, debugger, refiner]
+      auditors: [syntax_audit, type_safety, security_audit, edge_case_hunter, test_generator]
+    full-pipeline:
+      workers: [classifier, planner, researcher, coder, critic, refiner, merger]
+      auditors: [syntax_audit, type_safety, security_audit, logic_flaw, hallucination_hunter, edge_case_hunter, performance_profiler, output_verifier]

@@ -1,206 +1,403 @@
-# Pravāha — प्रवाह
+# Pravāha v3 — प्रवाह
 
-**A vLLM-inspired LLM inference engine with continuous batching and PagedAttention.**
+### The self-healing, swarm-ready LLM inference engine.
 
-Pravāha means "flow/stream" in Sanskrit, symbolizing continuous batching and token streaming.
+> 32 agents. Self-auditing pipeline. RAG built-in. Vision routing. Conversation branching. Plugin system.
 
-## Architecture
+[![CI](https://github.com/pravaha/pravaha/actions/workflows/ci.yml/badge.svg)](https://github.com/pravaha/pravaha/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 
-```mermaid
-graph TD
-    User([User Request]) --> Engine
-    subgraph Pravaha [Pravāha Engine]
-        Engine[Engine Orchestrator] --> Loader[Model Loader]
-        Engine --> Decoder[Autoregressive Decoder]
-        Decoder -->|Token Generation| Model(Transformer Model)
-        Decoder <-->|State Management| KVCache[Naive KV-Cache]
-        KVCache -->|Prefill/Update| Model
-    end
-    Decoder --> Output([Streaming Token Output])
-    style KVCache fill:#f9f,stroke:#333,stroke-width:2px,color:#000
-```
+---
 
-## 🌍 Why Pravāha? (The Problem We Solve)
+## Why Pravāha?
 
-Most developers use HuggingFace `transformers` to run LLMs:
+Most LLM inference tools solve **one** problem. Pravāha solves **all of them**:
 
-```python
-# The "raw" way — painfully slow and wasteful
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3-8B")
-output = model.generate(input_ids, max_new_tokens=100)  # 💀 16GB VRAM, one user at a time
-```
-
-**This doesn't scale.** Here's what Pravāha fixes:
-
-| Problem                    |     Raw HuggingFace     |               **Pravāha**                |
-| :------------------------- | :---------------------: | :--------------------------------------: |
-| 💾 **Memory**              | Full 16GB model in VRAM |         **4-bit quant → 5.5GB**          |
-| 👥 **2+ users at once?**   |  ❌ Crashes or queues   |  ✅ **Continuous batching (4+ users)**   |
-| 🧠 **KV-Cache**            |   Rebuilt every token   |   ✅ **PagedAttention reuses blocks**    |
-| 🔁 **Same prompt prefix?** |   Recomputed per user   |  ✅ **Prefix sharing — computed once**   |
-| 💥 **GPU full?**           |  "Out of Memory" crash  |        ✅ **LRU swap to CPU RAM**        |
-| 🌐 **API for apps?**       |     Write your own      | ✅ **OpenAI-compatible server built in** |
-| ⚡ **Speed (4 users)**     |   ~4.4s (sequential)    |           **~1.0s (batched)**            |
+| Capability | vLLM | Ollama | llama.cpp | **Pravāha v3** |
+|---|:---:|:---:|:---:|:---:|
+| Continuous Batching | ✅ | ❌ | ❌ | ✅ |
+| PagedAttention | ✅ | ❌ | ❌ | ✅ |
+| OpenAI-Compatible API | ✅ | ✅ | ✅ | ✅ |
+| 32-Agent Swarm | ❌ | ❌ | ❌ | ✅ |
+| Self-Healing Audit Loop | ❌ | ❌ | ❌ | ✅ |
+| Built-in RAG Pipeline | ❌ | ❌ | ❌ | ✅ |
+| Vision Routing | ❌ | ❌ | ❌ | ✅ |
+| Conversation Branching | ❌ | ❌ | ❌ | ✅ |
+| Terminal Dashboard (TUI) | ❌ | ❌ | ❌ | ✅ |
+| Plugin System | ❌ | ❌ | ❌ | ✅ |
+| Token-Level Debugging | ❌ | ❌ | ❌ | ✅ |
+| Request Replay | ❌ | ❌ | ❌ | ✅ |
 
 > **Think of it this way:**
->
 > - **LLaMA** = the car engine 🛠️
 > - **CUDA** = the fuel ⛽
-> - **Pravāha** = the entire race car 🏎️ (chassis + turbo + pit crew + dashboard)
+> - **Pravāha** = the entire self-driving race car 🏎️ with pit crew, dashboard, and autopilot
 
-This project is **100% Open Source** and designed to let you run SOTA models on the hardware you already own.
-
-## ✨ Features (Phases 1-6 Completed)
-
-- ✅ **Production API Server (Phase 6)**: FastAPI-based OpenAI-compatible inference server with SSE token streaming, live telemetry (`/metrics`), health probes, CORS, and request tracing. Drop-in replacement for OpenAI's API — just change the `base_url`.
-- ✅ **INT8 & INT4 Quantization (Phase 5)**: Native integration with `bitsandbytes` allows loading massive models on consumer GPUs by reducing weight precision (e.g., slashing VRAM footprint by ~50% in 4-bit mode) without sacrificing the custom KV-cache architecture.
-- ✅ **Hybrid Paged Attention (Phase 4)**: Transitions from contiguous slots to a high-performance paged memory system. Uses a **Rust-based BlockAllocator** for O(1) memory management and **PagedKVCache** for efficient GPU/CPU block movements.
-- ✅ **LRU Swapping & Preemption**: Automatically handles memory pressure by swapping least-recently-used KV-cache blocks to system RAM, enabling much higher sequence counts than physical VRAM allowed.
-- ✅ **Prefix Sharing**: Radical memory optimization that allows multiple concurrent requests to share physical memory blocks for identical prompt prefixes.
-- ✅ **Continuous Batching Scheduler (Phase 3)**: A dynamic, slot-based execution engine that maximizes GPU utilization by grouping incoming requests in an asynchronous `asyncio` background loop.
-- ✅ **Custom KV-Cache Management (Phase 2)**: 100% Python-based pre-allocated Key-Value cache for multi-layered transformer blocks. Provides precise visibility into memory allocation (e.g., exactly 144MB for a 4-slot GPT-2 cache) and fully replaces opaque native HF caching.
-- ✅ **HuggingFace Native Interoperability (Phase 1)**: Zero-friction model loading for state-of-the-art architectures (GPT-2, Llama, Mistral) through dynamic state conversion, bringing advanced batching to standard huggingface checkpoints without kernel modification.
-- ✅ **High-Performance Streaming Generation**: Fully unblocked end-to-end token streaming driven by decoupled background threads queueing natively to `asyncio` event loops.
-- ✅ **Precision Controls**: Configurable FP16, BF16, and FP32 torch datatypes natively managed at loop initiation.
-- ✅ **Configurable Sampling Pipeline**: Robust generation controls including Temperature, Top-K, Top-P stochastic sampling, and custom stop-word parameters.
-
-## 🛠️ Proof of Work (Benchmarks & Validation)
-
-We verify every phase with automated benchmarks and real-world generation logs.
-
-| Benchmark             | FP16 (GPT-2) | 4-bit NF4    | Reduction       |
-| :-------------------- | :----------- | :----------- | :-------------- |
-| **VRAM Usage**        | 238.2 MB     | **119.0 MB** | **50.1%**       |
-| **Inference Latency** | ~0.08s/tok   | ~0.09s/tok   | Minimal Penalty |
-
-## 📈 Roadmap & Technical Achievements
-
-- ✅ **Phase 1: Foundation (Loader & Engine Scaffold)**
-  - _Goal:_ Create a lightweight inference orchestrator.
-  - _Achievement:_ Implemented the base `PravahaEngine`, decoupling tokenization and model weights while proving the feasibility of streaming inference.
-
-- ✅ **Phase 2: Acceleration (Naive KV-Cache + Deterministic State)**
-  - _Goal:_ Strip control from HuggingFace auto-regressive generation loops.
-  - _Achievement:_ Built a custom `NaiveKVCache` that pre-allocates exactly the tensors required for continuous inference instead of constantly resizing memory arrays. This removed the opaque HF caching and unlocked the data structures fundamentally required for concurrent multi-sequence scheduling.
-
-- ✅ **Phase 3: Continuous Batching Scheduler**
-  - _Goal:_ Substantially increase hardware throughput via concurrent inference.
-  - _Achievement:_ Designed an asynchronous frontend wrapped around a synchronous PyTorch thread-loop. The `ContinuousScheduler` handles concurrent inputs by employing **Disjoint Execution Phases**. It waits to batch un-allocated requests together for an isolated _Batched Prefill Pass_, and then cleanly executes multi-sequence _Batched Decode Passes_, dynamically hiding single-batch latency to near zero (e.g., executing 4 concurrent GPT-2 blocks in just 1.10 seconds total).
-
-- ✅ **Phase 4: Paged KV-Cache + BlockAllocator**
-  - _Goal:_ Implement industrial-grade memory management.
-  - _Achievement:_ Built a hybrid Rust/Python memory plane. Implemented `PagedKVCache` with fixed-size 16-token blocks and a Rust-powered `BlockAllocator` for O(1) allocation. Added **LRU Swapping** (preempting requests to CPU) and **Prefix Sharing** (reusing blocks for common prefixes), enabling the engine to handle memory pressure gracefully and process 4 concurrent requests in just 1.02 seconds.
-
-- ✅ **Phase 5: INT8/INT4 Quantization (GPTQ/AWQ)**
-  - _Goal:_ Expand accessibility by allowing massive models to fit on consumer GPUs.
-  - _Achievement:_ Seamlessly integrated `bitsandbytes` into the custom `ModelLoader`. By exposing `quantization="8bit"` and `quantization="4bit"` in the global configuration, users can instantly slash memory footprints (verified 50% reduction for 4-bit NF4) while retaining full compatibility with the custom Rust/Python Paged Attention cache.
-
-- ✅ **Phase 6: Production API Server + FastAPI Streaming**
-  - _Goal:_ Expose the engine as an OpenAI-compatible inference service.
-  - _Achievement:_ Built a FastAPI server with full OpenAI API compatibility (`/v1/completions`, `/v1/chat/completions`, `/v1/models`). Includes SSE token streaming, live GPU telemetry via `/metrics`, health/readiness probes, CORS middleware, request ID tracing, and chat template support. The server works as a drop-in replacement for OpenAI's API.
-
-- 🔲 Phase 7: Real-time Telemetry & Profiling
-- 🔲 Phase 8: FlashAttention & Speculative Decoding Integration
-
-## 🎥 Demos
-
-**Phase 1: Foundation** (Baseline Inference)
-https://github.com/user-attachments/assets/32ba41bb-b0ea-45ff-b167-ae13927faeaf
-
-**Phase 2: Acceleration** (Naive KV-Cache + Streaming)
-https://github.com/user-attachments/assets/ea9071da-2285-4f15-a385-c551eada8882
-
-**Phase 3: Continuous Batching** (Dynamic Slot Allocation)
-https://github.com/user-attachments/assets/9b882e99-75bc-453c-947a-fa6e9b51a447
-
-**Phase 4: Paged Attention** (Hybrid Rust/Python + Swapping)
-https://github.com/user-attachments/assets/0f6459ac-16cf-4324-bf41-ee045a752c70
-
-**Phase 5: INT8/INT4 Quantization** (bitsandbytes + Memory Benchmarks)
-https://github.com/user-attachments/assets/8c616abd-821b-4ba9-872c-9bdf28c25d84
-
-**Phase 6: API Server** (OpenAI-Compatible Inference Server + Live Telemetry)
-https://github.com/user-attachments/assets/efe325c8-50ca-498c-a6a5-59b18cd6f635
+---
 
 ## Quick Start
 
+### One-Command Serving
+
 ```bash
 # Install
-pip install -e ".[dev]"
+pip install -e ".[all]"
 
-# Run
-python -c "
-from pravaha.engine import PravahaEngine
-engine = PravahaEngine()
-for token in engine.generate('Once upon a time', max_new_tokens=50, temperature=0.8):
-    print(token, end='', flush=True)
-print()
-"
+# Serve any HuggingFace model with one command
+pravaha serve gpt2
+pravaha serve meta-llama/Llama-3-8B --quantize 4bit --tui
+pravaha serve mistralai/Mistral-7B --swarm --self-heal --rag --tui
 
-# Tests
-python -m pytest tests/ -v             # Fast tests only
-python -m pytest tests/ -v --run-slow  # All tests (downloads models)
+# Interactive chat
+pravaha chat --server http://localhost:8000
+
+# Run benchmarks
+pravaha bench --model gpt2 --runs 5
 ```
 
-## 🚀 Running Heavy Models on Consumer GPUs
+### Python API
 
-Pravāha is designed to democratize LLM inference. With **Phase 5 Quantization**, you can run models that previously required enterprise hardware on a standard laptop.
+```python
+from pravaha.engine.async_engine import AsyncPravahaEngine
+from pravaha.decoder.sampling import SamplingParams
 
-### Step-by-Step: Running Llama-3 8B on an 8GB GPU
+engine = AsyncPravahaEngine(config_path="configs/default.yaml")
 
-1. **Enable Quantization**: Open `configs/default.yaml` and set the quantization mode:
+async for token in engine.generate("Explain quantum computing", SamplingParams()):
+    print(token, end="", flush=True)
+```
 
-   ```yaml
-   model:
-     model_path: "meta-llama/Meta-Llama-3-8B-Instruct"
-     quantization: "4bit" # Slashes VRAM by 2x
-   ```
+### OpenAI-Compatible API
 
-2. **Configure Paged Attention**: Ensure your cache settings are optimized for your VRAM:
+```python
+import openai
 
-   ```yaml
-   cache:
-     block_size: 16
-     num_gpu_blocks: 0 # Auto-calculate based on free VRAM
-     use_naive_cache: false # Use PagedKVCache for efficiency
-   ```
+client = openai.OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
+response = client.chat.completions.create(
+    model="gpt2",
+    messages=[{"role": "user", "content": "Hello!"}],
+    stream=True,
+)
+for chunk in response:
+    print(chunk.choices[0].delta.content or "", end="")
+```
 
-3. **Launch the Engine**:
-   ```bash
-   python pravaha/engine.py --prompt "Explain quantum computing to a 5-year old."
-   ```
+### Docker
 
-### 💎 Memory Benchmark Guide
+```bash
+docker compose -f docker/docker-compose.yml up
+# Pravaha on :8000, Prometheus on :9090, Grafana on :3000
+```
 
-| Model          | Precision | VRAM Required | Pravāha VRAM (4-bit) | Status      |
-| :------------- | :-------- | :------------ | :------------------- | :---------- |
-| **GPT-2**      | FP16      | 250MB         | **120MB**            | ✅ Verified |
-| **Llama-3 8B** | FP16      | 16GB          | **~5.5GB**           | ✅ Ready    |
-| **Mistral 7B** | FP16      | 14GB          | **~4.8GB**           | ✅ Ready    |
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Pravāha v3 Engine                        │
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────────┐  │
+│  │   CLI    │  │ FastAPI  │  │ WebSocket│  │    TUI    │  │
+│  │  Typer   │  │  Server  │  │ Streaming│  │  Textual  │  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └─────┬─────┘  │
+│       └──────────────┼───────────────────────────┘          │
+│                      ▼                                      │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              AsyncPravahaEngine                      │   │
+│  │  ┌──────────┐ ┌────────────┐ ┌───────────────────┐  │   │
+│  │  │ Tokenizer│ │   Decoder  │ │    Scheduler      │  │   │
+│  │  └──────────┘ │  + Sampler │ │ ContinuousBatch   │  │   │
+│  │               └──────┬─────┘ └──────────┬────────┘  │   │
+│  │                      ▼                  ▼            │   │
+│  │  ┌──────────────────────────────────────────────┐    │   │
+│  │  │  Memory Plane (Rust BlockAllocator)          │    │   │
+│  │  │  PagedKVCache · BlockManager · SessionCache  │    │   │
+│  │  │  Prefix Sharing · LRU Swapping · Preemption  │    │   │
+│  │  └──────────────────────────────────────────────┘    │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Swarm Layer (32 Agents)                 │   │
+│  │  ┌─ Workers (20) ──────────────────────────────────┐ │   │
+│  │  │ Planner·Coder·Debugger·Critic·Researcher·...   │ │   │
+│  │  └─────────────────────────────────────────────────┘ │   │
+│  │  ┌─ Auditors (12) ─────────────────────────────────┐ │   │
+│  │  │ SyntaxAudit·Security·TypeSafety·EdgeCase·...    │ │   │
+│  │  └─────────────────────────────────────────────────┘ │   │
+│  │  ┌─ Self-Healing Loop ─────────────────────────────┐ │   │
+│  │  │ Audit → Find Issues → Patch → Re-Audit → Pass  │ │   │
+│  │  └─────────────────────────────────────────────────┘ │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────┐ ┌───────────┐ ┌──────────┐ ┌───────────────┐   │
+│  │  RAG   │ │  Vision   │ │Branching │ │   Plugins     │   │
+│  │Pipeline│ │  Router   │ │ Manager  │ │   Registry    │   │
+│  └────────┘ └───────────┘ └──────────┘ └───────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Observability: Prometheus · Tracer · CostEstimator  │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## The 32-Agent Swarm
+
+Pravāha's swarm is a multi-agent system where specialized agents collaborate to produce, audit, and refine outputs.
+
+### 20 Worker Agents
+
+| Agent | Role | Key Feature |
+|---|---|---|
+| **PlannerAgent** | Task decomposition | Tags subtasks by type + complexity |
+| **ResearcherAgent** | Information gathering | Confidence-tagged claims [HIGH/MEDIUM/LOW] |
+| **CoderAgent** | Code generation | Language detection, quality metrics |
+| **DebuggerAgent** | Root cause analysis | Structured bug reports with minimal fixes |
+| **CriticAgent** | Quality evaluation | 4-dimensional scoring (clarity/correctness/completeness/efficiency) |
+| **ValidatorAgent** | Fact verification | Per-claim [V]/[?]/[X] tagging |
+| **SummarizerAgent** | Content condensation | Compression ratio tracking |
+| **ExpanderAgent** | Content expansion | Expansion ratio tracking |
+| **TranslatorAgent** | Multilingual translation | Cultural sensitivity, translator notes |
+| **ReasoningAgent** | Chain-of-thought | Step validation with conclusion checks |
+| **MergerAgent** | Multi-output synthesis | Conflict detection [CONFLICT: ...] |
+| **RouterAgent** | Task classification | JSON category/complexity/agent routing |
+| **MemoryAgent** | Context compression | Preserves key decisions and open questions |
+| **ToolAgent** | Function call formatting | Structured JSON tool invocations |
+| **JudgeAgent** | Quality arbiter | Multi-dimensional scoring (accuracy/completeness/clarity) |
+| **RefinerAgent** | Iterative improvement | # REFINED: change tracking |
+| **ClassifierAgent** | Domain/intent classification | Domain + urgency + agent recommendations |
+| **ExtractorAgent** | Structured data extraction | Schema-based JSON extraction |
+| **NarratorAgent** | Technical-to-readable prose | Analogies and examples for accessibility |
+| **EnsembleAgent** | Multi-model voting | Agreement analysis, majority voting |
+
+### 12 Self-Healing Audit Agents
+
+| Agent | Scans For | Technique |
+|---|---|---|
+| **SyntaxAuditAgent** | Syntax errors | AST parsing (free) + LLM analysis |
+| **LogicFlawAgent** | Logical contradictions | Off-by-one, infinite loops, bad conditionals |
+| **HallucinationHunterAgent** | Fabricated facts | Per-claim confidence + cross-reference |
+| **SecurityAuditAgent** | OWASP vulnerabilities | 8 static regex patterns + LLM deep scan |
+| **PerformanceProfilerAgent** | Performance bottlenecks | O(n²), N+1, blocking I/O detection |
+| **ConsistencyGuardAgent** | Cross-agent contradictions | Multi-output comparison |
+| **TypeSafetyAgent** | Type mismatches | Missing annotations, None-dereference |
+| **EdgeCaseHunterAgent** | Missing edge cases | Empty/null/overflow/race conditions |
+| **TestGeneratorAgent** | Missing tests | Auto-generates pytest suites |
+| **OutputVerifierAgent** | Task satisfaction | 0-100 score with retry logic |
+| **SelfReflectionAgent** | Pipeline quality | Meta-cognitive audit (logged only) |
+| **PatchApplierAgent** | Fix application | Surgical minimal patches with `# PATCHED:` |
+
+### The Self-Healing Loop
+
+```
+User Task
+    ↓
+[Router] → classify task type
+    ↓
+[Planner] → decompose into subtasks
+    ↓
+[Workers] → execute subtasks (Coder, Researcher, etc.)
+    ↓
+[Audit Loop] ← up to 3 iterations
+    │  ├─ SyntaxAudit → finds issues?
+    │  ├─ SecurityAudit → finds vulnerabilities?
+    │  ├─ TypeSafety → finds type errors?
+    │  ├─ LogicFlaw → finds contradictions?
+    │  ├─ OutputVerifier → score < 70?
+    │  │
+    │  └─ YES → PatchApplier → fix → re-audit
+    │
+    └─ PASS → return to user
+```
+
+---
+
+## CLI Commands
+
+```bash
+# Serving
+pravaha serve <model> [--quantize 4bit] [--tui] [--swarm] [--rag]
+
+# Interactive Chat
+pravaha chat [--server URL] [--model NAME]
+
+# Benchmarks
+pravaha bench [--model NAME] [--runs N]
+
+# Model Management
+pravaha models list
+pravaha models info <model>
+pravaha models pull <model>
+
+# Swarm
+pravaha swarm run "Write a REST API" --pipeline code-review
+pravaha swarm list-agents
+pravaha swarm pipeline plan-execute-audit
+
+# RAG
+pravaha rag ingest ./docs/
+pravaha rag query "How does caching work?"
+pravaha rag list
+
+# Debug
+pravaha debug replay <request-id>
+pravaha debug step <request-id> --pos 42
+pravaha debug trace <request-id>
+
+# Plugins
+pravaha plugin list
+pravaha plugin install ./my-plugin/
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/v1/completions` | Text completion (OpenAI compatible) |
+| POST | `/v1/chat/completions` | Chat completion (OpenAI compatible) |
+| GET | `/v1/models` | List loaded models |
+| POST | `/v1/vision/complete` | Multimodal vision + text |
+| POST | `/v1/swarm/run` | Execute swarm pipeline |
+| GET | `/v1/swarm/agents` | List all agents |
+| GET | `/v1/swarm/pipelines` | List built-in pipelines |
+| POST | `/v1/rag/ingest` | Ingest documents |
+| GET | `/v1/rag/query` | Query vector store |
+| POST | `/v1/branch` | Fork conversation |
+| GET | `/v1/branch/{id}` | List branches |
+| POST | `/v1/debug/replay` | Replay recorded request |
+| GET | `/v1/debug/trace` | Export decision trace |
+| POST | `/admin/reload` | Hot-reload config |
+| POST | `/admin/lora/load` | Load LoRA adapter |
+| GET | `/health` | Health check |
+| GET | `/metrics` | Prometheus metrics |
+| WS | `/ws/generate` | WebSocket streaming |
+
+---
+
+## Built-in Pipelines
+
+| Pipeline | Workers | Best For |
+|---|---|---|
+| `plan-execute-audit` | Planner → Coder → Critic | General coding tasks |
+| `research-summarize` | Researcher → Reasoning → Summarizer | Research synthesis |
+| `code-review` | Coder → Debugger → Critic → Refiner | Code quality |
+| `creative-write` | Narrator → Expander → Refiner | Creative writing |
+| `extract-classify` | Extractor → Classifier → Validator | Data extraction |
+
+---
+
+## Configuration
+
+```yaml
+# configs/default.yaml
+model:
+  model_path: gpt2
+  device: auto
+  quantization: null       # null | 4bit | 8bit
+  max_seq_len: 2048
+
+sampling:
+  temperature: 0.7
+  top_k: 50
+  top_p: 0.9
+  max_new_tokens: 256
+
+swarm:
+  enabled: true
+  max_iterations: 3
+  min_score: 70.0
+
+rag:
+  enabled: false
+  embedding_model: all-MiniLM-L6-v2
+```
+
+---
 
 ## Project Structure
 
 ```
 pravaha/
-├── config.py           # Pydantic configuration system
-├── engine.py           # Top-level inference orchestrator
-├── models/
-│   ├── loader.py       # HuggingFace model loading
-│   ├── model_config.py # Architecture detection
-│   └── weights.py      # Weight loading utilities
-├── tokenizer/
-│   └── tokenizer.py    # HuggingFace tokenizer wrapper
-├── decoder/
-│   ├── decoder.py      # Autoregressive decode loop
-│   └── sampling.py     # Sampling strategies
-├── scheduler/
-│   └── request.py      # Request/sequence data structures
-├── kv_cache/           # (Phase 2-4)
-├── quantization/       # (Phase 5)
-├── server/             # (Phase 6)
-└── metrics/            # (Phase 7)
+├── engine/            # AsyncPravahaEngine, events, background loop
+├── decoder/           # Autoregressive decoder, sampling pipeline
+├── scheduler/         # Continuous batching scheduler
+├── memory/            # PagedKVCache, BlockManager, SessionCache
+├── models/            # Model loader, architecture configs, weights, GGUF
+├── tokenizer/         # HuggingFace tokenizer wrapper
+├── quantization/      # INT4/INT8 quantization via bitsandbytes
+├── swarm/
+│   ├── agents/        # 32 individual agent files (20 workers + 12 auditors)
+│   ├── orchestrator.py
+│   ├── audit_loop.py
+│   ├── pipeline.py
+│   └── shared_memory.py
+├── rag/               # Chunker, embedder, retriever, vector store
+├── vision/            # Multimodal detector, preprocessor, engine
+├── branching/         # Conversation branching manager
+├── serving/
+│   ├── app.py         # FastAPI factory (11 route modules + 3 middleware)
+│   ├── middleware.py   # RequestID, Timing, ErrorHandler, RateLimit
+│   ├── websocket.py   # WebSocket streaming
+│   └── routes/        # completions, chat, models, swarm, rag, vision,
+│                      #   branches, debug, admin, metrics, health
+├── cli/
+│   ├── main.py        # Typer entry point
+│   ├── ascii_art.py   # Banners, gauges, grids
+│   └── commands/      # serve, chat, bench, models, swarm, rag, debug, plugins
+├── tui/
+│   ├── app.py         # Textual dashboard
+│   ├── pravaha.tcss   # Dark terminal theme
+│   └── panels/        # 8 panels: header, chat, metrics, queue, swarm,
+│                      #   audit, rag, log
+├── plugins/           # Plugin base, loader, registry
+├── guardrails/        # Content filter, token budget
+├── debug/             # Request replayer, step debugger, trace logger
+├── observability/     # Prometheus, tracer, cost estimator, self-benchmark
+├── config/            # Engine config, YAML loading
+└── cache/             # Multi-level caching utilities
 ```
+
+---
+
+## Proof of Work
+
+### Benchmarks (GPT-2 baseline)
+
+| Metric | FP16 | 4-bit NF4 | Improvement |
+|---|---|---|---|
+| VRAM Usage | 238 MB | **119 MB** | **50% reduction** |
+| Inference Latency | ~0.08s/tok | ~0.09s/tok | Minimal penalty |
+| 4 Concurrent Users | 4.4s total | **1.0s total** | **4.4x faster** |
+
+### Demos
+
+- **Phase 1-7**: [See demo videos in releases](https://github.com/pravaha/pravaha/releases)
+
+---
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/ -v --cov=pravaha
+
+# Lint
+ruff check pravaha/
+
+# Type check
+mypy pravaha/ --ignore-missing-imports
+```
+
+---
 
 ## License
 
-MIT
+MIT — Built with ❤️ by [@EternalcoderTanishq3](https://github.com/EternalcoderTanishq3)
