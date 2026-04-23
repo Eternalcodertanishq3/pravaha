@@ -1,8 +1,10 @@
 """Router Agent — Task classification and routing."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -32,8 +34,14 @@ class RouterAgent(BaseAgent):
         context.task_type = category
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=category, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.9, metadata=result)
+        return AgentOutput(
+            role=self.role,
+            output=category,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.9,
+            metadata=result,
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return True  # Router handles everything

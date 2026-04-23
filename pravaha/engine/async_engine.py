@@ -22,20 +22,18 @@ import logging
 import threading
 import time
 import uuid
-from typing import AsyncGenerator, Optional
-
-import torch
+from collections.abc import AsyncGenerator
 
 from pravaha.config.engine_config import EngineConfig
 from pravaha.decoder.decoder import DecoderEngine
 from pravaha.decoder.sampling import Sampler, SamplingParams
-from pravaha.engine.events import EngineEvent, EventBus, EventType, RequestMetrics
+from pravaha.engine.events import EngineEvent, EventBus, EventType
 from pravaha.memory.block_manager import BlockManager
 from pravaha.memory.paged_cache import PagedKVCache
 from pravaha.memory.session_cache import SessionKVCache
 from pravaha.models.loader import ModelLoader
-from pravaha.scheduler.request import FinishReason, InferenceRequest
 from pravaha.scheduler.continuous_scheduler import ContinuousScheduler
+from pravaha.scheduler.request import FinishReason, InferenceRequest
 from pravaha.tokenizer.tokenizer import PravahaTokenizer
 
 logger = logging.getLogger(__name__)
@@ -61,8 +59,8 @@ class AsyncPravahaEngine:
 
     def __init__(
         self,
-        config: Optional[EngineConfig] = None,
-        config_path: Optional[str] = None,
+        config: EngineConfig | None = None,
+        config_path: str | None = None,
     ) -> None:
         """Initialize the engine and start the background loop.
 
@@ -95,7 +93,7 @@ class AsyncPravahaEngine:
         self._request_futures: dict[str, asyncio.Future[list[int]]] = {}
         self._request_queues: dict[str, asyncio.Queue[str]] = {}
         self._active_requests: dict[str, InferenceRequest] = {}
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         # Load model, tokenizer, and build subsystems
         self._initialize_subsystems()
@@ -103,7 +101,7 @@ class AsyncPravahaEngine:
         # ── Fix 5: Swarm config validation at startup ──
         # If swarm is enabled but no agent roles are configured, fail fast
         # with a clear error instead of crashing at request time.
-        if hasattr(self.config, 'swarm') and self.config.swarm.enabled:
+        if hasattr(self.config, "swarm") and self.config.swarm.enabled:
             if not self.config.swarm.agent_roles:
                 raise ValueError(
                     "ConfigurationError: Swarm is enabled but no agent roles "
@@ -190,17 +188,19 @@ class AsyncPravahaEngine:
         self._total_tokens_generated = 0
 
         elapsed = time.time() - t0
-        self.event_bus.publish(EngineEvent(
-            event_type=EventType.MODEL_LOADED,
-            data={"model": self.config.model.model_path, "load_time_s": round(elapsed, 2)},
-        ))
+        self.event_bus.publish(
+            EngineEvent(
+                event_type=EventType.MODEL_LOADED,
+                data={"model": self.config.model.model_path, "load_time_s": round(elapsed, 2)},
+            )
+        )
         logger.info(f"All subsystems initialized in {elapsed:.1f}s")
 
     async def generate(
         self,
         prompt: str,
-        params: Optional[SamplingParams] = None,
-        session_id: Optional[str] = None,
+        params: SamplingParams | None = None,
+        session_id: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Generate tokens for a prompt, yielding one token at a time.
 
@@ -227,11 +227,13 @@ class AsyncPravahaEngine:
         request_id = str(uuid.uuid4())
         self._total_requests += 1
 
-        self.event_bus.publish(EngineEvent(
-            event_type=EventType.REQUEST_RECEIVED,
-            request_id=request_id,
-            data={"prompt_len": len(prompt), "session_id": session_id},
-        ))
+        self.event_bus.publish(
+            EngineEvent(
+                event_type=EventType.REQUEST_RECEIVED,
+                request_id=request_id,
+                data={"prompt_len": len(prompt), "session_id": session_id},
+            )
+        )
 
         # Tokenize prompt
         input_ids = self.tokenizer.encode(prompt)
@@ -270,11 +272,13 @@ class AsyncPravahaEngine:
 
                 if first_token:
                     ttft = (time.time() - t_start) * 1000
-                    self.event_bus.publish(EngineEvent(
-                        event_type=EventType.TOKEN_GENERATED,
-                        request_id=request_id,
-                        data={"ttft_ms": round(ttft, 1)},
-                    ))
+                    self.event_bus.publish(
+                        EngineEvent(
+                            event_type=EventType.TOKEN_GENERATED,
+                            request_id=request_id,
+                            data={"ttft_ms": round(ttft, 1)},
+                        )
+                    )
                     first_token = False
 
                 tokens_generated += 1
@@ -287,15 +291,19 @@ class AsyncPravahaEngine:
             self._active_requests.pop(request_id, None)
 
             total_ms = (time.time() - t_start) * 1000
-            self.event_bus.publish(EngineEvent(
-                event_type=EventType.REQUEST_COMPLETE,
-                request_id=request_id,
-                duration_ms=round(total_ms, 1),
-                data={
-                    "tokens": tokens_generated,
-                    "tps": round(tokens_generated / (total_ms / 1000), 1) if total_ms > 0 else 0,
-                },
-            ))
+            self.event_bus.publish(
+                EngineEvent(
+                    event_type=EventType.REQUEST_COMPLETE,
+                    request_id=request_id,
+                    duration_ms=round(total_ms, 1),
+                    data={
+                        "tokens": tokens_generated,
+                        "tps": round(tokens_generated / (total_ms / 1000), 1)
+                        if total_ms > 0
+                        else 0,
+                    },
+                )
+            )
 
     def _run_scheduler_loop(self) -> None:
         """Background thread: continuously schedule and execute batches.
@@ -340,9 +348,7 @@ class AsyncPravahaEngine:
             request_ids = [r.request_id for r in requests]
             block_tables = [r.block_table for r in requests]
 
-            next_tokens = self._decoder.step_prefill(
-                input_ids_list, request_ids, block_tables
-            )
+            next_tokens = self._decoder.step_prefill(input_ids_list, request_ids, block_tables)
 
             for req, token_id in zip(requests, next_tokens):
                 req.generated_token_ids.append(token_id)

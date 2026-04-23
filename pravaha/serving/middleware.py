@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -66,6 +66,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self._counts[client_ip] = []
         self._counts[client_ip] = [t for t in self._counts[client_ip] if now - t < self.window]
         if len(self._counts[client_ip]) >= self.max_requests:
-            return JSONResponse(status_code=429, content={"error": {"message": "Rate limit exceeded"}})
+            return JSONResponse(
+                status_code=429, content={"error": {"message": "Rate limit exceeded"}}
+            )
         self._counts[client_ip].append(now)
         return await call_next(request)

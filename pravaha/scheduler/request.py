@@ -13,7 +13,6 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 from pravaha.decoder.sampling import SamplingParams
 
@@ -21,19 +20,19 @@ from pravaha.decoder.sampling import SamplingParams
 class SequenceStatus(Enum):
     """Lifecycle status of an inference request."""
 
-    WAITING = "waiting"      # Queued, not yet scheduled
-    RUNNING = "running"      # Actively generating tokens
-    FINISHED = "finished"    # Generation complete (EOS or max tokens)
-    SWAPPED = "swapped"      # KV-cache swapped to CPU (preempted)
+    WAITING = "waiting"  # Queued, not yet scheduled
+    RUNNING = "running"  # Actively generating tokens
+    FINISHED = "finished"  # Generation complete (EOS or max tokens)
+    SWAPPED = "swapped"  # KV-cache swapped to CPU (preempted)
 
 
 class FinishReason(Enum):
     """Reason why generation stopped."""
 
-    EOS = "eos"              # Hit end-of-sequence token
+    EOS = "eos"  # Hit end-of-sequence token
     MAX_TOKENS = "max_tokens"  # Reached max_new_tokens limit
     STOP_TOKEN = "stop_token"  # Hit a custom stop token
-    ABORTED = "aborted"      # Client disconnected or request cancelled
+    ABORTED = "aborted"  # Client disconnected or request cancelled
 
 
 @dataclass
@@ -65,9 +64,9 @@ class InferenceRequest:
     status: SequenceStatus = SequenceStatus.WAITING
     generated_token_ids: list[int] = field(default_factory=list)
     arrival_time: float = field(default_factory=time.time)
-    start_time: Optional[float] = None
-    finish_time: Optional[float] = None
-    finish_reason: Optional[FinishReason] = None
+    start_time: float | None = None
+    finish_time: float | None = None
+    finish_reason: FinishReason | None = None
     # Phase 4: Paged KV-cache block assignments
     block_table: list[int] = field(default_factory=list)
     num_computed_tokens: int = 0
@@ -98,14 +97,14 @@ class InferenceRequest:
         return self.status == SequenceStatus.RUNNING
 
     @property
-    def latency(self) -> Optional[float]:
+    def latency(self) -> float | None:
         """Total end-to-end latency in seconds, if finished."""
         if self.finish_time is not None:
             return self.finish_time - self.arrival_time
         return None
 
     @property
-    def time_to_first_token(self) -> Optional[float]:
+    def time_to_first_token(self) -> float | None:
         """Time from arrival to first generated token, if started."""
         if self.start_time is not None:
             return self.start_time - self.arrival_time

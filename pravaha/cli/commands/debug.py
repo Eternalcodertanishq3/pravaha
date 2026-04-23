@@ -13,9 +13,11 @@ debug_app = typer.Typer()
 def replay(request_id: str = typer.Argument(..., help="Request ID to replay")) -> None:
     """Replay a recorded request exactly."""
     import httpx
+
     try:
-        resp = httpx.post("http://localhost:8000/v1/debug/replay",
-                          json={"request_id": request_id}, timeout=60.0)
+        resp = httpx.post(
+            "http://localhost:8000/v1/debug/replay", json={"request_id": request_id}, timeout=60.0
+        )
         console.print(resp.json())
     except Exception as e:
         console.print(f"[red]Replay error: {e}[/red]")
@@ -28,9 +30,12 @@ def step(
 ) -> None:
     """Step through inference token-by-token, inspecting logits."""
     import httpx
+
     try:
-        resp = httpx.get("http://localhost:8000/v1/debug/step",
-                         params={"request_id": request_id, "pos": position})
+        resp = httpx.get(
+            "http://localhost:8000/v1/debug/step",
+            params={"request_id": request_id, "pos": position},
+        )
         data = resp.json()
         console.print(f"[bold]Position {position}:[/bold] '{data.get('token_text', '?')}'")
         console.print(f"  Token ID: {data.get('token_id', '?')}")
@@ -47,10 +52,11 @@ def step(
 def trace(request_id: str = typer.Argument(..., help="Request ID")) -> None:
     """Export full token-by-token decision trace."""
     import httpx
+
     try:
-        resp = httpx.get("http://localhost:8000/v1/debug/trace",
-                         params={"request_id": request_id})
+        resp = httpx.get("http://localhost:8000/v1/debug/trace", params={"request_id": request_id})
         import json
+
         output = json.dumps(resp.json(), indent=2)
         console.print(output)
     except Exception as e:

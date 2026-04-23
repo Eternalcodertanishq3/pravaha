@@ -14,14 +14,14 @@ app = typer.Typer(
 
 def _register_commands() -> None:
     """Import and register all sub-commands."""
-    from pravaha.cli.commands.serve import serve
-    from pravaha.cli.commands.chat import chat
     from pravaha.cli.commands.bench import bench
-    from pravaha.cli.commands.models import models_app
-    from pravaha.cli.commands.swarm import swarm_app
-    from pravaha.cli.commands.rag import rag_app
+    from pravaha.cli.commands.chat import chat
     from pravaha.cli.commands.debug import debug_app
+    from pravaha.cli.commands.models import models_app
     from pravaha.cli.commands.plugins import plugin_app
+    from pravaha.cli.commands.rag import rag_app
+    from pravaha.cli.commands.serve import serve
+    from pravaha.cli.commands.swarm import swarm_app
 
     app.command()(serve)
     app.command()(chat)

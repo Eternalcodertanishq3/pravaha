@@ -1,10 +1,10 @@
 """RAG Ingester — Document loading and chunking pipeline."""
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DocumentChunk:
     """A chunk of text from an ingested document."""
+
     text: str
     source: str = ""
     chunk_index: int = 0
@@ -59,6 +60,7 @@ class Ingester:
     def _load_pdf(self, path: Path) -> str:
         try:
             from pypdf import PdfReader
+
             reader = PdfReader(str(path))
             return "\n".join(page.extract_text() or "" for page in reader.pages)
         except ImportError:
@@ -66,5 +68,6 @@ class Ingester:
 
     def _load_html(self, path: Path) -> str:
         import re
+
         html = path.read_text(encoding="utf-8")
         return re.sub(r"<[^>]+>", " ", html)

@@ -1,8 +1,10 @@
 """Expander Agent — Content expansion with depth and detail."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -35,9 +37,14 @@ class ExpanderAgent(BaseAgent):
         expansion = output_len / input_len if input_len > 0 else 1.0
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=output, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.8,
-                           metadata={"expansion_ratio": round(expansion, 2)})
+        return AgentOutput(
+            role=self.role,
+            output=output,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.8,
+            metadata={"expansion_ratio": round(expansion, 2)},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"writing", "general", "research"}

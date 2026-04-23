@@ -1,10 +1,11 @@
 """Branch Store — Persist conversation tree state."""
 
 from __future__ import annotations
+
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+
 from pravaha.branching.schemas import Branch, BranchNode
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BranchStore:
     """In-memory + disk-backed conversation tree storage."""
 
-    def __init__(self, persist_path: Optional[str] = None) -> None:
+    def __init__(self, persist_path: str | None = None) -> None:
         self.persist_path = persist_path
         self._nodes: dict[str, BranchNode] = {}
         self._branches: dict[str, Branch] = {}
@@ -21,13 +22,13 @@ class BranchStore:
     def add_node(self, node: BranchNode) -> None:
         self._nodes[node.node_id] = node
 
-    def get_node(self, node_id: str) -> Optional[BranchNode]:
+    def get_node(self, node_id: str) -> BranchNode | None:
         return self._nodes.get(node_id)
 
     def add_branch(self, branch: Branch) -> None:
         self._branches[branch.branch_id] = branch
 
-    def get_branch(self, branch_id: str) -> Optional[Branch]:
+    def get_branch(self, branch_id: str) -> Branch | None:
         return self._branches.get(branch_id)
 
     def list_branches(self) -> list[Branch]:
@@ -51,8 +52,25 @@ class BranchStore:
         p = Path(self.persist_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         data = {
-            "nodes": {nid: {"node_id": n.node_id, "parent_id": n.parent_id, "role": n.role, "content": n.content, "timestamp": n.timestamp} for nid, n in self._nodes.items()},
-            "branches": {bid: {"branch_id": b.branch_id, "name": b.name, "head_node_id": b.head_node_id, "parent_branch_id": b.parent_branch_id} for bid, b in self._branches.items()},
+            "nodes": {
+                nid: {
+                    "node_id": n.node_id,
+                    "parent_id": n.parent_id,
+                    "role": n.role,
+                    "content": n.content,
+                    "timestamp": n.timestamp,
+                }
+                for nid, n in self._nodes.items()
+            },
+            "branches": {
+                bid: {
+                    "branch_id": b.branch_id,
+                    "name": b.name,
+                    "head_node_id": b.head_node_id,
+                    "parent_branch_id": b.parent_branch_id,
+                }
+                for bid, b in self._branches.items()
+            },
         }
         with open(p, "w") as f:
             json.dump(data, f, indent=2)

@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from enum import Enum, auto
-from typing import Optional
 
 import torch
 
@@ -20,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ConstraintMode(Enum):
     """Types of output constraints."""
+
     JSON_OBJECT = auto()
     JSON_SCHEMA = auto()
     REGEX = auto()
@@ -40,7 +39,7 @@ class JSONConstrainedSampler:
 
     def __init__(
         self,
-        schema: Optional[dict[str, object]] = None,
+        schema: dict[str, object] | None = None,
         mode: ConstraintMode = ConstraintMode.JSON_OBJECT,
     ) -> None:
         """Initialize the constrained sampler.
@@ -134,16 +133,16 @@ class JSONConstrainedSampler:
             if escape:
                 escape = False
                 continue
-            if char == '\\':
+            if char == "\\":
                 escape = True
                 continue
             if char == '"' and not escape:
                 in_string = not in_string
                 continue
             if not in_string:
-                if char in '{[':
+                if char in "{[":
                     depth += 1
-                elif char in '}]':
+                elif char in "}]":
                     depth -= 1
 
         # If depth is 0 and we have content, JSON might be complete
@@ -176,6 +175,7 @@ class JSONConstrainedSampler:
         # For schema-level enforcement, delegate to outlines if available
         try:
             from outlines.processors import JSONLogitsProcessor
+
             # Outlines handles schema enforcement natively
             return torch.ones(vocab_size, dtype=torch.bool)
         except ImportError:

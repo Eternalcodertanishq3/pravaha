@@ -1,18 +1,18 @@
 """Admin routes — config reload, LoRA management, A/B testing, model merge."""
 
 from __future__ import annotations
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
-from typing import Optional
 
 router = APIRouter(tags=["Admin"])
 
 
 class ReloadRequest(BaseModel):
-    sampling: Optional[dict] = None
-    scheduler: Optional[dict] = None
-    swarm: Optional[dict] = None
-    guardrails: Optional[dict] = None
+    sampling: dict | None = None
+    scheduler: dict | None = None
+    swarm: dict | None = None
+    guardrails: dict | None = None
 
 
 class MergeRequest(BaseModel):
@@ -50,6 +50,7 @@ async def reload_config(request: ReloadRequest, raw_request: Request):
 async def load_lora(request: LoRARequest, raw_request: Request):
     """Load a LoRA adapter."""
     from pravaha.models.lora import LoRAManager
+
     manager = LoRAManager()
     manager.load_adapter(request.adapter_path, request.name)
     return {"loaded": request.name, "status": "ok"}
@@ -59,6 +60,7 @@ async def load_lora(request: LoRARequest, raw_request: Request):
 async def activate_lora(name: str):
     """Activate a loaded LoRA adapter."""
     from pravaha.models.lora import LoRAManager
+
     manager = LoRAManager()
     manager.activate_adapter(name)
     return {"activated": name}
@@ -67,8 +69,12 @@ async def activate_lora(name: str):
 @router.post("/admin/merge")
 async def merge_models(request: MergeRequest):
     """Merge two models using SLERP."""
-    return {"status": "merge_queued", "model_a": request.model_a,
-            "model_b": request.model_b, "alpha": request.alpha}
+    return {
+        "status": "merge_queued",
+        "model_a": request.model_a,
+        "model_b": request.model_b,
+        "alpha": request.alpha,
+    }
 
 
 @router.post("/admin/ab")

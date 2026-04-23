@@ -15,7 +15,6 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +69,7 @@ class SessionKVCache:
         self._sessions: OrderedDict[str, SessionState] = OrderedDict()
         self._lock = threading.Lock()
 
-        logger.info(
-            f"SessionKVCache initialized: max_sessions={max_sessions}, "
-            f"ttl={ttl_seconds}s"
-        )
+        logger.info(f"SessionKVCache initialized: max_sessions={max_sessions}, ttl={ttl_seconds}s")
 
     def save(
         self,
@@ -116,7 +112,7 @@ class SessionKVCache:
             # Evict if over capacity
             self._evict_if_needed()
 
-    def load(self, session_id: str) -> Optional[tuple[list[int], int]]:
+    def load(self, session_id: str) -> tuple[list[int], int] | None:
         """Load cached KV state for a session.
 
         Args:
@@ -188,7 +184,8 @@ class SessionKVCache:
         with self._lock:
             now = time.time()
             expired = [
-                sid for sid, state in self._sessions.items()
+                sid
+                for sid, state in self._sessions.items()
                 if now - state.last_access > self.ttl_seconds
             ]
             for sid in expired:
@@ -225,14 +222,12 @@ class SessionKVCache:
             Dictionary with session count, capacity, and block usage.
         """
         with self._lock:
-            total_blocks = sum(
-                len(s.block_table) for s in self._sessions.values()
-            )
+            total_blocks = sum(len(s.block_table) for s in self._sessions.values())
             return {
                 "active_sessions": len(self._sessions),
                 "max_sessions": self.max_sessions,
                 "total_cached_blocks": total_blocks,
-                "capacity_pct": round(
-                    len(self._sessions) / self.max_sessions * 100, 1
-                ) if self.max_sessions > 0 else 0.0,
+                "capacity_pct": round(len(self._sessions) / self.max_sessions * 100, 1)
+                if self.max_sessions > 0
+                else 0.0,
             }

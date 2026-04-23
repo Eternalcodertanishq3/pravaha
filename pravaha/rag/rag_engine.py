@@ -1,13 +1,14 @@
 """RAG Engine — Unified RAG pipeline combining ingestion, embedding, retrieval."""
 
 from __future__ import annotations
+
 import logging
-from typing import Optional
+
 from pravaha.config.rag_config import RAGConfig
-from pravaha.rag.ingester import Ingester, DocumentChunk
 from pravaha.rag.embedder import Embedder
-from pravaha.rag.vector_store import VectorStore
+from pravaha.rag.ingester import Ingester
 from pravaha.rag.retriever import Retriever
+from pravaha.rag.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,22 @@ logger = logging.getLogger(__name__)
 class RAGEngine:
     """Unified RAG pipeline."""
 
-    def __init__(self, config: Optional[RAGConfig] = None) -> None:
+    def __init__(self, config: RAGConfig | None = None) -> None:
         self.config = config or RAGConfig()
-        self.ingester = Ingester(chunk_size=self.config.chunking.chunk_size, chunk_overlap=self.config.chunking.chunk_overlap)
-        self.embedder = Embedder(model_name=self.config.embedding.model_name, device=self.config.embedding.device)
+        self.ingester = Ingester(
+            chunk_size=self.config.chunking.chunk_size,
+            chunk_overlap=self.config.chunking.chunk_overlap,
+        )
+        self.embedder = Embedder(
+            model_name=self.config.embedding.model_name, device=self.config.embedding.device
+        )
         self.store = VectorStore(persist_path=self.config.vector_store.persist_path)
-        self.retriever = Retriever(embedder=self.embedder, store=self.store, top_k=self.config.retrieval.top_k, threshold=self.config.retrieval.score_threshold)
+        self.retriever = Retriever(
+            embedder=self.embedder,
+            store=self.store,
+            top_k=self.config.retrieval.top_k,
+            threshold=self.config.retrieval.score_threshold,
+        )
 
     def ingest(self, path: str) -> int:
         chunks = self.ingester.ingest_file(path)

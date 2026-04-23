@@ -1,10 +1,12 @@
 """RAG Retriever — Query the vector store and format context."""
 
 from __future__ import annotations
+
 import logging
+
 from pravaha.rag.embedder import Embedder
-from pravaha.rag.vector_store import VectorStore
 from pravaha.rag.ingester import DocumentChunk
+from pravaha.rag.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +14,9 @@ logger = logging.getLogger(__name__)
 class Retriever:
     """Retrieve relevant context from the vector store."""
 
-    def __init__(self, embedder: Embedder, store: VectorStore, top_k: int = 5, threshold: float = 0.3) -> None:
+    def __init__(
+        self, embedder: Embedder, store: VectorStore, top_k: int = 5, threshold: float = 0.3
+    ) -> None:
         self.embedder = embedder
         self.store = store
         self.top_k = top_k

@@ -11,7 +11,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +65,20 @@ class FunctionCallParser:
         re.DOTALL,
     )
     _XML_PATTERN = re.compile(
-        r'<function_call>\s*'
-        r'<name>([^<]+)</name>\s*'
-        r'<arguments>(.*?)</arguments>\s*'
-        r'</function_call>',
+        r"<function_call>\s*"
+        r"<name>([^<]+)</name>\s*"
+        r"<arguments>(.*?)</arguments>\s*"
+        r"</function_call>",
         re.DOTALL,
     )
     _TOOL_CALL_PATTERN = re.compile(
-        r'```tool_call\s*\n(.*?)\n\s*```',
+        r"```tool_call\s*\n(.*?)\n\s*```",
         re.DOTALL,
     )
 
     def __init__(
         self,
-        tools: Optional[list[FunctionDefinition]] = None,
+        tools: list[FunctionDefinition] | None = None,
     ) -> None:
         """Initialize the parser.
 
@@ -92,7 +92,7 @@ class FunctionCallParser:
         self,
         token_ids: list[int],
         text: str,
-    ) -> Optional[ToolCall]:
+    ) -> ToolCall | None:
         """Detect if the output text contains a function call.
 
         Tries multiple formats in order of specificity.
@@ -121,7 +121,7 @@ class FunctionCallParser:
 
         return None
 
-    def _try_json_format(self, text: str) -> Optional[ToolCall]:
+    def _try_json_format(self, text: str) -> ToolCall | None:
         """Try to parse OpenAI-style JSON function call."""
         match = self._JSON_PATTERN.search(text)
         if match:
@@ -140,7 +140,7 @@ class FunctionCallParser:
             )
         return None
 
-    def _try_xml_format(self, text: str) -> Optional[ToolCall]:
+    def _try_xml_format(self, text: str) -> ToolCall | None:
         """Try to parse XML-style function call."""
         match = self._XML_PATTERN.search(text)
         if match:
@@ -159,7 +159,7 @@ class FunctionCallParser:
             )
         return None
 
-    def _try_markdown_format(self, text: str) -> Optional[ToolCall]:
+    def _try_markdown_format(self, text: str) -> ToolCall | None:
         """Try to parse markdown tool_call block."""
         match = self._TOOL_CALL_PATTERN.search(text)
         if match:
@@ -193,10 +193,7 @@ class FunctionCallParser:
         Returns:
             Formatted message for the model.
         """
-        return (
-            f"Tool call result for {call.function_name} "
-            f"(call_id: {call.id}):\n{result}"
-        )
+        return f"Tool call result for {call.function_name} (call_id: {call.id}):\n{result}"
 
     def build_tools_prompt(self) -> str:
         """Build a system prompt section describing available tools.
@@ -215,10 +212,7 @@ class FunctionCallParser:
                 lines.append(f"Parameters: {json.dumps(func.parameters, indent=2)}")
             lines.append("")
 
-        lines.append(
-            'To call a tool, respond with JSON: '
-            '{"name": "tool_name", "arguments": {...}}'
-        )
+        lines.append('To call a tool, respond with JSON: {"name": "tool_name", "arguments": {...}}')
         return "\n".join(lines)
 
     def validate_call(self, call: ToolCall) -> tuple[bool, str]:
@@ -232,10 +226,7 @@ class FunctionCallParser:
         """
         if call.function_name not in self.tools:
             available = ", ".join(self.tools.keys())
-            return False, (
-                f"Unknown function: {call.function_name}. "
-                f"Available: {available}"
-            )
+            return False, (f"Unknown function: {call.function_name}. Available: {available}")
 
         func = self.tools[call.function_name]
         required = func.parameters.get("required", [])

@@ -9,7 +9,6 @@ Used for educational purposes and as a fallback when paged attention isn't neede
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import torch
 
@@ -69,8 +68,14 @@ class NaiveKVCache:
         self.active_slots: set[int] = set()
 
         cache_mb = (
-            2 * num_layers * max_batch_size * max_seq_len * num_kv_heads * head_dim
-            * torch.finfo(dtype).bits // 8
+            2
+            * num_layers
+            * max_batch_size
+            * max_seq_len
+            * num_kv_heads
+            * head_dim
+            * torch.finfo(dtype).bits
+            // 8
         ) / (1024 * 1024)
         logger.info(
             f"NaiveKVCache allocated: {num_layers}L × {max_batch_size} slots × "
@@ -91,9 +96,7 @@ class NaiveKVCache:
                 self.active_slots.add(slot)
                 self.seq_lens[slot] = 0
                 return slot
-        raise RuntimeError(
-            f"NaiveKVCache: all {self.max_batch_size} slots are occupied"
-        )
+        raise RuntimeError(f"NaiveKVCache: all {self.max_batch_size} slots are occupied")
 
     def free_slot(self, slot: int) -> None:
         """Release a cache slot.
@@ -132,8 +135,8 @@ class NaiveKVCache:
             )
 
         # Write into the pre-allocated buffer
-        self.k_cache[layer_idx, slot, current_len:current_len + num_new, :, :] = k.transpose(0, 1)
-        self.v_cache[layer_idx, slot, current_len:current_len + num_new, :, :] = v.transpose(0, 1)
+        self.k_cache[layer_idx, slot, current_len : current_len + num_new, :, :] = k.transpose(0, 1)
+        self.v_cache[layer_idx, slot, current_len : current_len + num_new, :, :] = v.transpose(0, 1)
 
         if layer_idx == self.num_layers - 1:
             # Only increment seq_len once, after the last layer is written
@@ -177,19 +180,16 @@ class NaiveKVCache:
 
         k_out = torch.zeros(
             (batch_size, self.num_kv_heads, max_len, self.head_dim),
-            dtype=self.dtype, device=self.device,
+            dtype=self.dtype,
+            device=self.device,
         )
         v_out = torch.zeros_like(k_out)
 
         for i, slot in enumerate(slots):
             slen = self.seq_lens[slot]
             if slen > 0:
-                k_out[i, :, :slen, :] = self.k_cache[
-                    layer_idx, slot, :slen, :, :
-                ].transpose(0, 1)
-                v_out[i, :, :slen, :] = self.v_cache[
-                    layer_idx, slot, :slen, :, :
-                ].transpose(0, 1)
+                k_out[i, :, :slen, :] = self.k_cache[layer_idx, slot, :slen, :, :].transpose(0, 1)
+                v_out[i, :, :slen, :] = self.v_cache[layer_idx, slot, :slen, :, :].transpose(0, 1)
 
         return k_out, v_out
 
@@ -201,7 +201,7 @@ class NaiveKVCache:
         max_batch_size: int = 4,
         dtype: torch.dtype = torch.float16,
         device: str = "cuda",
-    ) -> "NaiveKVCache":
+    ) -> NaiveKVCache:
         """Factory: create cache from a ModelArchConfig."""
         return cls(
             num_layers=arch_config.num_layers,  # type: ignore[attr-defined]

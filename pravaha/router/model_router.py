@@ -5,9 +5,9 @@ token budget, and available resources.
 """
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RouteDecision:
     """Result of a routing decision."""
+
     model_name: str
     reason: str
     confidence: float = 1.0
@@ -23,7 +24,7 @@ class RouteDecision:
 class ModelRouter:
     """Route requests to the optimal model based on complexity analysis."""
 
-    def __init__(self, models: Optional[list[str]] = None) -> None:
+    def __init__(self, models: list[str] | None = None) -> None:
         self.models = models or []
         self._default_model = models[0] if models else "default"
 

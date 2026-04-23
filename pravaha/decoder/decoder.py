@@ -11,9 +11,8 @@ batched scheduling (step_prefill/step_decode) and standalone generation.
 from __future__ import annotations
 
 import logging
-import time
 import uuid
-from typing import Generator, Optional
+from collections.abc import Generator
 
 import torch
 import torch.nn as nn
@@ -43,9 +42,9 @@ class DecoderEngine:
         self,
         model: nn.Module,
         tokenizer: PravahaTokenizer,
-        sampler: Optional[Sampler] = None,
+        sampler: Sampler | None = None,
         device: str = "cuda",
-        kv_cache: Optional[PagedKVCache] = None,
+        kv_cache: PagedKVCache | None = None,
     ) -> None:
         """Initialize the decoder engine.
 
@@ -98,16 +97,16 @@ class DecoderEngine:
 
         try:
             # Phase 1: Prefill — process the entire prompt in one forward pass
-            next_tokens = self.step_prefill(
-                [input_ids], [request_id], [block_table]
-            )
+            next_tokens = self.step_prefill([input_ids], [request_id], [block_table])
             yield self.tokenizer.decode_token(next_tokens[0])
 
             # Phase 2: Autoregressive decode — one token at a time
             context_len = len(input_ids)
             for _ in range(params.max_new_tokens - 1):
                 # Allocate additional blocks if needed for the growing sequence
-                needed = (context_len + 1 + self.kv_cache.block_size - 1) // self.kv_cache.block_size
+                needed = (
+                    context_len + 1 + self.kv_cache.block_size - 1
+                ) // self.kv_cache.block_size
                 while len(block_table) < needed:
                     new_blocks = self.kv_cache.allocate_blocks(1)
                     block_table.extend(new_blocks)
@@ -153,12 +152,15 @@ class DecoderEngine:
         pad_token_id = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
 
         padded_inputs = torch.full(
-            (batch_size, max_prompt_len), pad_token_id,
-            dtype=torch.long, device=self.device,
+            (batch_size, max_prompt_len),
+            pad_token_id,
+            dtype=torch.long,
+            device=self.device,
         )
         attention_mask = torch.zeros(
             (batch_size, max_prompt_len),
-            dtype=torch.long, device=self.device,
+            dtype=torch.long,
+            device=self.device,
         )
 
         last_token_indices: list[int] = []
@@ -227,23 +229,17 @@ class DecoderEngine:
         assert batch_size == len(request_ids)
 
         # One new token per sequence
-        input_tensor = torch.tensor(
-            token_ids, dtype=torch.long, device=self.device
-        ).unsqueeze(1)
+        input_tensor = torch.tensor(token_ids, dtype=torch.long, device=self.device).unsqueeze(1)
 
         # Retrieve padded KV-cache from physical blocks
-        past_key_values = self.kv_cache.to_hf_past_key_values(
-            block_tables, context_lens
-        )
+        past_key_values = self.kv_cache.to_hf_past_key_values(block_tables, context_lens)
 
         # Attention mask covering full sequence (past + new token)
         max_seq_len = max(context_lens)
         total_len = max_seq_len + 1
-        attention_mask = torch.zeros(
-            (batch_size, total_len), dtype=torch.long, device=self.device
-        )
+        attention_mask = torch.zeros((batch_size, total_len), dtype=torch.long, device=self.device)
         for i, clen in enumerate(context_lens):
-            attention_mask[i, :clen + 1] = 1
+            attention_mask[i, : clen + 1] = 1
 
         # Model forward pass
         outputs = self.model(

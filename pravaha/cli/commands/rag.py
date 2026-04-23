@@ -16,9 +16,11 @@ def ingest(
     """Ingest a document into the RAG vector store."""
     console.print(f"Ingesting: {source}")
     import httpx
+
     try:
-        resp = httpx.post("http://localhost:8000/v1/rag/ingest",
-                          json={"source": source}, timeout=60.0)
+        resp = httpx.post(
+            "http://localhost:8000/v1/rag/ingest", json={"source": source}, timeout=60.0
+        )
         result = resp.json()
         console.print(f"[green]Ingested: {result.get('chunks', '?')} chunks[/green]")
     except Exception as e:
@@ -32,9 +34,11 @@ def query(
 ) -> None:
     """Query the RAG document store."""
     import httpx
+
     try:
-        resp = httpx.get("http://localhost:8000/v1/rag/query",
-                         params={"query": query_text, "top_k": top_k})
+        resp = httpx.get(
+            "http://localhost:8000/v1/rag/query", params={"query": query_text, "top_k": top_k}
+        )
         results = resp.json().get("results", [])
         for i, r in enumerate(results, 1):
             console.print(f"\n[bold]Result {i}[/bold] (score: {r.get('score', '?'):.3f})")
@@ -47,6 +51,7 @@ def query(
 def list_docs() -> None:
     """List all ingested documents."""
     import httpx
+
     try:
         resp = httpx.get("http://localhost:8000/v1/rag/sources")
         sources = resp.json().get("sources", [])

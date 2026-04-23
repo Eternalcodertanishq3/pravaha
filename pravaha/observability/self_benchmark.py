@@ -5,6 +5,7 @@ performance metrics (TTFT, throughput, latency).
 """
 
 from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BenchmarkResult:
     """Results of a self-benchmark run."""
+
     ttft_ms: float = 0.0
     tokens_per_second: float = 0.0
     total_duration_ms: float = 0.0
@@ -33,6 +35,7 @@ class SelfBenchmark:
     async def run(self, engine: object, num_tokens: int = 50) -> BenchmarkResult:
         """Run a quick benchmark generating num_tokens tokens."""
         from pravaha.decoder.sampling import SamplingParams
+
         params = SamplingParams(max_new_tokens=num_tokens, temperature=0.0)
 
         t0 = time.time()

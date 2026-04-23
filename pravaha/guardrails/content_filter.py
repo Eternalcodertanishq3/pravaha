@@ -4,6 +4,7 @@ Scans prompts and responses for blocked patterns, PII, and harmful content.
 """
 
 from __future__ import annotations
+
 import logging
 import re
 from dataclasses import dataclass
@@ -28,7 +29,9 @@ class ContentFilter:
     def check_prompt(self, prompt: str) -> FilterResult:
         for pattern, compiled in zip(self.blocked_patterns, self._compiled):
             if compiled.search(prompt):
-                return FilterResult(allowed=False, reason="blocked_pattern", matched_pattern=pattern)
+                return FilterResult(
+                    allowed=False, reason="blocked_pattern", matched_pattern=pattern
+                )
         return FilterResult(allowed=True)
 
     def check_response(self, response: str) -> FilterResult:

@@ -65,6 +65,8 @@ class AdaptiveBatcher:
         return {
             "current_batch_size": self.current_batch_size,
             "p50_latency_ms": round(sorted_lat[len(sorted_lat) // 2], 1),
-            "p95_latency_ms": round(sorted_lat[int(len(sorted_lat) * 0.95)], 1) if len(sorted_lat) > 1 else 0,
+            "p95_latency_ms": round(sorted_lat[int(len(sorted_lat) * 0.95)], 1)
+            if len(sorted_lat) > 1
+            else 0,
             "samples": len(self._latencies),
         }

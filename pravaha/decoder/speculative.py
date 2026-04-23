@@ -8,9 +8,7 @@ quality loss.
 from __future__ import annotations
 
 import logging
-from typing import AsyncGenerator, Optional
-
-import torch
+from collections.abc import AsyncGenerator
 
 from pravaha.decoder.sampling import SamplingParams
 
@@ -78,7 +76,6 @@ class SpeculativeDecoder:
         while total_tokens < params.max_new_tokens:
             # Step 1: Draft model generates K candidate tokens greedily
             draft_tokens: list[int] = []
-            draft_logprobs: list[float] = []
             current_prompt = input_ids + generated
 
             for _ in range(self.lookahead):
@@ -115,7 +112,7 @@ class SpeculativeDecoder:
             # Step 2: Verify all K tokens with the main model in one pass
             # Build the verification prompt with all draft tokens appended
             verify_prompt = input_ids + generated + draft_tokens
-            verify_text = tokenizer.decode(verify_prompt)
+            tokenizer.decode(verify_prompt)
 
             # Get main model's assessment of each position
             accepted = 0
@@ -176,7 +173,5 @@ class SpeculativeDecoder:
             "total_accepted": self._total_accepted,
             "acceptance_rate": round(self.acceptance_rate, 3),
             "lookahead": self.lookahead,
-            "effective_speedup": round(
-                1.0 + self.acceptance_rate * (self.lookahead - 1), 2
-            ),
+            "effective_speedup": round(1.0 + self.acceptance_rate * (self.lookahead - 1), 2),
         }

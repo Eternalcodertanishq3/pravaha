@@ -1,8 +1,10 @@
 """Judge Agent — Quality arbiter with structured scoring."""
 
 from __future__ import annotations
-import re, time
+
+import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -31,9 +33,14 @@ class JudgeAgent(BaseAgent):
         score = result.get("score", 50)
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=result.get("reason", str(result)),
-                           tokens_used=self._total_tokens, duration_ms=duration,
-                           confidence=score / 100.0, metadata=result)
+        return AgentOutput(
+            role=self.role,
+            output=result.get("reason", str(result)),
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=score / 100.0,
+            metadata=result,
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return True

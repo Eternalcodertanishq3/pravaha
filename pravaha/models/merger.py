@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class ModelMerger:
         self,
         model_paths: list[str],
         output_path: str,
-        weights: Optional[list[float]] = None,
+        weights: list[float] | None = None,
     ) -> str:
         """Merge models and save the result.
 
@@ -42,7 +41,6 @@ class ModelMerger:
         Returns:
             Path to the merged model.
         """
-        import torch
         from safetensors.torch import load_file, save_file
 
         if weights is None:
@@ -83,16 +81,16 @@ class ModelMerger:
 
     def _linear_merge(self, state_dicts: list[dict], weights: list[float]) -> dict:
         """Linear interpolation of weights."""
-        import torch
         merged = {}
         keys = state_dicts[0].keys()
         for key in keys:
-            merged[key] = sum(sd[key].float() * w for sd, w in zip(state_dicts, weights)).to(state_dicts[0][key].dtype)
+            merged[key] = sum(sd[key].float() * w for sd, w in zip(state_dicts, weights)).to(
+                state_dicts[0][key].dtype
+            )
         return merged
 
     def _slerp_merge(self, state_dicts: list[dict], weights: list[float]) -> dict:
         """Spherical linear interpolation (for 2 models)."""
-        import torch
         import torch.nn.functional as F
 
         if len(state_dicts) != 2:
@@ -108,12 +106,19 @@ class ModelMerger:
             dot = max(-1.0, min(1.0, dot))
 
             import math
+
             omega = math.acos(dot)
             if abs(omega) < 1e-10:
-                merged[key] = ((1 - t) * v0 + t * v1).reshape(state_dicts[0][key].shape).to(state_dicts[0][key].dtype)
+                merged[key] = (
+                    ((1 - t) * v0 + t * v1)
+                    .reshape(state_dicts[0][key].shape)
+                    .to(state_dicts[0][key].dtype)
+                )
             else:
                 so = math.sin(omega)
                 merged[key] = (
-                    (math.sin((1 - t) * omega) / so) * v0 + (math.sin(t * omega) / so) * v1
-                ).reshape(state_dicts[0][key].shape).to(state_dicts[0][key].dtype)
+                    ((math.sin((1 - t) * omega) / so) * v0 + (math.sin(t * omega) / so) * v1)
+                    .reshape(state_dicts[0][key].shape)
+                    .to(state_dicts[0][key].dtype)
+                )
         return merged

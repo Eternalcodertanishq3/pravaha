@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,28 +45,33 @@ def create_app() -> FastAPI:
     # Middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], allow_methods=["*"],
-        allow_headers=["*"], allow_credentials=True,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        allow_credentials=True,
     )
     from pravaha.serving.middleware import (
-        ErrorHandlerMiddleware, RequestIDMiddleware, TimingMiddleware,
+        ErrorHandlerMiddleware,
+        RequestIDMiddleware,
+        TimingMiddleware,
     )
+
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(TimingMiddleware)
     app.add_middleware(ErrorHandlerMiddleware)
 
     # Routes
-    from pravaha.serving.routes.completions import router as completions_router
+    from pravaha.serving.routes.admin import router as admin_router
+    from pravaha.serving.routes.branches import router as branches_router
     from pravaha.serving.routes.chat import router as chat_router
-    from pravaha.serving.routes.models import router as models_router
+    from pravaha.serving.routes.completions import router as completions_router
+    from pravaha.serving.routes.debug import router as debug_router
     from pravaha.serving.routes.health import router as health_router
     from pravaha.serving.routes.metrics import router as metrics_router
-    from pravaha.serving.routes.swarm import router as swarm_router
+    from pravaha.serving.routes.models import router as models_router
     from pravaha.serving.routes.rag import router as rag_router
+    from pravaha.serving.routes.swarm import router as swarm_router
     from pravaha.serving.routes.vision import router as vision_router
-    from pravaha.serving.routes.branches import router as branches_router
-    from pravaha.serving.routes.debug import router as debug_router
-    from pravaha.serving.routes.admin import router as admin_router
     from pravaha.serving.websocket import router as ws_router
 
     app.include_router(completions_router, prefix="/v1")

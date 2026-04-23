@@ -1,17 +1,17 @@
 """Vision route — POST /v1/vision/complete."""
 
 from __future__ import annotations
+
 from fastapi import APIRouter, Request
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel
 
 router = APIRouter(tags=["Vision"])
 
 
 class VisionContent(BaseModel):
     type: str
-    text: Optional[str] = None
-    image_url: Optional[dict] = None
+    text: str | None = None
+    image_url: dict | None = None
 
 
 class VisionMessage(BaseModel):
@@ -48,6 +48,7 @@ async def vision_complete(request: VisionRequest, raw_request: Request):
         prompt = f"[IMAGE: {image_data[:50]}...]\n{prompt}"
 
     from pravaha.decoder.sampling import SamplingParams
+
     params = SamplingParams(max_new_tokens=request.max_tokens)
     output = ""
     async for token in engine.generate(prompt, params):

@@ -7,9 +7,8 @@ the appropriate engine configuration automatically.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
-from pravaha.config.engine_config import ConfigurationError, EngineConfig
+from pravaha.config.engine_config import EngineConfig
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +30,7 @@ def detect_hardware() -> dict[str, object]:
 
     try:
         import psutil
+
         info["cpu_cores"] = psutil.cpu_count(logical=False) or 1
         info["ram_gb"] = round(psutil.virtual_memory().total / (1024**3), 1)
     except ImportError:
@@ -38,6 +38,7 @@ def detect_hardware() -> dict[str, object]:
 
     try:
         import torch
+
         if torch.cuda.is_available():
             info["gpu_available"] = True
             info["gpu_count"] = torch.cuda.device_count()
@@ -72,11 +73,11 @@ def auto_configure_blocks(vram_gb: float, model_size_gb: float = 2.0) -> int:
 
 
 def build_engine(
-    config: Optional[EngineConfig] = None,
-    config_path: Optional[str] = None,
-    model: Optional[str] = None,
-    quantize: Optional[str] = None,
-    device: Optional[str] = None,
+    config: EngineConfig | None = None,
+    config_path: str | None = None,
+    model: str | None = None,
+    quantize: str | None = None,
+    device: str | None = None,
 ) -> object:
     """Build an AsyncPravahaEngine from configuration.
 
@@ -129,6 +130,7 @@ def build_engine(
 
     # 6. Build engine
     from pravaha.engine.async_engine import AsyncPravahaEngine
+
     engine = AsyncPravahaEngine(config=config)
 
     logger.info(

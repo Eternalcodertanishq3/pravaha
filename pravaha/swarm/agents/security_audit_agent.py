@@ -7,8 +7,11 @@ Triggers on: code, api, database, auth, crypto
 """
 
 from __future__ import annotations
-import re, time
+
+import re
+import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -22,14 +25,18 @@ class SecurityAuditAgent(BaseAgent):
 
     # Static patterns for common vulnerabilities (pre-LLM check)
     STATIC_PATTERNS = [
-        (r'(?i)(password|secret|api_key|token)\s*=\s*["\'][^"\']+["\']', "Hardcoded secret", "critical"),
-        (r'(?i)eval\s*\(', "Use of eval()", "critical"),
-        (r'(?i)exec\s*\(', "Use of exec()", "major"),
-        (r'(?i)subprocess\.call\s*\(.*shell\s*=\s*True', "Shell injection risk", "critical"),
-        (r'(?i)pickle\.loads?\s*\(', "Unsafe deserialization (pickle)", "critical"),
-        (r'(?i)yaml\.load\s*\([^)]*\)(?!.*Loader)', "Unsafe YAML load without Loader", "major"),
-        (r'(?i)os\.system\s*\(', "OS command injection risk", "major"),
-        (r'(?i)md5|sha1(?!_)', "Weak hash algorithm (MD5/SHA1)", "minor"),
+        (
+            r'(?i)(password|secret|api_key|token)\s*=\s*["\'][^"\']+["\']',
+            "Hardcoded secret",
+            "critical",
+        ),
+        (r"(?i)eval\s*\(", "Use of eval()", "critical"),
+        (r"(?i)exec\s*\(", "Use of exec()", "major"),
+        (r"(?i)subprocess\.call\s*\(.*shell\s*=\s*True", "Shell injection risk", "critical"),
+        (r"(?i)pickle\.loads?\s*\(", "Unsafe deserialization (pickle)", "critical"),
+        (r"(?i)yaml\.load\s*\([^)]*\)(?!.*Loader)", "Unsafe YAML load without Loader", "major"),
+        (r"(?i)os\.system\s*\(", "OS command injection risk", "major"),
+        (r"(?i)md5|sha1(?!_)", "Weak hash algorithm (MD5/SHA1)", "minor"),
     ]
 
     system_prompt = (
@@ -55,12 +62,16 @@ class SecurityAuditAgent(BaseAgent):
         for pattern, desc, severity in self.STATIC_PATTERNS:
             matches = re.finditer(pattern, code)
             for match in matches:
-                line_num = code[:match.start()].count("\n") + 1
-                issues.append({
-                    "type": "security", "severity": severity,
-                    "description": f"{desc}: {match.group()[:50]}",
-                    "location": f"line {line_num}", "source": "static_scan",
-                })
+                line_num = code[: match.start()].count("\n") + 1
+                issues.append(
+                    {
+                        "type": "security",
+                        "severity": severity,
+                        "description": f"{desc}: {match.group()[:50]}",
+                        "location": f"line {line_num}",
+                        "source": "static_scan",
+                    }
+                )
 
         # Phase 2: LLM deep analysis
         prompt = self.build_prompt(f"Security audit:\n```\n{code[:1500]}\n```", context)
@@ -68,24 +79,34 @@ class SecurityAuditAgent(BaseAgent):
         vulns = result.get("vulnerabilities", [])
         if isinstance(vulns, list):
             for v in vulns:
-                issues.append({
-                    "type": v.get("cve_type", "security"),
-                    "severity": v.get("severity", "major"),
-                    "description": v.get("description", ""),
-                    "location": v.get("location", ""),
-                    "fix": v.get("fix", ""), "source": "llm_scan",
-                })
+                issues.append(
+                    {
+                        "type": v.get("cve_type", "security"),
+                        "severity": v.get("severity", "major"),
+                        "description": v.get("description", ""),
+                        "location": v.get("location", ""),
+                        "fix": v.get("fix", ""),
+                        "source": "llm_scan",
+                    }
+                )
 
         clean = len(issues) == 0
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
             role=self.role,
-            output="PASS: No vulnerabilities" if clean else f"FAIL: {len(issues)} vulnerability(ies)",
-            tokens_used=self._total_tokens, duration_ms=duration,
-            confidence=1.0 if clean else 0.3, issues=issues,
-            metadata={"clean": clean, "static_findings": sum(1 for i in issues if i.get("source") == "static_scan"),
-                       "llm_findings": sum(1 for i in issues if i.get("source") == "llm_scan")},
+            output="PASS: No vulnerabilities"
+            if clean
+            else f"FAIL: {len(issues)} vulnerability(ies)",
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=1.0 if clean else 0.3,
+            issues=issues,
+            metadata={
+                "clean": clean,
+                "static_findings": sum(1 for i in issues if i.get("source") == "static_scan"),
+                "llm_findings": sum(1 for i in issues if i.get("source") == "llm_scan"),
+            },
         )
 
     def can_handle(self, task_type: str) -> bool:

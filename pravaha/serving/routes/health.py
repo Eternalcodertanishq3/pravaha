@@ -1,6 +1,7 @@
 """Health API — /health and /health/ready."""
 
 from __future__ import annotations
+
 from fastapi import APIRouter, Request
 
 router = APIRouter(tags=["Health"])

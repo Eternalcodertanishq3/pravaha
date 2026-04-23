@@ -1,9 +1,10 @@
 """RAG Embedder — Generate vector embeddings for text chunks."""
 
 from __future__ import annotations
+
 import logging
+
 import numpy as np
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class Embedder:
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
+
                 self._model = SentenceTransformer(self.model_name, device=self.device)
                 logger.info(f"Embedding model loaded: {self.model_name}")
             except ImportError:

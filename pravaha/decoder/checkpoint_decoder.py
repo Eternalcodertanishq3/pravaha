@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import AsyncGenerator, Optional
 
 from pravaha.decoder.sampling import SamplingParams
 
@@ -41,7 +41,7 @@ class InferenceCheckpoint:
     generated_so_far: list[int] = field(default_factory=list)
     kv_blocks: list[int] = field(default_factory=list)
     context_len: int = 0
-    sampling_params: Optional[SamplingParams] = None
+    sampling_params: SamplingParams | None = None
     prompt: str = ""
     paused_at: float = field(default_factory=time.time)
 
@@ -94,8 +94,7 @@ class CheckpointManager:
 
         self._checkpoints[request_id] = checkpoint
         logger.info(
-            f"Paused request {request_id}: {len(generated_so_far)} tokens, "
-            f"{len(kv_blocks)} blocks"
+            f"Paused request {request_id}: {len(generated_so_far)} tokens, {len(kv_blocks)} blocks"
         )
         return checkpoint
 
@@ -142,8 +141,7 @@ class CheckpointManager:
         )
 
         logger.info(
-            f"Resuming request {checkpoint.request_id}: "
-            f"continuing for up to {remaining} tokens"
+            f"Resuming request {checkpoint.request_id}: continuing for up to {remaining} tokens"
         )
 
         # Generate using the engine
@@ -153,7 +151,7 @@ class CheckpointManager:
         # Clean up checkpoint after completion
         self._checkpoints.pop(checkpoint.request_id, None)
 
-    def get(self, request_id: str) -> Optional[InferenceCheckpoint]:
+    def get(self, request_id: str) -> InferenceCheckpoint | None:
         """Retrieve a checkpoint by request ID.
 
         Args:
@@ -223,7 +221,9 @@ class CheckpointManager:
                 "top_p": checkpoint.sampling_params.top_p,
                 "max_new_tokens": checkpoint.sampling_params.max_new_tokens,
                 "repetition_penalty": checkpoint.sampling_params.repetition_penalty,
-            } if checkpoint.sampling_params else None,
+            }
+            if checkpoint.sampling_params
+            else None,
         }
 
         with open(path, "w", encoding="utf-8") as f:
@@ -247,7 +247,7 @@ class CheckpointManager:
         if not path.exists():
             raise FileNotFoundError(f"Checkpoint file not found: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
         params = None

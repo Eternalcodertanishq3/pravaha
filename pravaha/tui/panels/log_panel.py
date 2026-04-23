@@ -1,9 +1,11 @@
 """Log Panel — Structured log viewer."""
 
 from __future__ import annotations
+
 from datetime import datetime
-from textual.widgets import Static
+
 from textual.containers import VerticalScroll
+from textual.widgets import Static
 
 
 class LogPanel(VerticalScroll):

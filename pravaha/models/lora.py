@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -20,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LoRAConfig:
     """Configuration for a LoRA adapter."""
+
     name: str
     path: str
     rank: int = 16
@@ -38,7 +38,7 @@ class LoRAManager:
     def __init__(self, base_model: nn.Module) -> None:
         self.base_model = base_model
         self._adapters: dict[str, LoRAConfig] = {}
-        self._active: Optional[str] = None
+        self._active: str | None = None
 
     def load_adapter(self, config: LoRAConfig) -> None:
         """Load a LoRA adapter from disk."""
@@ -48,8 +48,10 @@ class LoRAManager:
 
         try:
             from peft import PeftModel
+
             self.base_model = PeftModel.from_pretrained(
-                self.base_model, config.path,
+                self.base_model,
+                config.path,
                 adapter_name=config.name,
             )
             config.loaded = True
@@ -66,6 +68,7 @@ class LoRAManager:
 
         for f in path.glob("*.safetensors"):
             from safetensors.torch import load_file
+
             adapter_weights.update(load_file(str(f)))
 
         if not adapter_weights:

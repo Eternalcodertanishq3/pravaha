@@ -17,13 +17,16 @@ def bench(
     """Run comprehensive benchmarks and display results table."""
     console.print("[bold green]Pravaha Benchmark[/bold green]\n")
 
-    console.print(f"Model: {model} | Prompt: {prompt_len} tokens | "
-                  f"Output: {output_len} tokens | Runs: {runs}\n")
+    console.print(
+        f"Model: {model} | Prompt: {prompt_len} tokens | "
+        f"Output: {output_len} tokens | Runs: {runs}\n"
+    )
 
     with console.status("[bold green]Running benchmarks...[/bold green]"):
         # Import and run benchmark
         try:
             import asyncio
+
             from pravaha.config.engine_config import EngineConfig
             from pravaha.observability.self_benchmark import StartupBenchmark
 
@@ -31,19 +34,25 @@ def bench(
             config.model.model_path = model
 
             from pravaha.engine.async_engine import AsyncPravahaEngine
+
             engine = AsyncPravahaEngine(config=config)
             benchmark = StartupBenchmark()
             result = asyncio.run(benchmark.run(engine))
 
-            table = status_box({
-                "Throughput": f"{result.get('tokens_per_second', 0):.0f} tok/s",
-                "TTFT p50": f"{result.get('ttft_p50_ms', 0):.0f}ms",
-                "TTFT p99": f"{result.get('ttft_p99_ms', 0):.0f}ms",
-                "VRAM": f"{result.get('vram_gb', 0):.1f} GB",
-                "Runs": str(runs),
-            }, title="Benchmark Results")
+            table = status_box(
+                {
+                    "Throughput": f"{result.get('tokens_per_second', 0):.0f} tok/s",
+                    "TTFT p50": f"{result.get('ttft_p50_ms', 0):.0f}ms",
+                    "TTFT p99": f"{result.get('ttft_p99_ms', 0):.0f}ms",
+                    "VRAM": f"{result.get('vram_gb', 0):.1f} GB",
+                    "Runs": str(runs),
+                },
+                title="Benchmark Results",
+            )
             console.print(table)
             engine.stop()
         except Exception as e:
             console.print(f"[red]Benchmark failed: {e}[/red]")
-            console.print("[dim]Make sure the model is available and dependencies are installed.[/dim]")
+            console.print(
+                "[dim]Make sure the model is available and dependencies are installed.[/dim]"
+            )

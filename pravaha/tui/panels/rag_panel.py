@@ -1,6 +1,7 @@
 """RAG Panel — Document store viewer."""
 
 from __future__ import annotations
+
 from textual.widgets import Static
 
 

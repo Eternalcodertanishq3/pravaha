@@ -1,8 +1,10 @@
 """Ensemble Agent — Multi-model voting and synthesis."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -32,16 +34,21 @@ class EnsembleAgent(BaseAgent):
             output = candidates[0] if candidates else context.output or task
             duration = (time.time() - t0) * 1000
             return AgentOutput(role=self.role, output=output, duration_ms=duration, confidence=0.7)
-        combined = "\n---\n".join(f"Candidate {i+1}:\n{c}" for i, c in enumerate(candidates))
+        combined = "\n---\n".join(f"Candidate {i + 1}:\n{c}" for i, c in enumerate(candidates))
         prompt = self.build_prompt(f"Ensemble these candidates:\n\n{combined}", context)
         result = await self._generate_json(prompt, engine)
         final = result.get("final_answer", str(result))
         conf = result.get("confidence", 0.7)
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=final, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=conf,
-                           metadata={"candidates": len(candidates), "ensemble_result": result})
+        return AgentOutput(
+            role=self.role,
+            output=final,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=conf,
+            metadata={"candidates": len(candidates), "ensemble_result": result},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return True

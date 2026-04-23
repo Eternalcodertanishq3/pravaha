@@ -6,10 +6,9 @@ detection and shard merging. Provides memory profiling utilities.
 
 from __future__ import annotations
 
-import glob
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import torch
 
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def load_weights(
     model_path: str,
-    dtype: Optional[torch.dtype] = None,
+    dtype: torch.dtype | None = None,
     device: str = "cpu",
 ) -> dict[str, torch.Tensor]:
     """Load model weights from safetensors or PyTorch bin files.
@@ -42,8 +41,9 @@ def load_weights(
         elif path.suffix in (".bin", ".pt", ".pth"):
             state_dict = _load_pytorch_bin([path], dtype, device)
         else:
-            logger.warning(f"Unknown weight format: {path.suffix}, "
-                           "weights will be loaded by transformers.")
+            logger.warning(
+                f"Unknown weight format: {path.suffix}, weights will be loaded by transformers."
+            )
     elif path.is_dir():
         safetensor_files = sorted(path.glob("*.safetensors"))
         if safetensor_files:
@@ -53,8 +53,9 @@ def load_weights(
             if bin_files:
                 state_dict = _load_pytorch_bin(bin_files, dtype, device)
             else:
-                logger.warning("No weight files found in directory, "
-                               "weights will be loaded by transformers.")
+                logger.warning(
+                    "No weight files found in directory, weights will be loaded by transformers."
+                )
 
     logger.info(f"Loaded {len(state_dict)} tensors from {model_path}")
     return state_dict
@@ -62,7 +63,7 @@ def load_weights(
 
 def _load_safetensors(
     filepaths: list[Path],
-    dtype: Optional[torch.dtype],
+    dtype: torch.dtype | None,
     device: str,
 ) -> dict[str, torch.Tensor]:
     """Load weights from safetensors format."""
@@ -86,7 +87,7 @@ def _load_safetensors(
 
 def _load_pytorch_bin(
     filepaths: list[Path],
-    dtype: Optional[torch.dtype],
+    dtype: torch.dtype | None,
     device: str,
 ) -> dict[str, torch.Tensor]:
     """Load weights from PyTorch .bin format."""
@@ -126,10 +127,10 @@ def get_weight_memory_profile(
 
     return {
         "total_bytes": total_bytes,
-        "total_gb": round(total_bytes / (1024 ** 3), 3),
+        "total_gb": round(total_bytes / (1024**3), 3),
         "total_params": sum(t.nelement() for t in state_dict.values()),
         "num_tensors": len(state_dict),
-        "by_dtype": {k: round(v / (1024 ** 2), 1) for k, v in dtype_sizes.items()},
+        "by_dtype": {k: round(v / (1024**2), 1) for k, v in dtype_sizes.items()},
         "top_layers": dict(sorted(layer_sizes.items(), key=lambda x: -x[1])[:10]),
     }
 
@@ -149,6 +150,5 @@ def shard_weights(
     Returns:
         List of state dicts, one per shard.
     """
-    logger.warning("Tensor parallelism sharding is not yet implemented. "
-                   "Returning single shard.")
+    logger.warning("Tensor parallelism sharding is not yet implemented. Returning single shard.")
     return [state_dict]

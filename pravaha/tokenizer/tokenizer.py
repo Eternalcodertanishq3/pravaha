@@ -1,8 +1,8 @@
 """Pravaha Tokenizer — Wrapper around HuggingFace AutoTokenizer."""
 
 from __future__ import annotations
+
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +12,7 @@ class PravahaTokenizer:
 
     def __init__(self, model_path: str) -> None:
         from transformers import AutoTokenizer
+
         self._tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         if self._tokenizer.pad_token is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
@@ -30,7 +31,7 @@ class PravahaTokenizer:
         return self._tokenizer.eos_token_id
 
     @property
-    def pad_token_id(self) -> Optional[int]:
+    def pad_token_id(self) -> int | None:
         return self._tokenizer.pad_token_id
 
     @property

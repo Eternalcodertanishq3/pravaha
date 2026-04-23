@@ -13,6 +13,7 @@ plugin_app = typer.Typer()
 def list_plugins() -> None:
     """Show all installed plugins."""
     from pravaha.plugins.registry import PluginRegistry
+
     registry = PluginRegistry()
     plugins = registry.discover()
     if plugins:
@@ -28,6 +29,7 @@ def install_plugin(path: str = typer.Argument(..., help="Path to plugin package"
     """Install a local plugin."""
     console.print(f"Installing plugin from: {path}")
     import subprocess
+
     try:
         subprocess.run(["pip", "install", "-e", path], check=True)
         console.print("[green]Plugin installed successfully.[/green]")
@@ -40,6 +42,7 @@ def remove_plugin(name: str = typer.Argument(..., help="Plugin name")) -> None:
     """Remove an installed plugin."""
     console.print(f"[yellow]Removing plugin: {name}[/yellow]")
     import subprocess
+
     try:
         subprocess.run(["pip", "uninstall", "-y", name], check=True)
         console.print("[green]Plugin removed.[/green]")
@@ -51,6 +54,7 @@ def remove_plugin(name: str = typer.Argument(..., help="Plugin name")) -> None:
 def plugin_info(name: str = typer.Argument(..., help="Plugin name")) -> None:
     """Show plugin details."""
     from pravaha.plugins.registry import PluginRegistry
+
     registry = PluginRegistry()
     for p in registry.discover():
         if p.name == name:

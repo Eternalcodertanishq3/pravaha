@@ -1,9 +1,9 @@
 """Semantic Router — Route based on prompt embedding similarity."""
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class SemanticRouter:
     def __init__(self, routes: list[SemanticRoute] | None = None) -> None:
         self.routes = routes or []
 
-    def route(self, prompt: str) -> Optional[SemanticRoute]:
+    def route(self, prompt: str) -> SemanticRoute | None:
         """Find the best matching route for a prompt."""
         if not self.routes:
             return None

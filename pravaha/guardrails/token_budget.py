@@ -4,6 +4,7 @@ Enforces maximum token usage to prevent runaway costs.
 """
 
 from __future__ import annotations
+
 import logging
 from collections import defaultdict
 

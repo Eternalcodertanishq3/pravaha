@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Optional
 
 import yaml
 from pydantic import BaseModel, Field
@@ -33,7 +32,7 @@ class AgentRoleConfig(BaseModel):
     priority: int = 0
     max_tokens: int = 1024
     temperature: float = 0.5
-    model_override: Optional[str] = None
+    model_override: str | None = None
 
 
 class AuditConfig(BaseModel):
@@ -50,21 +49,25 @@ class AuditConfig(BaseModel):
     enabled: bool = True
     max_iterations: int = 3
     min_satisfaction_score: float = 70.0
-    pipeline: list[str] = Field(default_factory=lambda: [
-        "syntax_audit",
-        "type_safety",
-        "security_audit",
-        "logic_flaw",
-        "consistency_guard",
-        "hallucination_hunter",
-        "edge_case_hunter",
-        "performance_profiler",
-        "output_verifier",
-    ])
-    skip_for_types: dict[str, list[str]] = Field(default_factory=lambda: {
-        "text": ["syntax_audit", "type_safety"],
-        "analysis": ["syntax_audit"],
-    })
+    pipeline: list[str] = Field(
+        default_factory=lambda: [
+            "syntax_audit",
+            "type_safety",
+            "security_audit",
+            "logic_flaw",
+            "consistency_guard",
+            "hallucination_hunter",
+            "edge_case_hunter",
+            "performance_profiler",
+            "output_verifier",
+        ]
+    )
+    skip_for_types: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            "text": ["syntax_audit", "type_safety"],
+            "analysis": ["syntax_audit"],
+        }
+    )
 
 
 class PipelineStepConfig(BaseModel):
@@ -78,7 +81,7 @@ class PipelineStepConfig(BaseModel):
 
     agent: str
     depends_on: list[str] = Field(default_factory=list)
-    condition: Optional[str] = None
+    condition: str | None = None
 
 
 class PipelineConfig(BaseModel):
@@ -113,20 +116,20 @@ class SwarmConfig(BaseModel):
     total_token_budget: int = 50000
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "SwarmConfig":
+    def from_yaml(cls, path: str | Path) -> SwarmConfig:
         """Load swarm configuration from a YAML file."""
         path = Path(path)
         if not path.exists():
             logger.warning(f"Swarm config not found: {path}, using defaults.")
             return cls()
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
 
         return cls.model_validate(raw or {})
 
     @classmethod
-    def default_with_all_agents(cls) -> "SwarmConfig":
+    def default_with_all_agents(cls) -> SwarmConfig:
         """Create a default config with all 32 agents enabled."""
         worker_roles = [
             AgentRoleConfig(name="planner", priority=2, max_tokens=512, temperature=0.3),
@@ -154,9 +157,13 @@ class SwarmConfig(BaseModel):
         audit_roles = [
             AgentRoleConfig(name="syntax_audit", priority=1, max_tokens=512, temperature=0.1),
             AgentRoleConfig(name="logic_flaw", priority=1, max_tokens=512, temperature=0.1),
-            AgentRoleConfig(name="hallucination_hunter", priority=1, max_tokens=512, temperature=0.1),
+            AgentRoleConfig(
+                name="hallucination_hunter", priority=1, max_tokens=512, temperature=0.1
+            ),
             AgentRoleConfig(name="security_audit", priority=1, max_tokens=512, temperature=0.1),
-            AgentRoleConfig(name="performance_profiler", priority=1, max_tokens=512, temperature=0.1),
+            AgentRoleConfig(
+                name="performance_profiler", priority=1, max_tokens=512, temperature=0.1
+            ),
             AgentRoleConfig(name="consistency_guard", priority=1, max_tokens=512, temperature=0.1),
             AgentRoleConfig(name="type_safety", priority=1, max_tokens=512, temperature=0.1),
             AgentRoleConfig(name="edge_case_hunter", priority=1, max_tokens=512, temperature=0.1),

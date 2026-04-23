@@ -1,8 +1,10 @@
 """Self Reflection Agent — Meta-cognitive engine auditor."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -33,15 +35,19 @@ class SelfReflectionAgent(BaseAgent):
         agents_used = list(context.agent_outputs.keys())
         prompt = self.build_prompt(
             f"Reflect on pipeline:\nTask: {task[:300]}\nAgents used: {agents_used}\n"
-            f"Outputs generated: {len(context.agent_outputs)}", context)
+            f"Outputs generated: {len(context.agent_outputs)}",
+            context,
+        )
         result = await self._generate_json(prompt, engine)
         quality = result.get("pipeline_quality", "ok")
         improvements = result.get("improvements", [])
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
-            role=self.role, output=f"Pipeline: {quality} | {len(improvements)} improvement(s)",
-            tokens_used=self._total_tokens, duration_ms=duration,
+            role=self.role,
+            output=f"Pipeline: {quality} | {len(improvements)} improvement(s)",
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
             confidence={"good": 0.9, "ok": 0.7, "poor": 0.4}.get(quality, 0.5),
             metadata=result,
         )

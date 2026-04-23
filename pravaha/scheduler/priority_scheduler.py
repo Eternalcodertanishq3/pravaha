@@ -9,7 +9,6 @@ from __future__ import annotations
 import heapq
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from pravaha.scheduler.request import InferenceRequest
 
@@ -22,6 +21,7 @@ class PriorityRequest:
 
     Lower priority values = higher priority (processed first).
     """
+
     priority: int
     timestamp: float
     request: InferenceRequest = field(compare=False)
@@ -46,16 +46,17 @@ class PriorityScheduler:
 
     def push(self, request: InferenceRequest, priority: int = 3) -> None:
         import time
+
         self._counter += 1
         entry = PriorityRequest(priority=priority, timestamp=time.time(), request=request)
         heapq.heappush(self._heap, entry)
 
-    def pop(self) -> Optional[InferenceRequest]:
+    def pop(self) -> InferenceRequest | None:
         if self._heap:
             return heapq.heappop(self._heap).request
         return None
 
-    def peek(self) -> Optional[InferenceRequest]:
+    def peek(self) -> InferenceRequest | None:
         if self._heap:
             return self._heap[0].request
         return None

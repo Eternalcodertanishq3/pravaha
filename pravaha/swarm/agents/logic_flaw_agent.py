@@ -7,8 +7,10 @@ Triggers on: code, reasoning, analysis, math
 """
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -40,17 +42,25 @@ class LogicFlawAgent(BaseAgent):
         flaws = result.get("flaws", [])
         if not isinstance(flaws, list):
             flaws = []
-        issues = [{"type": f.get("type", "logic"), "severity": f.get("severity", "major"),
-                    "description": f.get("description", str(f)), "location": f.get("location", "")}
-                   for f in flaws]
+        issues = [
+            {
+                "type": f.get("type", "logic"),
+                "severity": f.get("severity", "major"),
+                "description": f.get("description", str(f)),
+                "location": f.get("location", ""),
+            }
+            for f in flaws
+        ]
         clean = len(issues) == 0
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
             role=self.role,
             output="PASS: No logic flaws" if clean else f"FAIL: {len(issues)} flaw(s)",
-            tokens_used=self._total_tokens, duration_ms=duration,
-            confidence=1.0 if clean else 0.4, issues=issues,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=1.0 if clean else 0.4,
+            issues=issues,
             metadata={"clean": clean, "flaw_count": len(issues)},
         )
 

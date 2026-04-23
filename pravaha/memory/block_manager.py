@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +37,7 @@ class BlockManager:
         """
         try:
             from pravaha.pravaha_core import BlockAllocator
+
             self.allocator = BlockAllocator(num_blocks)
             self._rust_available = True
         except ImportError:
@@ -73,8 +73,7 @@ class BlockManager:
         """
         if self.num_free_blocks() < num_required:
             raise RuntimeError(
-                f"Out of memory: need {num_required} blocks but only "
-                f"{self.num_free_blocks()} free"
+                f"Out of memory: need {num_required} blocks but only {self.num_free_blocks()} free"
             )
         return self.allocator.allocate(num_required)
 
@@ -149,7 +148,7 @@ class BlockManager:
         """
         self.allocator.swap_in(block_id)
 
-    def get_lru_block(self) -> Optional[int]:
+    def get_lru_block(self) -> int | None:
         """Find the least recently used GPU-resident block.
 
         Returns:
@@ -169,7 +168,7 @@ class BlockManager:
         content = str(tuple(token_ids))
         return hashlib.sha256(content.encode()).hexdigest()
 
-    def try_share_block(self, token_ids: list[int]) -> Optional[int]:
+    def try_share_block(self, token_ids: list[int]) -> int | None:
         """Try to find a shared block with matching content.
 
         If found, increments the reference count and returns the block ID.
@@ -275,7 +274,7 @@ class _PythonBlockAllocator:
         if self.states[block_id] == "cpu":
             self.states[block_id] = "gpu"
 
-    def get_lru_block(self) -> Optional[int]:
+    def get_lru_block(self) -> int | None:
         for i in range(self.num_blocks):
             if self.states[i] == "gpu" and self.ref_counts[i] > 0:
                 return i

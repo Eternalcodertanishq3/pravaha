@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -38,9 +39,9 @@ class ModelConfig(BaseModel):
     dtype: Literal["float16", "bfloat16", "float32"] = "float16"
     device: str = "auto"
     max_seq_len: int = 1024
-    quantization: Optional[Literal["8bit", "4bit"]] = None
+    quantization: Literal["8bit", "4bit"] | None = None
     trust_remote_code: bool = False
-    revision: Optional[str] = None
+    revision: str | None = None
 
     @property
     def resolved_device(self) -> str:
@@ -49,6 +50,7 @@ class ModelConfig(BaseModel):
             return self.device
         try:
             import torch
+
             return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
             return "cpu"
@@ -135,7 +137,7 @@ class ServerInlineConfig(BaseModel):
     port: int = 8000
     max_concurrent: int = 64
     enable_cors: bool = True
-    api_key: Optional[str] = None
+    api_key: str | None = None
     rate_limit_rpm: int = 0  # 0 = unlimited
 
 
@@ -158,6 +160,7 @@ class GuardrailsConfig(BaseModel):
 
 class ConfigurationError(Exception):
     """Raised when configuration is invalid or inconsistent."""
+
     pass
 
 
@@ -218,9 +221,9 @@ class EngineConfig(BaseModel):
     guardrails: GuardrailsConfig = Field(default_factory=GuardrailsConfig)
 
     # Internal state (not serialized)
-    _watchers: list[Callable[["EngineConfig"], None]] = []
+    _watchers: list[Callable[[EngineConfig], None]] = []
     _lock: threading.Lock = threading.Lock()
-    _source_path: Optional[Path] = None
+    _source_path: Path | None = None
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -244,11 +247,9 @@ class EngineConfig(BaseModel):
             )
 
         if self.rag.enabled and not self.rag.store_path:
-            raise ConfigurationError(
-                "RAG is enabled but no store_path is configured."
-            )
+            raise ConfigurationError("RAG is enabled but no store_path is configured.")
 
-    def watch(self, callback: Callable[["EngineConfig"], None]) -> None:
+    def watch(self, callback: Callable[[EngineConfig], None]) -> None:
         """Register a callback for hot-reload notifications.
 
         Args:
@@ -290,8 +291,7 @@ class EngineConfig(BaseModel):
 
                     if field_path in COLD_FIELDS:
                         raise ConfigurationError(
-                            f"Field '{field_path}' cannot be hot-reloaded. "
-                            f"Server restart required."
+                            f"Field '{field_path}' cannot be hot-reloaded. Server restart required."
                         )
 
                     if field_path not in HOT_RELOADABLE_FIELDS:
@@ -313,7 +313,7 @@ class EngineConfig(BaseModel):
 
         return updated
 
-    def reload_from_yaml(self, path: Optional[str | Path] = None) -> list[str]:
+    def reload_from_yaml(self, path: str | Path | None = None) -> list[str]:
         """Reload hot-reloadable fields from a YAML file.
 
         Args:
@@ -324,11 +324,9 @@ class EngineConfig(BaseModel):
         """
         load_path = Path(path) if path else self._source_path
         if load_path is None or not load_path.exists():
-            raise ConfigurationError(
-                f"Cannot reload: config file not found at {load_path}"
-            )
+            raise ConfigurationError(f"Cannot reload: config file not found at {load_path}")
 
-        with open(load_path, "r", encoding="utf-8") as f:
+        with open(load_path, encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
 
         # Only apply hot-reloadable sections
@@ -342,7 +340,7 @@ class EngineConfig(BaseModel):
         return []
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "EngineConfig":
+    def from_yaml(cls, path: str | Path) -> EngineConfig:
         """Load configuration from a YAML file.
 
         Args:
@@ -358,7 +356,7 @@ class EngineConfig(BaseModel):
         if not path.exists():
             raise FileNotFoundError(f"Config file not found: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
 
         config = cls.model_validate(raw or {})
@@ -366,7 +364,7 @@ class EngineConfig(BaseModel):
         return config
 
     @classmethod
-    def default(cls) -> "EngineConfig":
+    def default(cls) -> EngineConfig:
         """Return default configuration."""
         return cls()
 

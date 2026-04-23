@@ -7,8 +7,10 @@ Triggers on: text, research, facts, code
 """
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -37,7 +39,9 @@ class HallucinationHunterAgent(BaseAgent):
         ref_context = context.research[:500] if context.research else ""
         prompt = self.build_prompt(
             f"Check for hallucinations:\n\nContent:\n{content[:1500]}\n\n"
-            f"Reference context:\n{ref_context}", context)
+            f"Reference context:\n{ref_context}",
+            context,
+        )
         result = await self._generate_json(prompt, engine)
         claims = result.get("claims", [])
         if not isinstance(claims, list):
@@ -45,19 +49,30 @@ class HallucinationHunterAgent(BaseAgent):
         hallucinations = [c for c in claims if c.get("status") == "hallucination"]
         uncertain = [c for c in claims if c.get("status") == "uncertain"]
         risk = result.get("hallucination_risk", "medium")
-        issues = [{"type": "hallucination", "description": h.get("text", ""),
-                    "severity": "critical", "reason": h.get("reason", "")}
-                   for h in hallucinations]
+        issues = [
+            {
+                "type": "hallucination",
+                "description": h.get("text", ""),
+                "severity": "critical",
+                "reason": h.get("reason", ""),
+            }
+            for h in hallucinations
+        ]
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
             role=self.role,
             output=f"Risk: {risk} | Hallucinations: {len(hallucinations)} | Uncertain: {len(uncertain)}",
-            tokens_used=self._total_tokens, duration_ms=duration,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
             confidence={"low": 0.95, "medium": 0.6, "high": 0.2}.get(risk, 0.5),
             issues=issues,
-            metadata={"hallucination_risk": risk, "hallucinations": len(hallucinations),
-                       "uncertain": len(uncertain), "total_claims": len(claims)},
+            metadata={
+                "hallucination_risk": risk,
+                "hallucinations": len(hallucinations),
+                "uncertain": len(uncertain),
+                "total_claims": len(claims),
+            },
         )
 
     def can_handle(self, task_type: str) -> bool:

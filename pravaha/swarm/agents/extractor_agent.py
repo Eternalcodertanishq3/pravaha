@@ -1,8 +1,10 @@
 """Extractor Agent — Structured data extraction from text."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -33,9 +35,14 @@ class ExtractorAgent(BaseAgent):
         is_valid = not result.get("parse_error", False)
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=str(result), tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.9 if is_valid else 0.4,
-                           metadata={"extracted_data": result, "valid_json": is_valid})
+        return AgentOutput(
+            role=self.role,
+            output=str(result),
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.9 if is_valid else 0.4,
+            metadata={"extracted_data": result, "valid_json": is_valid},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"analysis", "research", "general"}

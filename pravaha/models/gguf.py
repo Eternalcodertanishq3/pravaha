@@ -7,8 +7,7 @@ directly into Pravaha for CPU and GPU inference.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ class GGUFLoader:
         """Load the GGUF model."""
         try:
             from llama_cpp import Llama
+
             self._model = Llama(
                 model_path=self.model_path,
                 n_gpu_layers=self.n_gpu_layers,

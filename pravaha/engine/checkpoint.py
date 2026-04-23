@@ -7,10 +7,8 @@ Handles KV cache block preservation during pause and restoration during resume.
 from __future__ import annotations
 
 import logging
-from typing import AsyncGenerator, Optional
 
 from pravaha.decoder.checkpoint_decoder import CheckpointManager, InferenceCheckpoint
-from pravaha.decoder.sampling import SamplingParams
 
 logger = logging.getLogger(__name__)
 

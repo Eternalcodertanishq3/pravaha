@@ -1,8 +1,9 @@
 """Chat Panel — Streaming chat with token rendering."""
 
 from __future__ import annotations
-from textual.widgets import Static
+
 from textual.containers import VerticalScroll
+from textual.widgets import Static
 
 
 class ChatPanel(VerticalScroll):

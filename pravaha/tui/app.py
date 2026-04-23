@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Footer, Header, Input, Static
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Footer, Input
 
-from pravaha.tui.panels.header import HeaderPanel
+from pravaha.tui.panels.audit_panel import AuditPanel
 from pravaha.tui.panels.chat_panel import ChatPanel
+from pravaha.tui.panels.header import HeaderPanel
+from pravaha.tui.panels.log_panel import LogPanel
 from pravaha.tui.panels.metrics_panel import MetricsPanel
 from pravaha.tui.panels.queue_panel import QueuePanel
-from pravaha.tui.panels.swarm_panel import SwarmPanel
-from pravaha.tui.panels.audit_panel import AuditPanel
 from pravaha.tui.panels.rag_panel import RAGPanel
-from pravaha.tui.panels.log_panel import LogPanel
+from pravaha.tui.panels.swarm_panel import SwarmPanel
 
 
 class PravahaTUI(App):

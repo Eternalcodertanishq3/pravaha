@@ -6,10 +6,9 @@ premium terminal experience.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.text import Text
 
 console = Console()
@@ -49,9 +48,7 @@ def status_box(rows: dict[str, str], title: str = "") -> str:
     return "\n".join(lines)
 
 
-def ascii_progress(
-    value: float, max_val: float, width: int = 40, label: str = ""
-) -> str:
+def ascii_progress(value: float, max_val: float, width: int = 40, label: str = "") -> str:
     """Render an ASCII progress bar."""
     ratio = min(value / max_val, 1.0) if max_val > 0 else 0
     filled = int(ratio * width)
@@ -79,5 +76,5 @@ def agent_grid(agents: list[dict[str, Any]]) -> str:
 
     lines = []
     for i in range(0, len(badges), 8):
-        lines.append("  ".join(badges[i:i + 8]))
+        lines.append("  ".join(badges[i : i + 8]))
     return "\n".join(lines)

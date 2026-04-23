@@ -11,10 +11,9 @@ multi-agent system.
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Optional
+from typing import Any
 
-from pravaha.swarm.agents import ALL_AGENTS, AUDIT_AGENTS, WORKER_AGENTS
+from pravaha.swarm.agents import ALL_AGENTS
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 logger = logging.getLogger(__name__)
@@ -31,15 +30,11 @@ class SwarmOrchestrator:
         self.context = SharedContext()
         logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded")
 
-    async def execute_agent(
-        self, name: str, task: str, engine: Any
-    ) -> AgentOutput:
+    async def execute_agent(self, name: str, task: str, engine: Any) -> AgentOutput:
         """Execute a single agent by name."""
         agent = self._agents.get(name)
         if not agent:
-            return AgentOutput(
-                role=name, output=f"Agent '{name}' not found", confidence=0.0
-            )
+            return AgentOutput(role=name, output=f"Agent '{name}' not found", confidence=0.0)
         result = await agent.run(task, self.context, engine)
         self.context.agent_outputs[name] = result
         return result
@@ -82,9 +77,15 @@ class SwarmOrchestrator:
 
         # Phase 2: Audit loop
         audit_pipeline = [
-            "syntax_audit", "type_safety", "security_audit",
-            "logic_flaw", "consistency_guard", "hallucination_hunter",
-            "edge_case_hunter", "performance_profiler", "output_verifier",
+            "syntax_audit",
+            "type_safety",
+            "security_audit",
+            "logic_flaw",
+            "consistency_guard",
+            "hallucination_hunter",
+            "edge_case_hunter",
+            "performance_profiler",
+            "output_verifier",
         ]
 
         score = 0.0
@@ -101,25 +102,25 @@ class SwarmOrchestrator:
                 all_issues.extend(result.issues)
 
             # Store audit report in context
-            self.context.audit_reports.append({
-                "iteration": iteration + 1,
-                "issues": all_issues,
-                "auditor_count": len(audit_results),
-            })
+            self.context.audit_reports.append(
+                {
+                    "iteration": iteration + 1,
+                    "issues": all_issues,
+                    "auditor_count": len(audit_results),
+                }
+            )
 
             # Check verifier score
             verifier = self.context.agent_outputs.get("output_verifier")
             score = verifier.metadata.get("score", 50) if verifier else 50
 
             if score >= min_score and not all_issues:
-                logger.info(f"Audit PASSED: iteration {iteration+1}, score {score}")
+                logger.info(f"Audit PASSED: iteration {iteration + 1}, score {score}")
                 break
 
             # Apply patches if issues found
             if all_issues and "patch_applier" in self._agents:
-                patch_result = await self.execute_agent(
-                    "patch_applier", task, engine
-                )
+                patch_result = await self.execute_agent("patch_applier", task, engine)
                 self.context.output = patch_result.output
                 self.context.code = patch_result.output
 
@@ -132,8 +133,7 @@ class SwarmOrchestrator:
             "worker_results": worker_results,
             "audit_iterations": iteration + 1,
             "final_score": score,
-            "issues_found": sum(len(r.get("issues", []))
-                                for r in self.context.audit_reports),
+            "issues_found": sum(len(r.get("issues", [])) for r in self.context.audit_reports),
         }
 
     def list_agents(self) -> list[dict[str, Any]]:

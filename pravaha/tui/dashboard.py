@@ -1,8 +1,9 @@
 """TUI Dashboard — Rich terminal UI for monitoring the engine."""
 
 from __future__ import annotations
+
 import time
-from typing import Any, Optional
+from typing import Any
 
 
 class Dashboard:
@@ -51,6 +52,7 @@ class Dashboard:
         except ImportError:
             # Fallback without Rich
             import os
+
             while self._running:
                 os.system("cls" if os.name == "nt" else "clear")
                 print(self.render_once())

@@ -53,7 +53,8 @@ class DebuggerAgent(BaseAgent):
 
         # Count bugs found (heuristic: look for numbered findings)
         bugs_found = sum(
-            1 for line in output.split("\n")
+            1
+            for line in output.split("\n")
             if line.strip().startswith(("**Bug", "Bug ", "Issue ", "- Bug"))
         )
 

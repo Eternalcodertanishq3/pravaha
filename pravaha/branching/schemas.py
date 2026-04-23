@@ -1,14 +1,16 @@
 """Branching Schemas — Data models for conversation forking."""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+
 import time
 import uuid
+from dataclasses import dataclass, field
 
 
 @dataclass
 class BranchNode:
     """A single node in the conversation tree."""
+
     node_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     parent_id: str | None = None
     role: str = "user"
@@ -20,6 +22,7 @@ class BranchNode:
 @dataclass
 class Branch:
     """A named branch in the conversation tree."""
+
     branch_id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = "main"
     head_node_id: str = ""

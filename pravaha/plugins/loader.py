@@ -1,10 +1,11 @@
 """Plugin Loader — Discover and load plugins from directories."""
 
 from __future__ import annotations
+
 import importlib
 import logging
 from pathlib import Path
-from typing import Optional
+
 from pravaha.plugins.base_plugin import BasePlugin
 from pravaha.plugins.registry import PluginRegistry
 
@@ -14,15 +15,19 @@ logger = logging.getLogger(__name__)
 class PluginLoader:
     """Load plugins from Python modules and directories."""
 
-    def __init__(self, registry: Optional[PluginRegistry] = None) -> None:
+    def __init__(self, registry: PluginRegistry | None = None) -> None:
         self.registry = registry or PluginRegistry()
 
-    def load_module(self, module_path: str) -> Optional[BasePlugin]:
+    def load_module(self, module_path: str) -> BasePlugin | None:
         try:
             module = importlib.import_module(module_path)
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if isinstance(attr, type) and issubclass(attr, BasePlugin) and attr is not BasePlugin:
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, BasePlugin)
+                    and attr is not BasePlugin
+                ):
                     plugin = attr()
                     self.registry.register(plugin)
                     return plugin

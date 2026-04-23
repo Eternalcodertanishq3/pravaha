@@ -1,7 +1,9 @@
 """Header Panel — Banner + clock + model badge + GPU status."""
 
 from __future__ import annotations
+
 from datetime import datetime
+
 from textual.widgets import Static
 
 
@@ -20,10 +22,7 @@ class HeaderPanel(Static):
 
     def render(self) -> str:
         now = datetime.now().strftime("%H:%M:%S")
-        return (
-            f" PRAVAHA v3  ·  {self.model_name}  ·  "
-            f"{self.quant}  ·  {self.gpu_info}  {now}"
-        )
+        return f" PRAVAHA v3  ·  {self.model_name}  ·  {self.quant}  ·  {self.gpu_info}  {now}"
 
     def update_info(self, model: str, quant: str = "", gpu: str = "") -> None:
         self.model_name = model

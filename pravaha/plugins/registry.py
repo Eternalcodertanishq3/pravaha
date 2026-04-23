@@ -1,8 +1,10 @@
 """Plugin Registry — Discover, register, and manage plugins."""
 
 from __future__ import annotations
+
 import logging
-from typing import Any, Optional
+from typing import Any
+
 from pravaha.plugins.base_plugin import BasePlugin
 
 logger = logging.getLogger(__name__)
@@ -23,11 +25,14 @@ class PluginRegistry:
         if plugin:
             plugin.on_unload()
 
-    def get(self, name: str) -> Optional[BasePlugin]:
+    def get(self, name: str) -> BasePlugin | None:
         return self._plugins.get(name)
 
     def list_plugins(self) -> list[dict]:
-        return [{"name": p.name, "version": p.version, "description": p.description} for p in self._plugins.values()]
+        return [
+            {"name": p.name, "version": p.version, "description": p.description}
+            for p in self._plugins.values()
+        ]
 
     def apply_pre_hooks(self, prompt: str, params: Any) -> tuple[str, Any]:
         for plugin in self._plugins.values():

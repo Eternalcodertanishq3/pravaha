@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 
 from pravaha.cli.ascii_art import console
 
 
 def chat(
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model to use"),
-    server: Optional[str] = typer.Option(None, "--server", "-s", help="Connect to running server URL"),
-    branch: Optional[str] = typer.Option(None, "--branch", help="Continue from branch ID"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Model to use"),
+    server: str | None = typer.Option(None, "--server", "-s", help="Connect to running server URL"),
+    branch: str | None = typer.Option(None, "--branch", help="Continue from branch ID"),
 ) -> None:
     """Interactive chat REPL with streaming tokens.
 
@@ -84,14 +82,20 @@ def chat(
         console.print("[bold green]pravaha>[/bold green] ", end="")
         try:
             with httpx.stream(
-                "POST", f"{base_url}/v1/chat/completions",
-                json={"model": model or "default", "messages": [{"role": "user", "content": user_input}],
-                       "stream": True, "session_id": session_id},
+                "POST",
+                f"{base_url}/v1/chat/completions",
+                json={
+                    "model": model or "default",
+                    "messages": [{"role": "user", "content": user_input}],
+                    "stream": True,
+                    "session_id": session_id,
+                },
                 timeout=60.0,
             ) as resp:
                 for line in resp.iter_lines():
                     if line.startswith("data: ") and line != "data: [DONE]":
                         import json
+
                         try:
                             chunk = json.loads(line[6:])
                             delta = chunk.get("choices", [{}])[0].get("delta", {})

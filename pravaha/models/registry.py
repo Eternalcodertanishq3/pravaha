@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +16,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ModelEntry:
     """A registered model entry."""
+
     name: str
     path: str
     format: str = "safetensors"  # safetensors, gguf, pytorch
     size_gb: float = 0.0
-    quantization: Optional[str] = None
+    quantization: str | None = None
     loaded: bool = False
     lora_adapters: list[str] = field(default_factory=list)
 
@@ -33,7 +33,7 @@ class ModelRegistry:
     unified API for listing and loading models.
     """
 
-    def __init__(self, model_dirs: Optional[list[str]] = None) -> None:
+    def __init__(self, model_dirs: list[str] | None = None) -> None:
         self._models: dict[str, ModelEntry] = {}
         self._model_dirs = model_dirs or []
 
@@ -64,7 +64,7 @@ class ModelRegistry:
         self._models[name] = entry
         return entry
 
-    def get(self, name: str) -> Optional[ModelEntry]:
+    def get(self, name: str) -> ModelEntry | None:
         return self._models.get(name)
 
     def list_models(self) -> list[ModelEntry]:

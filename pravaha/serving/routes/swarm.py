@@ -27,8 +27,10 @@ async def run_swarm(request: SwarmRequest, raw_request: Request):
     orchestrator = SwarmOrchestrator()
     pipeline_def = BUILTIN_PIPELINES.get(request.pipeline)
     if not pipeline_def:
-        return {"error": f"Unknown pipeline: {request.pipeline}",
-                "available": list(BUILTIN_PIPELINES.keys())}
+        return {
+            "error": f"Unknown pipeline: {request.pipeline}",
+            "available": list(BUILTIN_PIPELINES.keys()),
+        }
 
     result = await orchestrator.execute_with_audit(
         worker_pipeline=pipeline_def.worker_steps,

@@ -7,8 +7,10 @@ Triggers on: code, python, typescript, java
 """
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -40,18 +42,26 @@ class TypeSafetyAgent(BaseAgent):
         type_errors = result.get("type_errors", [])
         if not isinstance(type_errors, list):
             type_errors = []
-        issues = [{"type": "type_safety", "severity": "major",
-                    "description": f"{e.get('error', '')}: expected {e.get('expected_type', '?')}, got {e.get('actual_type', '?')}",
-                    "location": e.get("location", ""), "fix": e.get("fix", "")}
-                   for e in type_errors]
+        issues = [
+            {
+                "type": "type_safety",
+                "severity": "major",
+                "description": f"{e.get('error', '')}: expected {e.get('expected_type', '?')}, got {e.get('actual_type', '?')}",
+                "location": e.get("location", ""),
+                "fix": e.get("fix", ""),
+            }
+            for e in type_errors
+        ]
         clean = len(issues) == 0
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
             role=self.role,
             output="PASS: Type-safe" if clean else f"FAIL: {len(issues)} type issue(s)",
-            tokens_used=self._total_tokens, duration_ms=duration,
-            confidence=1.0 if clean else 0.5, issues=issues,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=1.0 if clean else 0.5,
+            issues=issues,
             metadata={"clean": clean, "type_errors": len(issues)},
         )
 

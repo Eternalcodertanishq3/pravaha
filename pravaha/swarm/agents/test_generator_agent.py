@@ -1,8 +1,10 @@
 """Test Generator Agent — Automated test suite creation."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -33,9 +35,14 @@ class TestGeneratorAgent(BaseAgent):
         test_count = output.count("def test_")
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=output, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.85,
-                           metadata={"test_count": test_count})
+        return AgentOutput(
+            role=self.role,
+            output=output,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.85,
+            metadata={"test_count": test_count},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"code", "function", "class", "module"}

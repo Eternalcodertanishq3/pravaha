@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -83,12 +82,14 @@ class SwapManager:
         import time
 
         self._swapped_blocks.update(block_ids)
-        self._swap_history.append(SwapRecord(
-            request_id=request_id,
-            block_ids=block_ids,
-            direction="out",
-            timestamp=time.time(),
-        ))
+        self._swap_history.append(
+            SwapRecord(
+                request_id=request_id,
+                block_ids=block_ids,
+                direction="out",
+                timestamp=time.time(),
+            )
+        )
 
         logger.debug(
             f"SwapManager: swapped out {len(block_ids)} blocks for {request_id}. "
@@ -109,12 +110,14 @@ class SwapManager:
         import time
 
         self._swapped_blocks -= set(block_ids)
-        self._swap_history.append(SwapRecord(
-            request_id=request_id,
-            block_ids=block_ids,
-            direction="in",
-            timestamp=time.time(),
-        ))
+        self._swap_history.append(
+            SwapRecord(
+                request_id=request_id,
+                block_ids=block_ids,
+                direction="in",
+                timestamp=time.time(),
+            )
+        )
 
         logger.debug(
             f"SwapManager: swapped in {len(block_ids)} blocks for {request_id}. "
@@ -150,9 +153,9 @@ class SwapManager:
             "max_swap_blocks": self.max_swap_blocks,
             "total_swap_outs": swap_outs,
             "total_swap_ins": swap_ins,
-            "capacity_pct": round(
-                len(self._swapped_blocks) / self.max_swap_blocks * 100, 1
-            ) if self.max_swap_blocks > 0 else 0.0,
+            "capacity_pct": round(len(self._swapped_blocks) / self.max_swap_blocks * 100, 1)
+            if self.max_swap_blocks > 0
+            else 0.0,
         }
 
     def clear_history(self) -> None:

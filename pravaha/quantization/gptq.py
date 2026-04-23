@@ -1,6 +1,7 @@
 """GPTQ Quantization — Post-training quantization with calibration."""
 
 from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -14,10 +15,13 @@ class GPTQQuantizer:
         self.bits = bits
         self.group_size = group_size
 
-    def quantize(self, model_path: str, output_path: str, calibration_data: list[str] | None = None) -> str:
+    def quantize(
+        self, model_path: str, output_path: str, calibration_data: list[str] | None = None
+    ) -> str:
         try:
             from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
-            config = BaseQuantizeConfig(bits=self.bits, group_size=self.group_size, damp_percent=0.01)
+
+            BaseQuantizeConfig(bits=self.bits, group_size=self.group_size, damp_percent=0.01)
             logger.info(f"Quantizing {model_path} to {self.bits}-bit GPTQ")
             return output_path
         except ImportError:
@@ -26,6 +30,7 @@ class GPTQQuantizer:
     def load(self, model_path: str, device: str = "cuda") -> Any:
         try:
             from auto_gptq import AutoGPTQForCausalLM
+
             return AutoGPTQForCausalLM.from_quantized(model_path, device=device)
         except ImportError:
             raise ImportError("auto-gptq required.")

@@ -8,9 +8,11 @@ Triggers on: code, function, class, script
 """
 
 from __future__ import annotations
+
 import ast
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -41,16 +43,20 @@ class SyntaxAuditAgent(BaseAgent):
         try:
             ast.parse(code)
         except SyntaxError as e:
-            issues.append({
-                "line": e.lineno or 0,
-                "severity": "error",
-                "description": f"SyntaxError: {e.msg}",
-                "fix_hint": f"Check syntax near line {e.lineno}: {e.text.strip() if e.text else ''}",
-            })
+            issues.append(
+                {
+                    "line": e.lineno or 0,
+                    "severity": "error",
+                    "description": f"SyntaxError: {e.msg}",
+                    "fix_hint": f"Check syntax near line {e.lineno}: {e.text.strip() if e.text else ''}",
+                }
+            )
 
         # Phase 2: LLM analysis for semantic syntax issues AST can't catch
         if not issues:
-            prompt = self.build_prompt(f"Audit this code for syntax issues:\n```\n{code}\n```", context)
+            prompt = self.build_prompt(
+                f"Audit this code for syntax issues:\n```\n{code}\n```", context
+            )
             result = await self._generate_json(prompt, engine)
             llm_issues = result.get("issues", [])
             if isinstance(llm_issues, list):
@@ -63,7 +69,8 @@ class SyntaxAuditAgent(BaseAgent):
         return AgentOutput(
             role=self.role,
             output="PASS: No syntax errors" if clean else f"FAIL: {len(issues)} issue(s) found",
-            tokens_used=self._total_tokens, duration_ms=duration,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
             confidence=1.0 if clean else 0.3,
             issues=issues,
             metadata={"clean": clean, "issue_count": len(issues), "used_ast": True},

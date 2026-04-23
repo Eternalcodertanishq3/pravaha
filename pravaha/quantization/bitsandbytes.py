@@ -7,7 +7,7 @@ during model loading. Supports 4-bit NF4 and 8-bit LLM.int8().
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,9 @@ class BitsAndBytesQuantizer:
     def get_config(self) -> Any:
         """Get a BitsAndBytesConfig for transformers loading."""
         try:
-            from transformers import BitsAndBytesConfig
             import torch
+            from transformers import BitsAndBytesConfig
+
             if self.bits == 4:
                 return BitsAndBytesConfig(
                     load_in_4bit=True,

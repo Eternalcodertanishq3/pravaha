@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import BaseModel, Field
@@ -72,8 +71,8 @@ class TLSConfig(BaseModel):
     """
 
     enabled: bool = False
-    cert_file: Optional[str] = None
-    key_file: Optional[str] = None
+    cert_file: str | None = None
+    key_file: str | None = None
 
 
 class ServerConfig(BaseModel):
@@ -97,14 +96,14 @@ class ServerConfig(BaseModel):
     log_level: str = "info"
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "ServerConfig":
+    def from_yaml(cls, path: str | Path) -> ServerConfig:
         """Load server configuration from a YAML file."""
         path = Path(path)
         if not path.exists():
             logger.warning(f"Server config not found: {path}, using defaults.")
             return cls()
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
 
         server_section = raw.get("server", raw)

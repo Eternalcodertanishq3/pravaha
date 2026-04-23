@@ -1,6 +1,7 @@
 """Trace Logger — Structured logging for inference pipeline debugging."""
 
 from __future__ import annotations
+
 import json
 import logging
 import time
@@ -17,7 +18,12 @@ class TraceLogger:
         self._traces: list[dict] = []
 
     def log(self, component: str, action: str, data: dict | None = None) -> None:
-        entry = {"timestamp": time.time(), "component": component, "action": action, "data": data or {}}
+        entry = {
+            "timestamp": time.time(),
+            "component": component,
+            "action": action,
+            "data": data or {},
+        }
         self._traces.append(entry)
 
     def flush(self, request_id: str) -> None:

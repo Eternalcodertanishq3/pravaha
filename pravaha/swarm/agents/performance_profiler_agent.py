@@ -7,8 +7,10 @@ Triggers on: code, sql, algorithm, async
 """
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -41,16 +43,26 @@ class PerformanceProfilerAgent(BaseAgent):
         perf_issues = result.get("issues", [])
         if not isinstance(perf_issues, list):
             perf_issues = []
-        issues = [{"type": p.get("type", "performance"), "severity": "major" if p.get("impact") == "high" else "minor",
-                    "description": f"{p.get('type', '')}: {p.get('fix', '')}", "location": p.get("location", "")}
-                   for p in perf_issues]
+        issues = [
+            {
+                "type": p.get("type", "performance"),
+                "severity": "major" if p.get("impact") == "high" else "minor",
+                "description": f"{p.get('type', '')}: {p.get('fix', '')}",
+                "location": p.get("location", ""),
+            }
+            for p in perf_issues
+        ]
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
         return AgentOutput(
             role=self.role,
-            output=f"Found {len(issues)} performance issue(s)" if issues else "PASS: No performance issues",
-            tokens_used=self._total_tokens, duration_ms=duration,
-            confidence=1.0 if not issues else 0.7, issues=issues,
+            output=f"Found {len(issues)} performance issue(s)"
+            if issues
+            else "PASS: No performance issues",
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=1.0 if not issues else 0.7,
+            issues=issues,
             metadata={"perf_issues": len(issues), "details": perf_issues},
         )
 

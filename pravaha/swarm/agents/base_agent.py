@@ -14,11 +14,9 @@ for the 32-agent self-healing inference pipeline.
 from __future__ import annotations
 
 import logging
-import time
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +96,7 @@ class BaseAgent(ABC):
     max_tokens: int = 1024
     temperature: float = 0.5
     system_prompt: str = ""
-    model_override: Optional[str] = None
+    model_override: str | None = None
 
     # Tracks cumulative usage across all calls
     _total_tokens: int = 0
@@ -260,8 +258,6 @@ class BaseAgent(ABC):
             "total_calls": self._total_calls,
             "total_duration_ms": self._total_duration_ms,
             "avg_tokens_per_call": (
-                self._total_tokens / self._total_calls
-                if self._total_calls > 0
-                else 0
+                self._total_tokens / self._total_calls if self._total_calls > 0 else 0
             ),
         }

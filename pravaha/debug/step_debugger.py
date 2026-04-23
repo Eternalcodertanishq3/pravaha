@@ -1,6 +1,7 @@
 """Step Debugger — Inspect token generation step-by-step."""
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 

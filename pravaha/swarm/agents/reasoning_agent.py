@@ -1,8 +1,10 @@
 """Reasoning Agent — Step-by-step chain-of-thought reasoning."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -30,7 +32,11 @@ class ReasoningAgent(BaseAgent):
         prompt = self.build_prompt(task, context)
         output = await self._generate(prompt, engine)
         context.reasoning = output
-        steps = sum(1 for line in output.split("\n") if "step" in line.lower() and any(c.isdigit() for c in line))
+        steps = sum(
+            1
+            for line in output.split("\n")
+            if "step" in line.lower() and any(c.isdigit() for c in line)
+        )
         has_conclusion = "CONCLUSION:" in output.upper()
         if "CONFIDENCE" in output.upper():
             parts = output.upper().split("CONFIDENCE")[-1][:20]
@@ -40,9 +46,14 @@ class ReasoningAgent(BaseAgent):
         conf_map = {"HIGH": 0.95, "MEDIUM": 0.7, "LOW": 0.4}
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=output, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=conf_map.get(confidence_str, 0.7),
-                           metadata={"steps": steps, "has_conclusion": has_conclusion})
+        return AgentOutput(
+            role=self.role,
+            output=output,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=conf_map.get(confidence_str, 0.7),
+            metadata={"steps": steps, "has_conclusion": has_conclusion},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"analysis", "math", "reasoning", "code", "general"}

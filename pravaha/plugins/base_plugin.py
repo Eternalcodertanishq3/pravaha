@@ -1,8 +1,9 @@
 """Plugin Base — Abstract base class for Pravaha plugins."""
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 
 class BasePlugin(ABC):

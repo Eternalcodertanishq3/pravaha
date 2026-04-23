@@ -64,9 +64,7 @@ class ResearcherAgent(BaseAgent):
         # Self-assessed confidence based on claim distribution
         total_claims = high + medium + low + uncertain
         confidence = (
-            (high * 1.0 + medium * 0.7 + low * 0.3) / total_claims
-            if total_claims > 0
-            else 0.5
+            (high * 1.0 + medium * 0.7 + low * 0.3) / total_claims if total_claims > 0 else 0.5
         )
 
         duration = (time.time() - t0) * 1000

@@ -1,6 +1,7 @@
 """AWQ Quantization — Activation-Aware Weight Quantization."""
 
 from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -16,6 +17,7 @@ class AWQQuantizer:
     def load(self, model_path: str, device: str = "cuda") -> Any:
         try:
             from awq import AutoAWQForCausalLM
+
             return AutoAWQForCausalLM.from_quantized(model_path, device_map=device)
         except ImportError:
             raise ImportError("autoawq required. Install: pip install 'pravaha[quantization]'")

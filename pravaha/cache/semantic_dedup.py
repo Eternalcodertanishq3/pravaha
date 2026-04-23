@@ -1,11 +1,11 @@
 """Semantic Deduplication — Detect and serve duplicate requests from cache."""
 
 from __future__ import annotations
+
 import hashlib
 import logging
 import time
 from collections import OrderedDict
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class SemanticDedup:
     def _hash(self, prompt: str, params_hash: str = "") -> str:
         return hashlib.sha256(f"{prompt}|{params_hash}".encode()).hexdigest()
 
-    def get(self, prompt: str, params_hash: str = "") -> Optional[str]:
+    def get(self, prompt: str, params_hash: str = "") -> str | None:
         key = self._hash(prompt, params_hash)
         entry = self._cache.get(key)
         if entry is not None:
@@ -48,4 +48,9 @@ class SemanticDedup:
 
     def get_stats(self) -> dict:
         total = self._hits + self._misses
-        return {"entries": len(self._cache), "hits": self._hits, "misses": self._misses, "hit_rate": round(self._hits / max(1, total) * 100, 1)}
+        return {
+            "entries": len(self._cache),
+            "hits": self._hits,
+            "misses": self._misses,
+            "hit_rate": round(self._hits / max(1, total) * 100, 1),
+        }

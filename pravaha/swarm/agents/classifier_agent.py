@@ -1,8 +1,10 @@
 """Classifier Agent — Domain/intent classification."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -28,8 +30,14 @@ class ClassifierAgent(BaseAgent):
         context.task_type = result.get("domain", "general")
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=str(result), tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.9, metadata=result)
+        return AgentOutput(
+            role=self.role,
+            output=str(result),
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.9,
+            metadata=result,
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return True

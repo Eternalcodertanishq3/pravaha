@@ -1,10 +1,10 @@
 """Vision Detector — Detect images in multimodal inputs."""
 
 from __future__ import annotations
+
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class ImageInput:
 class VisionDetector:
     """Detect and extract images from chat messages."""
 
-    URL_PATTERN = re.compile(r'https?://\S+\.(png|jpg|jpeg|gif|webp)', re.IGNORECASE)
+    URL_PATTERN = re.compile(r"https?://\S+\.(png|jpg|jpeg|gif|webp)", re.IGNORECASE)
 
     def detect(self, messages: list[dict]) -> list[ImageInput]:
         images: list[ImageInput] = []

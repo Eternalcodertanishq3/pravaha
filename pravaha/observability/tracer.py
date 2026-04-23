@@ -5,8 +5,9 @@ and performance analysis.
 """
 
 from __future__ import annotations
+
 import logging
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class Tracer:
         try:
             from opentelemetry import trace
             from opentelemetry.sdk.trace import TracerProvider
+
             provider = TracerProvider()
             trace.set_tracer_provider(provider)
             self._tracer = trace.get_tracer(service_name)
@@ -27,7 +29,7 @@ class Tracer:
         except ImportError:
             self._available = False
 
-    def start_span(self, name: str, attributes: Optional[dict] = None) -> Any:
+    def start_span(self, name: str, attributes: dict | None = None) -> Any:
         if not self._available or self._tracer is None:
             return _NoOpSpan()
         span = self._tracer.start_span(name, attributes=attributes or {})
@@ -35,18 +37,28 @@ class Tracer:
 
     def trace(self, name: str):
         """Decorator for tracing a function."""
+
         def decorator(func):
             def wrapper(*args, **kwargs):
                 if not self._available:
                     return func(*args, **kwargs)
                 with self._tracer.start_as_current_span(name):
                     return func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
 
 class _NoOpSpan:
-    def end(self): pass
-    def set_attribute(self, key, value): pass
-    def __enter__(self): return self
-    def __exit__(self, *args): pass
+    def end(self) -> None:
+        pass
+
+    def set_attribute(self, key, value) -> None:
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass

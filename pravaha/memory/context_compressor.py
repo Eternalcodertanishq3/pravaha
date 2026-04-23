@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,7 @@ class SemanticContextCompressor:
 
     def __init__(
         self,
-        tokenizer: Optional[object] = None,
+        tokenizer: object | None = None,
     ) -> None:
         """Initialize the compressor.
 
@@ -133,9 +132,7 @@ class SemanticContextCompressor:
                 messages_summarized=0,
             )
 
-        logger.info(
-            f"Context compression needed: {total_tokens} tokens → {max_tokens} max"
-        )
+        logger.info(f"Context compression needed: {total_tokens} tokens → {max_tokens} max")
 
         # Identify start, middle, and end segments
         start_msgs: list[Message] = []
@@ -167,7 +164,7 @@ class SemanticContextCompressor:
 
         # Phase 3: Middle messages are everything between start and end
         middle_msgs = messages[start_idx:end_idx]
-        middle_tokens = sum(m.token_count for m in middle_msgs)
+        sum(m.token_count for m in middle_msgs)
 
         if not middle_msgs:
             # Nothing to compress — just truncate end if needed

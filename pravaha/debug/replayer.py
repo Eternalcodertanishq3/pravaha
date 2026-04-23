@@ -1,11 +1,12 @@
 """Request Replayer — Replay saved requests for debugging."""
 
 from __future__ import annotations
+
 import json
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import AsyncGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,9 @@ class Replayer:
     def record(self, request_id: str, prompt: str, params: dict) -> None:
         if not self._recording:
             return
-        self._records[request_id] = ReplayRecord(request_id=request_id, prompt=prompt, params=params)
+        self._records[request_id] = ReplayRecord(
+            request_id=request_id, prompt=prompt, params=params
+        )
 
     def record_token(self, request_id: str, token: str) -> None:
         if request_id in self._records:
@@ -49,7 +52,16 @@ class Replayer:
         self.store_path.mkdir(parents=True, exist_ok=True)
         path = self.store_path / f"{request_id}.json"
         with open(path, "w") as f:
-            json.dump({"request_id": record.request_id, "prompt": record.prompt, "params": record.params, "generated_tokens": record.generated_tokens}, f, indent=2)
+            json.dump(
+                {
+                    "request_id": record.request_id,
+                    "prompt": record.prompt,
+                    "params": record.params,
+                    "generated_tokens": record.generated_tokens,
+                },
+                f,
+                indent=2,
+            )
 
     def load(self, request_id: str) -> ReplayRecord:
         path = self.store_path / f"{request_id}.json"

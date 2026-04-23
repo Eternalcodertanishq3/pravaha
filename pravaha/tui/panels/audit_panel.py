@@ -1,6 +1,7 @@
 """Audit Panel — Self-healing audit loop live view."""
 
 from __future__ import annotations
+
 from textual.widgets import Static
 
 

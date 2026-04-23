@@ -8,7 +8,6 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Optional
 
 from pravaha.scheduler.request import InferenceRequest
 
@@ -19,7 +18,7 @@ class SchedulingPolicy(ABC):
     """Base class for scheduling policies."""
 
     @abstractmethod
-    def select_next(self, waiting: deque[InferenceRequest]) -> Optional[InferenceRequest]:
+    def select_next(self, waiting: deque[InferenceRequest]) -> InferenceRequest | None:
         """Select the next request to process from the waiting queue."""
         ...
 
@@ -27,14 +26,14 @@ class SchedulingPolicy(ABC):
 class FCFSPolicy(SchedulingPolicy):
     """First-Come, First-Served (default)."""
 
-    def select_next(self, waiting: deque[InferenceRequest]) -> Optional[InferenceRequest]:
+    def select_next(self, waiting: deque[InferenceRequest]) -> InferenceRequest | None:
         return waiting[0] if waiting else None
 
 
 class SJFPolicy(SchedulingPolicy):
     """Shortest Job First — prioritize shorter prompts."""
 
-    def select_next(self, waiting: deque[InferenceRequest]) -> Optional[InferenceRequest]:
+    def select_next(self, waiting: deque[InferenceRequest]) -> InferenceRequest | None:
         if not waiting:
             return None
         return min(waiting, key=lambda r: r.num_prompt_tokens)
@@ -43,7 +42,7 @@ class SJFPolicy(SchedulingPolicy):
 class PriorityPolicy(SchedulingPolicy):
     """Priority-based — use request priority field."""
 
-    def select_next(self, waiting: deque[InferenceRequest]) -> Optional[InferenceRequest]:
+    def select_next(self, waiting: deque[InferenceRequest]) -> InferenceRequest | None:
         if not waiting:
             return None
         return min(waiting, key=lambda r: getattr(r, "priority", 3))

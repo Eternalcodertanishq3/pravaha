@@ -1,8 +1,10 @@
 """Translator Agent — Professional multilingual translation."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -31,9 +33,14 @@ class TranslatorAgent(BaseAgent):
         notes = output.count("[TN:")
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=output, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.85,
-                           metadata={"translator_notes": notes})
+        return AgentOutput(
+            role=self.role,
+            output=output,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.85,
+            metadata={"translator_notes": notes},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"translation", "general"}

@@ -59,7 +59,8 @@ class CriticAgent(BaseAgent):
                 if dimension in line and "/10" in line:
                     try:
                         import re
-                        nums = re.findall(r'(\d+)/10', line)
+
+                        nums = re.findall(r"(\d+)/10", line)
                         if nums:
                             scores[dimension] = int(nums[0])
                     except (ValueError, IndexError):

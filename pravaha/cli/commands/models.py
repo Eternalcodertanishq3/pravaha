@@ -13,6 +13,7 @@ models_app = typer.Typer()
 def list_models() -> None:
     """List loaded and available models."""
     import httpx
+
     try:
         resp = httpx.get("http://localhost:8000/v1/models")
         data = resp.json()
@@ -28,6 +29,7 @@ def model_info(model: str = typer.Argument(..., help="Model name")) -> None:
     console.print(f"[bold]Model:[/bold] {model}")
     try:
         from transformers import AutoConfig
+
         config = AutoConfig.from_pretrained(model)
         console.print(f"  Type: {config.model_type}")
         console.print(f"  Layers: {getattr(config, 'num_hidden_layers', '?')}")
@@ -43,6 +45,7 @@ def pull_model(model: str = typer.Argument(..., help="Model to download")) -> No
     console.print(f"Pulling {model}...")
     try:
         from huggingface_hub import snapshot_download
+
         path = snapshot_download(model)
         console.print(f"[green]Downloaded to: {path}[/green]")
     except Exception as e:

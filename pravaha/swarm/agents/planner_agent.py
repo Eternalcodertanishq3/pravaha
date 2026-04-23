@@ -48,7 +48,9 @@ class PlannerAgent(BaseAgent):
         context.plan = output
 
         # Parse subtask count for metadata
-        subtask_count = sum(1 for line in output.split("\n") if line.strip() and line.strip()[0].isdigit())
+        subtask_count = sum(
+            1 for line in output.split("\n") if line.strip() and line.strip()[0].isdigit()
+        )
 
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration

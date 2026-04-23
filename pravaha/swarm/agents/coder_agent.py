@@ -85,7 +85,9 @@ class CoderAgent(BaseAgent):
                 code_block = parts[1]
                 # Remove language tag from first line
                 lines = code_block.split("\n")
-                if lines and not lines[0].strip().startswith(("def ", "class ", "import ", "from ")):
+                if lines and not lines[0].strip().startswith(
+                    ("def ", "class ", "import ", "from ")
+                ):
                     lines = lines[1:]
                 return "\n".join(lines).strip()
         return text.strip()

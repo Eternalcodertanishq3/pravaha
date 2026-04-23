@@ -1,6 +1,7 @@
 """A/B Router — Split traffic between model variants for testing."""
 
 from __future__ import annotations
+
 import logging
 import random
 
@@ -26,4 +27,10 @@ class ABRouter:
 
     def get_stats(self) -> dict:
         total = self._a_count + self._b_count
-        return {"model_a": self.model_a, "model_b": self.model_b, "a_count": self._a_count, "b_count": self._b_count, "b_pct_actual": round(self._b_count / max(1, total) * 100, 1)}
+        return {
+            "model_a": self.model_a,
+            "model_b": self.model_b,
+            "a_count": self._a_count,
+            "b_count": self._b_count,
+            "b_pct_actual": round(self._b_count / max(1, total) * 100, 1),
+        }

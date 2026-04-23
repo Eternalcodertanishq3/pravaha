@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from pravaha.swarm.agents.base_agent import AgentOutput, SharedContext
+from pravaha.swarm.agents.base_agent import SharedContext
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,15 @@ class AuditLoop:
     """
 
     AUDIT_PIPELINE = [
-        "syntax_audit", "type_safety", "security_audit",
-        "logic_flaw", "consistency_guard", "hallucination_hunter",
-        "edge_case_hunter", "performance_profiler", "output_verifier",
+        "syntax_audit",
+        "type_safety",
+        "security_audit",
+        "logic_flaw",
+        "consistency_guard",
+        "hallucination_hunter",
+        "edge_case_hunter",
+        "performance_profiler",
+        "output_verifier",
     ]
 
     def __init__(
@@ -98,21 +104,14 @@ class AuditLoop:
 
             # Run each auditor
             for auditor_name in pipeline:
-                result = await orchestrator.execute_agent(
-                    auditor_name, task, engine
-                )
+                result = await orchestrator.execute_agent(auditor_name, task, engine)
                 iteration_issues.extend(result.issues)
 
             if not iteration_issues:
                 # Get final score
                 verifier_result = context.agent_outputs.get("output_verifier")
-                score = (
-                    verifier_result.metadata.get("score", 80)
-                    if verifier_result else 80.0
-                )
-                logger.info(
-                    f"Audit PASSED: iteration {iteration + 1}, score {score}"
-                )
+                score = verifier_result.metadata.get("score", 80) if verifier_result else 80.0
+                logger.info(f"Audit PASSED: iteration {iteration + 1}, score {score}")
                 return AuditResult(
                     final_output=current_output,
                     issues_found=all_issues,
@@ -124,14 +123,14 @@ class AuditLoop:
 
             # Issues found — apply patches
             all_issues.extend(iteration_issues)
-            context.audit_reports.append({
-                "iteration": iteration + 1,
-                "issues": iteration_issues,
-            })
-
-            patch_result = await orchestrator.execute_agent(
-                "patch_applier", task, engine
+            context.audit_reports.append(
+                {
+                    "iteration": iteration + 1,
+                    "issues": iteration_issues,
+                }
             )
+
+            patch_result = await orchestrator.execute_agent("patch_applier", task, engine)
             current_output = patch_result.output
             all_patches.extend(patch_result.patches)
             logger.info(
@@ -163,12 +162,16 @@ class AuditLoop:
             return self.AUDIT_PIPELINE  # All auditors
         elif output_type == "text":
             return [
-                "logic_flaw", "hallucination_hunter",
-                "consistency_guard", "output_verifier",
+                "logic_flaw",
+                "hallucination_hunter",
+                "consistency_guard",
+                "output_verifier",
             ]
         else:  # analysis, general
             return [
-                "logic_flaw", "hallucination_hunter",
-                "consistency_guard", "edge_case_hunter",
+                "logic_flaw",
+                "hallucination_hunter",
+                "consistency_guard",
+                "edge_case_hunter",
                 "output_verifier",
             ]

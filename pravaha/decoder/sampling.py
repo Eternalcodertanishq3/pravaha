@@ -8,7 +8,6 @@ raw logits into sampled token IDs.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import torch
 import torch.nn.functional as F
@@ -55,7 +54,7 @@ class Sampler:
         self,
         logits: torch.Tensor,
         params: SamplingParams,
-        generated_ids: Optional[torch.Tensor] = None,
+        generated_ids: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Sample the next token from logits.
 
@@ -166,7 +165,5 @@ class Sampler:
         sorted_logits[sorted_mask] = float("-inf")
 
         # Scatter back to original ordering
-        logits = torch.zeros_like(logits).scatter_(
-            dim=-1, index=sorted_indices, src=sorted_logits
-        )
+        logits = torch.zeros_like(logits).scatter_(dim=-1, index=sorted_indices, src=sorted_logits)
         return logits

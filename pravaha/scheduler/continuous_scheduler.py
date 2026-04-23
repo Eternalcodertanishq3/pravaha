@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import Optional
 
 from pravaha.memory.block_manager import BlockManager
 from pravaha.scheduler.request import FinishReason, InferenceRequest
@@ -23,7 +22,9 @@ class ContinuousScheduler:
     new requests OR decodes running requests, never both.
     """
 
-    def __init__(self, num_blocks: int, block_size: int, max_batch_size: int, max_seq_len: int):
+    def __init__(
+        self, num_blocks: int, block_size: int, max_batch_size: int, max_seq_len: int
+    ) -> None:
         self.num_blocks = num_blocks
         self.block_size = block_size
         self.max_batch_size = max_batch_size
@@ -44,7 +45,12 @@ class ContinuousScheduler:
 
     def step(self) -> dict[str, list[InferenceRequest]]:
         self._free_finished_resources()
-        scheduled: dict[str, list[InferenceRequest]] = {"prefill": [], "decode": [], "swap_out": [], "swap_in": []}
+        scheduled: dict[str, list[InferenceRequest]] = {
+            "prefill": [],
+            "decode": [],
+            "swap_out": [],
+            "swap_in": [],
+        }
 
         # Resume swapped
         while self.swapped and len(self.running) < self.max_batch_size:
@@ -73,7 +79,7 @@ class ContinuousScheduler:
             possible = True
 
             for i in range(full_blocks):
-                content = request.prompt_token_ids[i * self.block_size:(i + 1) * self.block_size]
+                content = request.prompt_token_ids[i * self.block_size : (i + 1) * self.block_size]
                 h = self.block_manager.compute_content_hash(content)
                 shared = self.hash_to_block.get(h)
                 if shared is not None:
@@ -133,7 +139,7 @@ class ContinuousScheduler:
 
         return scheduled
 
-    def preempt_request(self, request: Optional[InferenceRequest] = None) -> bool:
+    def preempt_request(self, request: InferenceRequest | None = None) -> bool:
         if request is None:
             if not self.running:
                 return False
@@ -172,14 +178,22 @@ class ContinuousScheduler:
 
     def get_queue_stats(self) -> dict:
         return {
-            "waiting": len(self.waiting), "running": len(self.running),
-            "swapped": len(self.swapped), "finished": len(self.finished),
+            "waiting": len(self.waiting),
+            "running": len(self.running),
+            "swapped": len(self.swapped),
+            "finished": len(self.finished),
             "free_blocks": self.block_manager.num_free_blocks(),
             "total_blocks": self.num_blocks,
             "requests": [
-                {"id": r.request_id, "status": "running",
-                 "tokens": len(r.generated_token_ids),
-                 "progress": round(len(r.generated_token_ids) / max(1, r.sampling_params.max_new_tokens) * 100, 1)}
+                {
+                    "id": r.request_id,
+                    "status": "running",
+                    "tokens": len(r.generated_token_ids),
+                    "progress": round(
+                        len(r.generated_token_ids) / max(1, r.sampling_params.max_new_tokens) * 100,
+                        1,
+                    ),
+                }
                 for r in self.running
             ],
         }

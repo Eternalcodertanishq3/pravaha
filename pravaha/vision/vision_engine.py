@@ -1,8 +1,10 @@
 """Vision Engine — Unified vision-language model interface."""
 
 from __future__ import annotations
+
 import logging
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+
 from pravaha.vision.detector import VisionDetector
 from pravaha.vision.preprocessor import VisionPreprocessor
 
@@ -17,7 +19,9 @@ class VisionEngine:
         self.preprocessor = VisionPreprocessor()
         self._vlm = None
 
-    async def generate(self, messages: list[dict], engine: object, params: object) -> AsyncGenerator[str, None]:
+    async def generate(
+        self, messages: list[dict], engine: object, params: object
+    ) -> AsyncGenerator[str, None]:
         images = self.detector.detect(messages)
         text_parts = []
         for msg in messages:

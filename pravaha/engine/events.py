@@ -9,11 +9,12 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 
 
 class EventType(Enum):
     """Types of engine events."""
+
     REQUEST_RECEIVED = auto()
     PREFILL_START = auto()
     PREFILL_END = auto()
@@ -53,9 +54,9 @@ class EngineEvent:
 
     event_type: EventType
     timestamp: float = field(default_factory=time.time)
-    request_id: Optional[str] = None
+    request_id: str | None = None
     data: dict[str, Any] = field(default_factory=dict)
-    duration_ms: Optional[float] = None
+    duration_ms: float | None = None
 
     def __str__(self) -> str:
         parts = [f"[{self.event_type.name}]"]
@@ -159,7 +160,7 @@ class EventBus:
         """
         self._history.append(event)
         if len(self._history) > self._max_history:
-            self._history = self._history[-self._max_history:]
+            self._history = self._history[-self._max_history :]
 
         for subscriber in self._subscribers:
             try:
@@ -169,7 +170,7 @@ class EventBus:
 
     def get_history(
         self,
-        event_type: Optional[EventType] = None,
+        event_type: EventType | None = None,
         limit: int = 100,
     ) -> list[EngineEvent]:
         """Get recent events, optionally filtered by type.

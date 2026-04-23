@@ -1,8 +1,10 @@
 """Narrator Agent — Technical-to-readable prose conversion."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -32,9 +34,14 @@ class NarratorAgent(BaseAgent):
         output = await self._generate(prompt, engine)
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=output, tokens_used=self._total_tokens,
-                           duration_ms=duration, confidence=0.8,
-                           metadata={"original_type": "technical", "target_audience": "general"})
+        return AgentOutput(
+            role=self.role,
+            output=output,
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=0.8,
+            metadata={"original_type": "technical", "target_audience": "general"},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"writing", "general", "research"}

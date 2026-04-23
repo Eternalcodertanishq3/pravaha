@@ -16,7 +16,6 @@ Bug Fixes Applied:
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import torch
 
@@ -71,12 +70,18 @@ class PagedKVCache:
         self.v_cache = torch.zeros(cache_shape, dtype=dtype, device=device)
 
         # CPU Pool (for swapping) — allocated lazily
-        self.cpu_k_cache: Optional[torch.Tensor] = None
-        self.cpu_v_cache: Optional[torch.Tensor] = None
+        self.cpu_k_cache: torch.Tensor | None = None
+        self.cpu_v_cache: torch.Tensor | None = None
 
         cache_mb = (
-            2 * num_layers * num_blocks * block_size * num_kv_heads * head_dim
-            * torch.finfo(dtype).bits // 8
+            2
+            * num_layers
+            * num_blocks
+            * block_size
+            * num_kv_heads
+            * head_dim
+            * torch.finfo(dtype).bits
+            // 8
         ) / (1024 * 1024)
         logger.info(
             f"PagedKVCache allocated: {num_layers}L × {num_blocks} blocks × "
@@ -87,8 +92,11 @@ class PagedKVCache:
         """Lazy allocation of CPU swap space."""
         if self.cpu_k_cache is None:
             cache_shape = (
-                self.num_layers, self.num_blocks, self.block_size,
-                self.num_kv_heads, self.head_dim,
+                self.num_layers,
+                self.num_blocks,
+                self.block_size,
+                self.num_kv_heads,
+                self.head_dim,
             )
             self.cpu_k_cache = torch.empty(cache_shape, dtype=self.dtype, device="cpu")
             self.cpu_v_cache = torch.empty(cache_shape, dtype=self.dtype, device="cpu")
@@ -111,8 +119,7 @@ class PagedKVCache:
             self._free_list: list[int] = list(range(self.num_blocks - 1, -1, -1))
         if len(self._free_list) < num_blocks:
             raise RuntimeError(
-                f"PagedKVCache: need {num_blocks} blocks but only "
-                f"{len(self._free_list)} free"
+                f"PagedKVCache: need {num_blocks} blocks but only {len(self._free_list)} free"
             )
         return [self._free_list.pop() for _ in range(num_blocks)]
 
@@ -187,7 +194,8 @@ class PagedKVCache:
         # Output tensors
         k_out = torch.zeros(
             (batch, self.num_kv_heads, max_len, self.head_dim),
-            dtype=self.dtype, device=self.device,
+            dtype=self.dtype,
+            device=self.device,
         )
         v_out = torch.zeros_like(k_out)
 
@@ -236,6 +244,7 @@ class PagedKVCache:
 
         try:
             from transformers.cache_utils import DynamicCache
+
             cache = DynamicCache()
             for layer_idx in range(self.num_layers):
                 k, v = self.get_batch(layer_idx, block_tables, context_lens)
@@ -269,11 +278,13 @@ class PagedKVCache:
         """
         # Strategy 1: DynamicCache with .key_cache / .value_cache attributes
         key_cache = getattr(
-            past_key_values, "key_cache",
+            past_key_values,
+            "key_cache",
             getattr(past_key_values, "_key_cache", None),
         )
         value_cache = getattr(
-            past_key_values, "value_cache",
+            past_key_values,
+            "value_cache",
             getattr(past_key_values, "_value_cache", None),
         )
 
@@ -290,8 +301,12 @@ class PagedKVCache:
                 k_new = k_full[:, :, -num_new_tokens:, :]
                 v_new = v_full[:, :, -num_new_tokens:, :]
                 self.append(
-                    layer_idx, k_new, v_new,
-                    request_ids, block_tables, slot_offsets,
+                    layer_idx,
+                    k_new,
+                    v_new,
+                    request_ids,
+                    block_tables,
+                    slot_offsets,
                 )
             return
 
@@ -303,8 +318,12 @@ class PagedKVCache:
                     k_new = k_full[:, :, -num_new_tokens:, :]
                     v_new = v_full[:, :, -num_new_tokens:, :]
                     self.append(
-                        layer_idx, k_new, v_new,
-                        request_ids, block_tables, slot_offsets,
+                        layer_idx,
+                        k_new,
+                        v_new,
+                        request_ids,
+                        block_tables,
+                        slot_offsets,
                     )
             return
 
@@ -312,11 +331,13 @@ class PagedKVCache:
         try:
             for layer_idx, layer_data in enumerate(past_key_values):  # type: ignore[union-attr]
                 k_full = getattr(
-                    layer_data, "key_cache",
+                    layer_data,
+                    "key_cache",
                     getattr(layer_data, "k", None),
                 )
                 v_full = getattr(
-                    layer_data, "value_cache",
+                    layer_data,
+                    "value_cache",
                     getattr(layer_data, "v", None),
                 )
                 if k_full is None and isinstance(layer_data, (list, tuple)):
@@ -326,8 +347,12 @@ class PagedKVCache:
                     k_new = k_full[:, :, -num_new_tokens:, :]
                     v_new = v_full[:, :, -num_new_tokens:, :]
                     self.append(
-                        layer_idx, k_new, v_new,
-                        request_ids, block_tables, slot_offsets,
+                        layer_idx,
+                        k_new,
+                        v_new,
+                        request_ids,
+                        block_tables,
+                        slot_offsets,
                     )
             return
         except Exception:
@@ -347,12 +372,8 @@ class PagedKVCache:
         self._ensure_cpu_cache()
         assert self.cpu_k_cache is not None and self.cpu_v_cache is not None
         for bid in block_ids:
-            self.cpu_k_cache[:, bid, ...] = self.k_cache[:, bid, ...].to(
-                "cpu", non_blocking=True
-            )
-            self.cpu_v_cache[:, bid, ...] = self.v_cache[:, bid, ...].to(
-                "cpu", non_blocking=True
-            )
+            self.cpu_k_cache[:, bid, ...] = self.k_cache[:, bid, ...].to("cpu", non_blocking=True)
+            self.cpu_v_cache[:, bid, ...] = self.v_cache[:, bid, ...].to("cpu", non_blocking=True)
         if self.device != "cpu":
             torch.cuda.synchronize()
 
@@ -389,7 +410,7 @@ class PagedKVCache:
         block_size: int = 16,
         dtype: torch.dtype = torch.float16,
         device: str = "cuda",
-    ) -> "PagedKVCache":
+    ) -> PagedKVCache:
         """Factory: create cache from a ModelArchConfig.
 
         Args:

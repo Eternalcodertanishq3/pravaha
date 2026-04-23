@@ -1,12 +1,14 @@
 """Swarm Pipeline — Named execution pipelines for common workflows."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 
 @dataclass
 class Pipeline:
     """A named sequence of agent executions."""
+
     name: str
     description: str = ""
     worker_steps: list[str] = field(default_factory=list)
@@ -19,7 +21,14 @@ BUILTIN_PIPELINES: dict[str, Pipeline] = {
         name="plan-execute-audit",
         description="Plan task, execute with coder, audit and patch.",
         worker_steps=["planner", "researcher", "coder"],
-        audit_steps=["syntax_audit", "security_audit", "logic_flaw", "edge_case_hunter", "output_verifier", "patch_applier"],
+        audit_steps=[
+            "syntax_audit",
+            "security_audit",
+            "logic_flaw",
+            "edge_case_hunter",
+            "output_verifier",
+            "patch_applier",
+        ],
     ),
     "research-summarize": Pipeline(
         name="research-summarize",
@@ -31,7 +40,15 @@ BUILTIN_PIPELINES: dict[str, Pipeline] = {
         name="code-review",
         description="Generate code, debug, test, and review.",
         worker_steps=["coder", "debugger", "critic", "refiner"],
-        audit_steps=["syntax_audit", "type_safety", "security_audit", "performance_profiler", "test_generator", "output_verifier", "patch_applier"],
+        audit_steps=[
+            "syntax_audit",
+            "type_safety",
+            "security_audit",
+            "performance_profiler",
+            "test_generator",
+            "output_verifier",
+            "patch_applier",
+        ],
     ),
     "creative-write": Pipeline(
         name="creative-write",

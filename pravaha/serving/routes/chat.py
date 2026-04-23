@@ -1,11 +1,22 @@
 """Chat Completions API — POST /v1/chat/completions."""
 
 from __future__ import annotations
-import json, time, uuid
+
+import json
+import time
+import uuid
+
 from fastapi import APIRouter, Request
 from starlette.responses import StreamingResponse
+
 from pravaha.decoder.sampling import SamplingParams
-from pravaha.serving.schemas import ChatCompletionChoice, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, UsageInfo
+from pravaha.serving.schemas import (
+    ChatCompletionChoice,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ChatMessage,
+    UsageInfo,
+)
 
 router = APIRouter(tags=["Chat"])
 
@@ -14,19 +25,33 @@ router = APIRouter(tags=["Chat"])
 async def create_chat_completion(request: ChatCompletionRequest, raw_request: Request):
     engine = raw_request.app.state.engine
     prompt = "\n".join(f"<|{m.role}|>\n{m.content}" for m in request.messages)
-    params = SamplingParams(temperature=request.temperature, top_k=request.top_k, top_p=request.top_p, max_new_tokens=request.max_tokens, repetition_penalty=request.repetition_penalty)
+    params = SamplingParams(
+        temperature=request.temperature,
+        top_k=request.top_k,
+        top_p=request.top_p,
+        max_new_tokens=request.max_tokens,
+        repetition_penalty=request.repetition_penalty,
+    )
     cid = f"chatcmpl-{uuid.uuid4().hex[:24]}"
     created = int(time.time())
 
     if request.stream:
+
         async def stream():
             async for token in engine.generate(prompt, params, session_id=request.session_id):
                 if await raw_request.is_disconnected():
                     break
-                chunk = {"id": cid, "object": "chat.completion.chunk", "created": created, "model": request.model, "choices": [{"index": 0, "delta": {"content": token}}]}
+                chunk = {
+                    "id": cid,
+                    "object": "chat.completion.chunk",
+                    "created": created,
+                    "model": request.model,
+                    "choices": [{"index": 0, "delta": {"content": token}}],
+                }
                 yield f"data: {json.dumps(chunk)}\n\n"
-            yield f'data: {json.dumps({"id": cid, "object": "chat.completion.chunk", "created": created, "model": request.model, "choices": [{"index": 0, "delta": {{}}, "finish_reason": "stop"}]})}\n\n'
+            yield f"data: {json.dumps({'id': cid, 'object': 'chat.completion.chunk', 'created': created, 'model': request.model, 'choices': [{'index': 0, 'delta': {{}}, 'finish_reason': 'stop'}]})}\n\n"
             yield "data: [DONE]\n\n"
+
         return StreamingResponse(stream(), media_type="text/event-stream")
 
     text, tokens = "", 0
@@ -34,4 +59,18 @@ async def create_chat_completion(request: ChatCompletionRequest, raw_request: Re
         text += token
         tokens += 1
     prompt_tokens = len(engine.tokenizer.encode(prompt))
-    return ChatCompletionResponse(id=cid, created=created, model=request.model, choices=[ChatCompletionChoice(message=ChatMessage(role="assistant", content=text), finish_reason="stop")], usage=UsageInfo(prompt_tokens=prompt_tokens, completion_tokens=tokens, total_tokens=prompt_tokens + tokens))
+    return ChatCompletionResponse(
+        id=cid,
+        created=created,
+        model=request.model,
+        choices=[
+            ChatCompletionChoice(
+                message=ChatMessage(role="assistant", content=text), finish_reason="stop"
+            )
+        ],
+        usage=UsageInfo(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=tokens,
+            total_tokens=prompt_tokens + tokens,
+        ),
+    )

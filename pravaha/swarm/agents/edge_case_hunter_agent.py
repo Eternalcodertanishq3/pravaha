@@ -1,8 +1,10 @@
 """Edge Case Hunter Agent — Missing boundary condition detector."""
 
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 
 
@@ -34,14 +36,21 @@ class EdgeCaseHunterAgent(BaseAgent):
         if not isinstance(edge_cases, list):
             edge_cases = []
         critical = [e for e in edge_cases if e.get("fix_required", True)]
-        issues = [{"type": "edge_case", "severity": "major", "description": e.get("case", str(e))}
-                   for e in critical]
+        issues = [
+            {"type": "edge_case", "severity": "major", "description": e.get("case", str(e))}
+            for e in critical
+        ]
         duration = (time.time() - t0) * 1000
         self._total_duration_ms += duration
-        return AgentOutput(role=self.role, output=f"{len(critical)} edge case(s) need fixes",
-                           tokens_used=self._total_tokens, duration_ms=duration,
-                           confidence=1.0 if not critical else 0.5, issues=issues,
-                           metadata={"total": len(edge_cases), "fix_required": len(critical)})
+        return AgentOutput(
+            role=self.role,
+            output=f"{len(critical)} edge case(s) need fixes",
+            tokens_used=self._total_tokens,
+            duration_ms=duration,
+            confidence=1.0 if not critical else 0.5,
+            issues=issues,
+            metadata={"total": len(edge_cases), "fix_required": len(critical)},
+        )
 
     def can_handle(self, task_type: str) -> bool:
         return task_type in {"code", "function", "api", "algorithm", "class"}

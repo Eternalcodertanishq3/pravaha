@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -78,9 +78,7 @@ class RetrievalConfig(BaseModel):
     top_k: int = 5
     score_threshold: float = 0.3
     rerank: bool = False
-    context_template: str = (
-        "[Context from documents:]\n{context}\n[End context]\n\n"
-    )
+    context_template: str = "[Context from documents:]\n{context}\n[End context]\n\n"
 
 
 class RAGConfig(BaseModel):
@@ -102,14 +100,14 @@ class RAGConfig(BaseModel):
     store_path: str = "data/rag"
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "RAGConfig":
+    def from_yaml(cls, path: str | Path) -> RAGConfig:
         """Load RAG configuration from a YAML file."""
         path = Path(path)
         if not path.exists():
             logger.warning(f"RAG config not found: {path}, using defaults.")
             return cls()
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
 
         return cls.model_validate(raw or {})

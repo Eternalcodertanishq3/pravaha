@@ -4,6 +4,7 @@ Estimates cost based on token counts and model pricing tiers.
 """
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PricingTier:
     """Cost per 1K tokens for a model."""
+
     model_pattern: str
     input_cost_per_1k: float = 0.0
     output_cost_per_1k: float = 0.0
@@ -36,7 +38,10 @@ class CostEstimator:
 
     def estimate(self, model: str, input_tokens: int, output_tokens: int) -> float:
         tier = self._find_tier(model)
-        cost = (input_tokens / 1000 * tier.input_cost_per_1k + output_tokens / 1000 * tier.output_cost_per_1k)
+        cost = (
+            input_tokens / 1000 * tier.input_cost_per_1k
+            + output_tokens / 1000 * tier.output_cost_per_1k
+        )
         self.total_cost += cost
         self.total_requests += 1
         return cost
@@ -49,4 +54,8 @@ class CostEstimator:
         return self.tiers[-1]
 
     def get_stats(self) -> dict:
-        return {"total_cost_usd": round(self.total_cost, 6), "total_requests": self.total_requests, "avg_cost_usd": round(self.total_cost / max(1, self.total_requests), 6)}
+        return {
+            "total_cost_usd": round(self.total_cost, 6),
+            "total_requests": self.total_requests,
+            "avg_cost_usd": round(self.total_cost / max(1, self.total_requests), 6),
+        }
