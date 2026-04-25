@@ -206,14 +206,14 @@ def parse_model_config(
         ArchConfig with all structural parameters populated.
     """
     # Try HF config attributes first
-    num_layers = getattr(hf_config, "num_hidden_layers", None) or getattr(hf_config, "n_layer", 12)
-    num_heads = getattr(hf_config, "num_attention_heads", None) or getattr(hf_config, "n_head", 12)
-    num_kv_heads = getattr(hf_config, "num_key_value_heads", None) or num_heads
-    hidden_size = getattr(hf_config, "hidden_size", None) or getattr(hf_config, "n_embd", 768)
+    num_layers = int(getattr(hf_config, "num_hidden_layers", 0) or getattr(hf_config, "n_layer", 12))
+    num_heads = int(getattr(hf_config, "num_attention_heads", 0) or getattr(hf_config, "n_head", 12))
+    num_kv_heads = int(getattr(hf_config, "num_key_value_heads", 0) or num_heads)
+    hidden_size = int(getattr(hf_config, "hidden_size", 0) or getattr(hf_config, "n_embd", 768))
     head_dim = hidden_size // num_heads if num_heads > 0 else 64
-    vocab_size = getattr(hf_config, "vocab_size", 32000)
-    max_pos = getattr(hf_config, "max_position_embeddings", 2048)
-    intermediate = getattr(hf_config, "intermediate_size", 4 * hidden_size)
+    vocab_size = int(getattr(hf_config, "vocab_size", 32000))
+    max_pos = int(getattr(hf_config, "max_position_embeddings", 2048))
+    intermediate = int(getattr(hf_config, "intermediate_size", 4 * hidden_size))
     model_type = getattr(hf_config, "model_type", "unknown")
 
     config = ArchConfig(

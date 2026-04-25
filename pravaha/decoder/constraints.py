@@ -50,7 +50,8 @@ class JSONConstrainedSampler:
         """
         self.schema = schema
         self.mode = mode
-        self._tokenizer = None
+        from typing import Any
+        self._tokenizer: Any | None = None
 
         # Pre-compute JSON structural tokens
         self._json_open_chars = set('{["')

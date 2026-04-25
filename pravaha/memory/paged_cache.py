@@ -329,7 +329,8 @@ class PagedKVCache:
 
         # Strategy 3: Iteration fallback for exotic cache implementations
         try:
-            for layer_idx, layer_data in enumerate(past_key_values):  # type: ignore[union-attr]
+            from typing import cast, Iterable, Any
+            for layer_idx, layer_data in enumerate(cast(Iterable[Any], past_key_values)):
                 k_full = getattr(
                     layer_data,
                     "key_cache",
@@ -383,8 +384,9 @@ class PagedKVCache:
         Args:
             block_ids: Physical block IDs to swap in.
         """
-        if self.cpu_k_cache is None:
+        if self.cpu_k_cache is None or self.cpu_v_cache is None:
             return
+        assert self.cpu_k_cache is not None and self.cpu_v_cache is not None
         for bid in block_ids:
             self.k_cache[:, bid, ...] = self.cpu_k_cache[:, bid, ...].to(
                 self.device, non_blocking=True

@@ -50,10 +50,12 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             )
 
 
+from typing import Any
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiter by client IP."""
 
-    def __init__(self, app: any, max_requests: int = 100, window_seconds: int = 60) -> None:
+    def __init__(self, app: Any, max_requests: int = 100, window_seconds: int = 60) -> None:
         super().__init__(app)
         self.max_requests = max_requests
         self.window = window_seconds

@@ -47,6 +47,7 @@ class GGUFLoader:
         """Generate text using the GGUF model."""
         if self._model is None:
             self.load()
+        assert self._model is not None
         output = self._model(prompt, max_tokens=max_tokens, **kwargs)
         return output["choices"][0]["text"]
 
@@ -54,5 +55,6 @@ class GGUFLoader:
         """Stream tokens from the GGUF model."""
         if self._model is None:
             self.load()
+        assert self._model is not None
         for chunk in self._model(prompt, max_tokens=max_tokens, stream=True, **kwargs):
             yield chunk["choices"][0]["text"]

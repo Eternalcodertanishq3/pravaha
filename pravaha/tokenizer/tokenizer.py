@@ -21,10 +21,12 @@ class PravahaTokenizer:
         return self._tokenizer.encode(text, add_special_tokens=True)
 
     def decode(self, token_ids: list[int]) -> str:
-        return self._tokenizer.decode(token_ids, skip_special_tokens=True)
+        from typing import cast
+        return cast(str, self._tokenizer.decode(token_ids, skip_special_tokens=True))
 
     def decode_token(self, token_id: int) -> str:
-        return self._tokenizer.decode([token_id], skip_special_tokens=False)
+        from typing import cast
+        return cast(str, self._tokenizer.decode([token_id], skip_special_tokens=False))
 
     @property
     def eos_token_id(self) -> int:

@@ -45,7 +45,7 @@ class SecurityAuditAgent(BaseAgent):
                         "cvss": cvss,
                         "snippet": line.strip()[:80],
                     })
-        max_cvss = max((i["cvss"] for i in issues), default=0)
+        max_cvss = max((float(str(i["cvss"])) for i in issues), default=0.0)
         return AgentOutput(
             role=self.role,
             output=f"Security scan: {len(issues)} finding(s), max CVSS={max_cvss}",

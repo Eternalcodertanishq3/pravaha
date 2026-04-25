@@ -36,7 +36,7 @@ class PluginLoader:
         return None
 
     def load_directory(self, path: str) -> list[BasePlugin]:
-        loaded = []
+        loaded: list[BasePlugin] = []
         p = Path(path)
         if not p.exists():
             return loaded

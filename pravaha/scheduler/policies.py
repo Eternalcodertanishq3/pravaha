@@ -57,6 +57,9 @@ def get_policy(name: str) -> SchedulingPolicy:
     Returns:
         The scheduling policy instance.
     """
-    policies = {"fcfs": FCFSPolicy, "sjf": SJFPolicy, "priority": PriorityPolicy}
-    cls = policies.get(name.lower(), FCFSPolicy)
-    return cls()
+    name = name.lower()
+    if name == "sjf":
+        return SJFPolicy()
+    elif name == "priority":
+        return PriorityPolicy()
+    return FCFSPolicy()

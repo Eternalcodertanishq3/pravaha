@@ -44,7 +44,7 @@ class BranchStore:
     def get_history(self, node_id: str) -> list[BranchNode]:
         """Walk up the tree from node_id to root, return in chronological order."""
         history = []
-        current = node_id
+        current: str | None = node_id
         while current:
             node = self._nodes.get(current)
             if node is None:

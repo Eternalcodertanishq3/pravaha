@@ -188,6 +188,8 @@ class DecoderEngine:
 
         stacked_logits = torch.stack(last_valid_logits)
 
+        assert self.kv_cache is not None
+
         # Store KV states in physical blocks
         self.kv_cache.update_from_hf_past_key_values(
             outputs.past_key_values,
@@ -202,7 +204,7 @@ class DecoderEngine:
         for i in range(batch_size):
             single_logits = stacked_logits[i]
             next_id = self.sampler.sample(single_logits, SamplingParams())
-            next_tokens.append(next_id.item())
+            next_tokens.append(int(next_id.item()))
 
         return next_tokens
 
@@ -230,6 +232,8 @@ class DecoderEngine:
 
         # One new token per sequence
         input_tensor = torch.tensor(token_ids, dtype=torch.long, device=self.device).unsqueeze(1)
+
+        assert self.kv_cache is not None
 
         # Retrieve padded KV-cache from physical blocks
         past_key_values = self.kv_cache.to_hf_past_key_values(block_tables, context_lens)
@@ -266,6 +270,6 @@ class DecoderEngine:
         for i in range(batch_size):
             single_logits = stacked_logits[i]
             next_id = self.sampler.sample(single_logits, SamplingParams())
-            next_tokens.append(next_id.item())
+            next_tokens.append(int(next_id.item()))
 
         return next_tokens
