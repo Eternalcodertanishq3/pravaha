@@ -34,6 +34,13 @@ class BranchStore:
     def list_branches(self) -> list[Branch]:
         return list(self._branches.values())
 
+    def delete_branch(self, branch_id: str) -> bool:
+        """Delete a branch. Returns True if found and deleted."""
+        if branch_id in self._branches:
+            del self._branches[branch_id]
+            return True
+        return False
+
     def get_history(self, node_id: str) -> list[BranchNode]:
         """Walk up the tree from node_id to root, return in chronological order."""
         history = []

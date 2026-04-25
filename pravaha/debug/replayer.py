@@ -72,3 +72,19 @@ class Replayer:
     async def replay(self, record: ReplayRecord) -> AsyncGenerator[str, None]:
         for token in record.generated_tokens:
             yield token
+
+    def get_recording(self, request_id: str) -> dict | None:
+        """Retrieve a recording by request ID (route-compatible)."""
+        record = self._records.get(request_id)
+        if not record:
+            path = self.store_path / f"{request_id}.json"
+            if path.exists():
+                record = self.load(request_id)
+        if not record:
+            return None
+        return {
+            "request_id": record.request_id,
+            "prompt": record.prompt,
+            "tokens": record.generated_tokens,
+            "params": record.params,
+        }

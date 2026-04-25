@@ -47,7 +47,8 @@ Once running, visit:
     print("=" * 60)
     
     uvicorn.run(
-        "pravaha.server.app:app",
+        "pravaha.serving.app:create_app",
+        factory=True,
         host=args.host,
         port=args.port,
         reload=args.reload,

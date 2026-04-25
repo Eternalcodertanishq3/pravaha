@@ -60,3 +60,7 @@ class SelfBenchmark:
         )
         logger.info(f"Benchmark: TTFT={ttft:.0f}ms, TPS={tps:.1f}, tokens={tokens}")
         return self.last_result
+
+
+# Backward compatibility alias
+StartupBenchmark = SelfBenchmark

@@ -1,8 +1,12 @@
-# Pravaha v3 — Swarm Default Configuration
+# Pravaha v3.1 — Swarm Default Configuration
+# 51 agents: 20 workers + 12 auditors + 10 security + 9 design
+
 swarm:
   enabled: true
   max_iterations: 3
   min_score: 70.0
+
+  # ── Worker Agents (20) ──────────────────────────────────
   agent_roles:
     - planner
     - researcher
@@ -24,6 +28,8 @@ swarm:
     - extractor
     - narrator
     - ensemble
+
+  # ── Audit Agents (12) ──────────────────────────────────
   audit_roles:
     - syntax_audit
     - type_safety
@@ -37,17 +43,65 @@ swarm:
     - self_reflection
     - test_generator
     - patch_applier
+    - regression_guard
+
+  # ── Security Agents (10) ────────────────────────────────
+  security_roles:
+    - security_audit
+    - injection_scanner
+    - auth_audit
+    - crypto_audit
+    - dependency_audit
+    - secrets_scanner
+    - network_security
+    - privilege_audit
+    - api_security
+    - compliance
+
+  # ── Design Agents (9) ──────────────────────────────────
+  design_roles:
+    - ui_designer
+    - component_builder
+    - layout_designer
+    - style_designer
+    - accessibility_auditor
+    - ux_reviewer
+    - design_critic
+    - prototype_builder
+    - design_system
+
+  # ── Pipelines ──────────────────────────────────────────
   default_pipeline: plan-execute-audit
+
   pipelines:
     plan-execute-audit:
       workers: [planner, coder, critic]
       auditors: [syntax_audit, security_audit, output_verifier]
+
     research-write:
       workers: [researcher, expander, narrator]
       auditors: [hallucination_hunter, output_verifier]
+
     code-review:
       workers: [coder, debugger, refiner]
       auditors: [syntax_audit, type_safety, security_audit, edge_case_hunter, test_generator]
+
+    secure-code-review:
+      workers: [planner, coder, debugger]
+      auditors: [syntax_audit, security_audit, injection_scanner, auth_audit,
+                 crypto_audit, secrets_scanner, output_verifier, patch_applier]
+
+    design-component:
+      workers: [ui_designer, layout_designer, style_designer, component_builder]
+      auditors: [accessibility_auditor, ux_reviewer, design_critic, output_verifier]
+
+    full-secure-design:
+      workers: [planner, ui_designer, component_builder, coder, debugger]
+      auditors: [syntax_audit, security_audit, injection_scanner, secrets_scanner,
+                 accessibility_auditor, design_critic, output_verifier, patch_applier]
+
     full-pipeline:
       workers: [classifier, planner, researcher, coder, critic, refiner, merger]
-      auditors: [syntax_audit, type_safety, security_audit, logic_flaw, hallucination_hunter, edge_case_hunter, performance_profiler, output_verifier]
+      auditors: [syntax_audit, type_safety, security_audit, logic_flaw,
+                 hallucination_hunter, edge_case_hunter, performance_profiler,
+                 output_verifier, patch_applier]

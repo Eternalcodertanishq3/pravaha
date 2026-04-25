@@ -38,3 +38,17 @@ class TraceLogger:
 
     def get_traces(self) -> list[dict]:
         return self._traces.copy()
+
+    def get_trace(self, request_id: str) -> list[dict]:
+        """Load trace from disk for a given request ID (route-compatible)."""
+        path = self.output_path / f"{request_id}.jsonl"
+        if not path.exists():
+            return []
+        traces: list[dict] = []
+        with open(path) as f:
+            for line in f:
+                try:
+                    traces.append(json.loads(line.strip()))
+                except json.JSONDecodeError:
+                    pass
+        return traces

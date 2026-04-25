@@ -44,3 +44,23 @@ class StepDebugger:
             if s.position == position:
                 return s
         return None
+
+    def get_step_info(
+        self,
+        request_id: str,
+        position: int,
+    ) -> dict | None:
+        """Get structured step info for a position (route-compatible)."""
+        step = self.get_step(request_id, position)
+        if not step:
+            return None
+        return {
+            "position": step.position,
+            "token_id": step.token_id,
+            "token_text": step.token_text,
+            "logprob": step.logprob,
+            "top_tokens": [
+                {"text": t, "prob": p}
+                for t, p in step.top_alternatives
+            ],
+        }

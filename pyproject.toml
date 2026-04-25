@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "pravaha"
-version = "3.0.0"
-description = "Pravaha — self-healing, swarm-ready LLM inference engine"
+version = "3.1.0"
+description = "Pravāha — Full-Stack Autonomous AI Inference Operating System"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -93,7 +93,8 @@ ignore = ["E501", "ANN401", "S110", "S104", "S605", "S311", "ANN201", "ANN202", 
 
 [tool.mypy]
 python_version = "3.11"
-disable_error_code = ["attr-defined", "assignment", "operator", "arg-type", "misc", "no-any-return", "unused-ignore", "union-attr", "call-arg", "func-returns-value", "valid-type", "no-untyped-call", "return-value", "index", "abstract", "var-annotated", "import-untyped", "type-arg", "no-untyped-def"]
+# Only disable what genuinely cannot be fixed without huge refactor
+disable_error_code = ["import-untyped", "no-untyped-def", "attr-defined", "no-any-return"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

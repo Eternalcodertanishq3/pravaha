@@ -9,6 +9,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, Input
 
 from pravaha.tui.panels.audit_panel import AuditPanel
+from pravaha.tui.panels.avatar_panel import AvatarPanel
 from pravaha.tui.panels.chat_panel import ChatPanel
 from pravaha.tui.panels.header import HeaderPanel
 from pravaha.tui.panels.log_panel import LogPanel
@@ -19,10 +20,10 @@ from pravaha.tui.panels.swarm_panel import SwarmPanel
 
 
 class PravahaTUI(App):
-    """Full 8-panel Textual dashboard for Pravaha v3."""
+    """Full 9-panel Textual dashboard for Pravaha v3.1."""
 
     CSS_PATH = "pravaha.tcss"
-    TITLE = "Pravaha v3"
+    TITLE = "Pravaha v3.1"
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("d", "toggle_dark", "Toggle Dark"),
@@ -47,7 +48,8 @@ class PravahaTUI(App):
             with Vertical(id="chat-area"):
                 yield ChatPanel()
                 yield Input(placeholder="Type a message...", id="chat-input")
-            with Vertical(id="metrics-area"):
+            with Vertical(id="side-area"):
+                yield AvatarPanel()
                 yield MetricsPanel()
                 yield QueuePanel()
         yield SwarmPanel()
@@ -68,4 +70,12 @@ class PravahaTUI(App):
             chat = self.query_one(ChatPanel)
             chat.add_message("user", event.value)
             event.input.value = ""
+
+            # Set avatar to thinking
+            avatar = self.query_one(AvatarPanel)
+            avatar.set_state("thinking")
+
             chat.add_message("assistant", "[streaming response...]")
+
+            # Set avatar to success after response
+            avatar.set_state("success")

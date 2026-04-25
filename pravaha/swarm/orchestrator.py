@@ -1,11 +1,11 @@
 """Swarm Orchestrator — Coordinate agent execution and pipeline management.
 
-Manages the 32-agent swarm: task decomposition, worker pipeline
+Manages the 51-agent swarm: task decomposition, worker pipeline
 execution, and the self-healing audit loop. Uses SharedContext
 for cross-agent communication.
 
-Phase 5: Core swarm orchestration — the brain of Pravaha's
-multi-agent system.
+v3.1: Initializes tool registry and persistent memory for all agents.
+Emits avatar state events for TUI integration.
 """
 
 from __future__ import annotations
@@ -14,27 +14,62 @@ import logging
 from typing import Any
 
 from pravaha.swarm.agents import ALL_AGENTS
-from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
+from pravaha.swarm.agents.base_agent import AgentMemory, AgentOutput, BaseAgent, SharedContext
+from pravaha.swarm.memory.memory_store import MemoryStore
+from pravaha.swarm.tools import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
 
 class SwarmOrchestrator:
-    """Orchestrate the 32-agent swarm execution with self-healing audit."""
+    """Orchestrate the 51-agent swarm execution with self-healing audit.
+
+    v3.1 additions:
+    - Initializes ToolRegistry for all agents on construction
+    - Attaches persistent MemoryStore to each agent
+    - Emits avatar state events for TUI
+    """
 
     def __init__(self, enabled_agents: list[str] | None = None) -> None:
         self._agents: dict[str, BaseAgent] = {}
+        self._avatar_callback: Any = None
+
+        # Initialize tool registry and memory store
+        self._tools = ToolRegistry.default()
+        self._memory = MemoryStore()
+
         for name, cls in ALL_AGENTS.items():
             if enabled_agents is None or name in enabled_agents:
-                self._agents[name] = cls()
+                agent = cls()
+                # Attach tools and memory to every agent
+                agent.attach_tools(self._tools)
+                agent.attach_memory(
+                    AgentMemory(self._memory, agent.role)
+                )
+                self._agents[name] = agent
+
         self.context = SharedContext()
-        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded")
+        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded (v3.1)")
+
+    def set_avatar_callback(self, callback: Any) -> None:
+        """Set callback for TUI avatar state updates."""
+        self._avatar_callback = callback
+
+    def _emit_avatar(self, state: str, agent_name: str = "") -> None:
+        """Emit avatar state change event."""
+        if self._avatar_callback:
+            try:
+                self._avatar_callback(state, agent_name)
+            except Exception:
+                pass
 
     async def execute_agent(self, name: str, task: str, engine: Any) -> AgentOutput:
         """Execute a single agent by name."""
         agent = self._agents.get(name)
         if not agent:
             return AgentOutput(role=name, output=f"Agent '{name}' not found", confidence=0.0)
+
+        self._emit_avatar("working", name)
         result = await agent.run(task, self.context, engine)
         self.context.agent_outputs[name] = result
         return result
@@ -47,7 +82,6 @@ class SwarmOrchestrator:
         for agent_name in pipeline:
             result = await self.execute_agent(agent_name, task, engine)
             results.append(result)
-            # Update context output for next agent
             self.context.output = result.output
         return results
 
@@ -69,6 +103,7 @@ class SwarmOrchestrator:
         5. Return final output with audit report
         """
         self.context.task = task
+        self._emit_avatar("thinking")
 
         # Phase 1: Worker execution
         worker_results = await self.execute_pipeline(worker_pipeline, task, engine)
@@ -76,6 +111,7 @@ class SwarmOrchestrator:
             self.context.output = worker_results[-1].output
 
         # Phase 2: Audit loop
+        self._emit_avatar("audit")
         audit_pipeline = [
             "syntax_audit",
             "type_safety",
@@ -101,7 +137,6 @@ class SwarmOrchestrator:
                 audit_results.append(result)
                 all_issues.extend(result.issues)
 
-            # Store audit report in context
             self.context.audit_reports.append(
                 {
                     "iteration": iteration + 1,
@@ -110,23 +145,24 @@ class SwarmOrchestrator:
                 }
             )
 
-            # Check verifier score
             verifier = self.context.agent_outputs.get("output_verifier")
             score = verifier.metadata.get("score", 50) if verifier else 50
 
             if score >= min_score and not all_issues:
+                self._emit_avatar("success")
                 logger.info(f"Audit PASSED: iteration {iteration + 1}, score {score}")
                 break
 
-            # Apply patches if issues found
             if all_issues and "patch_applier" in self._agents:
                 patch_result = await self.execute_agent("patch_applier", task, engine)
                 self.context.output = patch_result.output
                 self.context.code = patch_result.output
 
-        # Phase 3: Self-reflection (logged, not shown to user)
+        # Phase 3: Self-reflection
         if "self_reflection" in self._agents:
             await self.execute_agent("self_reflection", task, engine)
+
+        self._emit_avatar("success")
 
         return {
             "output": self.context.patched_output or self.context.output,
@@ -143,3 +179,4 @@ class SwarmOrchestrator:
     def reset(self) -> None:
         """Reset shared context for a new task."""
         self.context = SharedContext()
+        self._emit_avatar("idle")

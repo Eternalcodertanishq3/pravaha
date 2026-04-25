@@ -170,4 +170,70 @@ impl BlockAllocator {
     pub fn num_free_blocks(&self) -> usize {
         self.free_blocks.len()
     }
+
+    /// Allocate blocks in batch — more efficient than N individual allocs.
+    pub fn batch_allocate(&mut self, counts: Vec<usize>) -> PyResult<Vec<Vec<usize>>> {
+        let total_needed: usize = counts.iter().sum();
+        if self.free_blocks.len() < total_needed {
+            return Err(pyo3::exceptions::PyRuntimeError::new_err(
+                format!("Need {} blocks but only {} free", total_needed, self.free_blocks.len()),
+            ));
+        }
+
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let mut result = Vec::with_capacity(counts.len());
+        for count in counts {
+            let mut batch = Vec::with_capacity(count);
+            for _ in 0..count {
+                if let Some(block_id) = self.free_blocks.pop() {
+                    self.ref_counts[block_id] = 1;
+                    self.states[block_id] = BlockState::GPU;
+                    self.last_touched[block_id] = now;
+                    batch.push(block_id);
+                }
+            }
+            result.push(batch);
+        }
+        Ok(result)
+    }
+
+    /// Evict N least-recently-used blocks in one call.
+    pub fn evict_lru_batch(&mut self, count: usize) -> PyResult<Vec<usize>> {
+        // Collect (block_id, last_touched) for all GPU blocks with refs
+        let mut candidates: Vec<(usize, u64)> = Vec::new();
+        for i in 0..self.num_blocks {
+            if self.states[i] == BlockState::GPU && self.ref_counts[i] > 0 {
+                candidates.push((i, self.last_touched[i]));
+            }
+        }
+
+        // Sort by oldest first
+        candidates.sort_by_key(|&(_, t)| t);
+
+        let mut evicted = Vec::with_capacity(count);
+        for (block_id, _) in candidates.iter().take(count) {
+            self.ref_counts[*block_id] = 0;
+            self.states[*block_id] = BlockState::Free;
+            self.free_blocks.push(*block_id);
+            evicted.push(*block_id);
+        }
+
+        Ok(evicted)
+    }
+
+    /// Get the age of a block in seconds since last touch.
+    pub fn get_block_age(&self, block_id: usize) -> PyResult<u64> {
+        if block_id >= self.num_blocks {
+            return Err(pyo3::exceptions::PyValueError::new_err("Invalid block_id"));
+        }
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        Ok(now.saturating_sub(self.last_touched[block_id]))
+    }
 }

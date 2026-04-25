@@ -1,14 +1,13 @@
-# Pravāha v3 — System Architecture
+# Pravāha v3.1 — System Architecture
 
 ## Overview
 
-Pravāha v3 is a modular, self-healing LLM inference engine built around three core innovations:
+Pravāha v3.1 is a **Full-Stack Autonomous AI Inference Operating System** built around four core innovations:
 
-1. **Continuous Batching Engine** — PagedAttention with Rust-powered block allocation
-2. **32-Agent Swarm** — Specialized agents that collaborate, audit, and self-heal
-3. **Full-Stack Serving** — OpenAI-compatible API, TUI dashboard, CLI, and WebSocket streaming
-
-This document describes the internal architecture, data flow, and design decisions.
+1. **ReAct-Based Autonomous Agents** — 51 agents with real tool execution, persistent memory, and self-healing
+2. **Continuous Batching Engine** — PagedAttention with Rust-powered block allocation and prefix sharing
+3. **Security-First Design** — 10 dedicated security agents with CVSS scoring and CWE mapping
+4. **Full-Stack Serving** — OpenAI-compatible API, TUI dashboard with animated avatar, CLI, and WebSocket streaming
 
 ---
 
@@ -17,7 +16,7 @@ This document describes the internal architecture, data flow, and design decisio
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Layer 1: Interface                                      │
-│  CLI (Typer) · FastAPI · WebSocket · TUI (Textual)       │
+│  CLI (Typer) · FastAPI · WebSocket · TUI (Textual+Avatar)│
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2: Engine                                         │
 │  AsyncPravahaEngine · EventBus · RequestQueue            │
@@ -27,16 +26,20 @@ This document describes the internal architecture, data flow, and design decisio
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4: Memory Plane                                   │
 │  PagedKVCache · BlockManager · SessionCache              │
-│  Prefix Sharing · LRU Swapping · Preemption              │
+│  PrefixTrie (Rust) · LRU Swapping · Preemption           │
 ├──────────────────────────────────────────────────────────┤
-│  Layer 5: Intelligence (Swarm)                           │
-│  20 Workers · 12 Auditors · Orchestrator · AuditLoop     │
+│  Layer 5: Intelligence (Swarm — 51 Agents)               │
+│  20 Workers · 12 Auditors · 10 Security · 9 Design      │
+│  ReAct Loop · ToolRegistry · Persistent Memory           │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 6: Extensions                                     │
 │  RAG · Vision · Branching · Plugins · Guardrails         │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 7: Observability                                  │
 │  Prometheus · Tracer · CostEstimator · SelfBenchmark     │
+├──────────────────────────────────────────────────────────┤
+│  Layer 8: Rust Performance Core                          │
+│  BlockAllocator · PrefixTrie · AllocatorStats            │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -66,7 +69,8 @@ OpenAI-compatible API server with:
 
 Built with **Textual** for a full terminal dashboard:
 
-- 8 panels: Header, Chat, Metrics, Queue, Swarm, Audit, RAG, Log
+- 9 panels: Header, Chat, Metrics, Queue, Swarm, Audit, RAG, Log, **Avatar**
+- Pixel-art animated avatar with 5 states (idle, thinking, working, success, audit)
 - Dark green terminal aesthetic (`pravaha.tcss`)
 - Real-time metrics with ASCII gauge bars
 
@@ -79,208 +83,172 @@ Built with **Textual** for a full terminal dashboard:
 The central orchestrator. Manages:
 
 1. **Model loading** via `ModelLoader` with dynamic quantization
-2. **Background scheduler thread** with `threading.Event` gating (Fix 1)
+2. **Background scheduler thread** with `threading.Event` gating
 3. **Request submission** via asyncio Futures
 4. **Token streaming** via async generators and cross-thread queues
 
 **Key design decisions:**
 
-- **Thread boundary**: The scheduler runs in a dedicated daemon thread. Tokens cross the thread boundary via `loop.call_soon_threadsafe(queue.put_nowait, token)`.
-- **Race condition prevention**: `_ready_event` gates the scheduler loop until all subsystems are initialized.
+- **Thread boundary**: The scheduler runs in a dedicated daemon thread. Tokens cross via `loop.call_soon_threadsafe(queue.put_nowait, token)`.
+- **Race condition prevention**: `_ready_event` gates the scheduler loop until initialization is complete.
 - **Graceful shutdown**: `_shutdown_event` allows clean termination.
 
-### EventBus (`pravaha/engine/events.py`)
-
-Pub/sub system for telemetry events:
-
-- `MODEL_LOADED` — Fires after model initialization
-- `REQUEST_RECEIVED` — New request submitted
-- `TOKEN_GENERATED` — First token produced (captures TTFT)
-- `REQUEST_COMPLETE` — Request finished (captures throughput)
-
 ---
 
-## Layer 3: Inference Pipeline
+## Layer 5: Swarm Intelligence (v3.1 — Complete Rewrite)
 
-### Tokenizer (`pravaha/tokenizer/`)
+### The Fundamental Change: ReAct vs Prompt Wrapping
 
-Wraps HuggingFace `AutoTokenizer` with:
+**Before (v3.0):**
+```python
+prompt = self.build_prompt(task, context)
+output = await self._generate(prompt, engine)
+return AgentOutput(output=output)  # ← This is NOT agentic
+```
 
-- `encode(text)` → token IDs
-- `decode_token(id)` → text
-- EOS token ID access
-- Chat template support
-
-### Continuous Scheduler (`pravaha/scheduler/`)
-
-Implements continuous batching with disjoint execution phases:
-
-1. **Prefill phase**: Batch new requests together for initial token generation
-2. **Decode phase**: Batch running requests for subsequent tokens
-3. **Preemption**: When slots are full, preempt lowest-priority requests
-
-### Decoder + Sampler (`pravaha/decoder/`)
-
-- `DecoderEngine` — Manages model forward passes with KV cache
-- `Sampler` — Temperature scaling → Top-K → Top-P → Repetition penalty → Sample
-
----
-
-## Layer 4: Memory Plane
-
-### PagedKVCache (`pravaha/memory/paged_cache.py`)
-
-Industrial-grade KV cache with fixed-size 16-token blocks.
-
-### BlockManager (`pravaha/memory/block_manager.py`)
-
-Rust-powered O(1) block allocation with:
-
-- **Prefix sharing**: Multiple requests share physical blocks for identical prefixes
-- **LRU swapping**: Least-recently-used blocks swap to CPU RAM under pressure
-- **Copy-on-write**: Shared blocks only copy when modified
-
-### SessionKVCache (`pravaha/memory/session_cache.py`)
-
-Multi-turn conversation caching with TTL-based expiry.
-
----
-
-## Layer 5: Swarm Intelligence
+**After (v3.1):**
+```python
+# ReAct loop: THINK → ACT → OBSERVE → THINK → ... → ANSWER
+for step in range(self.max_react_steps):
+    output = await self._generate(react_prompt, engine)
+    parsed = self._parse_react_output(output)
+    
+    if parsed.is_final_answer:
+        return self._build_output(answer=parsed.answer)
+    
+    if parsed.action and self._tool_registry:
+        observation = await self._tool_registry.execute(
+            tool_name=parsed.action.tool_name,
+            args=parsed.action.args,
+        )
+        react_prompt += f"\nObservation: {observation}\nThought:"
+```
 
 ### Agent Architecture
 
-All 32 agents inherit from `BaseAgent` which provides:
+All 51 agents inherit from `BaseAgent` which provides:
 
 ```python
-class BaseAgent:
+class BaseAgent(ABC):
     role: str              # Agent identifier
-    priority: int          # Execution order (2=orchestrator, 1=senior, 0=worker)
+    priority: int          # Execution order
     max_tokens: int        # Token budget
     temperature: float     # Generation temperature
     system_prompt: str     # Expert system prompt
-
-    async def run(task, context, engine) -> AgentOutput
-    def can_handle(task_type) -> bool
-    async def _generate(prompt, engine) -> str
-    async def _generate_json(prompt, engine) -> dict
+    available_tools: list  # Tools this agent can use
+    max_react_steps: int   # Max ReAct iterations
+    
+    async def run_react(task, context, engine) -> AgentOutput  # ReAct loop
+    async def run(task, context, engine) -> AgentOutput         # Auto-selects
+    def attach_tools(registry: ToolRegistry) -> None
+    def attach_memory(memory: AgentMemory) -> None
 ```
 
-### SharedContext
+### Tool System
 
-Cross-agent communication without side channels:
+Real tools that execute actual I/O operations:
 
-```python
-@dataclass
-class SharedContext:
-    task: str = ""
-    output: str = ""
-    code: str = ""
-    research: str = ""
-    reasoning: str = ""
-    feedback: str = ""
-    plan: str = ""
-    agent_outputs: dict[str, AgentOutput]
-    audit_reports: list[dict]
-    conversation_history: list[dict]
-```
+| Tool | Capability | Security |
+|------|-----------|----------|
+| `execute_python` | Subprocess sandbox (5s timeout, 256MB) | No shell=True, sanitized env |
+| `read_file` | Local file reading | Whitelisted extensions only |
+| `fetch_url` | HTTP GET + HTML→text | 10s timeout |
+| `web_search` | DuckDuckGo API | No API key required |
+| `run_shell` | Shell commands | Whitelisted commands/flags only |
+| `memory` | Persistent memory | Namespaced per agent role |
+
+### Persistent Memory System
+
+SQLite-backed memory that persists across sessions:
+
+- **MemoryStore** — WAL-mode SQLite with importance weighting, access-time tracking, text search
+- **EpisodicMemory** — Task-result episodes for learning from past outcomes
+- **SemanticMemory** — TF-IDF cosine similarity for fact retrieval
 
 ### Orchestrator (`pravaha/swarm/orchestrator.py`)
 
-Coordinates agent execution:
+Coordinates the 51-agent swarm:
 
-1. `execute_agent(name, task, engine)` — Run single agent
-2. `execute_pipeline(pipeline, task, engine)` — Run sequence
-3. `execute_with_audit(pipeline, task, engine)` — Full audit loop
+1. Initializes `ToolRegistry` and `MemoryStore` for every agent on construction
+2. `execute_agent(name, task, engine)` — Run single agent with avatar state
+3. `execute_pipeline(pipeline, task, engine)` — Run sequence
+4. `execute_with_audit(pipeline, task, engine)` — Full self-healing audit loop
 
-### AuditLoop (`pravaha/swarm/audit_loop.py`)
+### Self-Healing Audit Loop
 
-The self-healing feedback cycle:
+```
+Worker Pipeline → Audit Pass → Issues? → PatchApplier → Re-Audit → ...
+                                  ↓ No
+                              ✅ Output (score ≥ 70)
+```
 
-1. Run auditors on output
-2. Collect issues from all auditors
-3. If issues found → PatchApplier fixes them
-4. Re-audit the patched output
-5. Repeat up to 3 iterations
-6. Return with `AuditResult` (score, issues, patches)
+- Runs up to 3 iterations
+- 12 auditor agents (regex-first, then LLM)
+- PatchApplier auto-fixes issues between iterations
+- OutputVerifier gates final release with confidence score
 
-**Output-type-aware auditor selection:**
+### Security Agents (10)
 
-- **Code**: All 9 auditors (syntax, type, security, logic, etc.)
-- **Text**: Logic + Hallucination + Consistency + Verifier
-- **Analysis**: Logic + Hallucination + Consistency + EdgeCase + Verifier
+Dedicated security analysis with CVSS scoring:
 
-### Pipeline Definitions (`pravaha/swarm/pipeline.py`)
+| Agent | Focus | Patterns |
+|-------|-------|:--------:|
+| SecurityAudit | eval/exec/pickle + CWE mapping | 12 |
+| InjectionScanner | SQL/XSS/XXE/command injection | 10 |
+| AuthAudit | JWT/session/credentials | 5 |
+| CryptoAudit | MD5/SHA1/DES/ECB/weak keys | 8 |
+| DependencyAudit | Risky imports | 6 |
+| SecretsScanner | API keys + Shannon entropy | 8+entropy |
+| NetworkSecurity | HTTP/SSL/CORS/SSRF | 5 |
+| PrivilegeAudit | Root escalation/chmod 777 | 5 |
+| APISecurity | Rate limiting/mass assignment | 4 |
+| Compliance | GDPR/PCI/OWASP | 5 |
 
-6 built-in pipelines:
+### Design Agents (9)
 
-1. `plan-execute-audit` — General purpose
-2. `research-summarize` — Research synthesis
-3. `code-review` — Full code quality
-4. `creative-write` — Creative content
-5. `extract-classify` — Data extraction
-6. `reasoning-only` — Pure logic
+UI/UX design with WCAG accessibility auditing:
 
----
-
-## Layer 6: Extensions
-
-### RAG Pipeline (`pravaha/rag/`)
-
-- Document ingestion (PDF, TXT, MD, HTML, URL)
-- Chunking with configurable size/overlap
-- Embedding via sentence-transformers
-- FAISS vector store
-- Top-K retrieval with similarity threshold
-
-### Vision Router (`pravaha/vision/`)
-
-- Image format detection
-- Vision model preprocessing
-- Multimodal prompt construction (image + text → LLaVA)
-
-### Conversation Branching (`pravaha/branching/`)
-
-- Fork conversations at any message index
-- Create labeled branches
-- Checkout/delete branches
-- Persistent branch store
-
-### Plugin System (`pravaha/plugins/`)
-
-- `BasePlugin` abstract class with lifecycle hooks
-- `PluginRegistry` for discovery via entry points
-- Hot-loading and unloading
-
-### Guardrails (`pravaha/guardrails/`)
-
-- Content filtering (NSFW, PII, toxicity detection)
-- Token budget enforcement (per-request and per-session)
+| Agent | Focus |
+|-------|-------|
+| UIDesigner | Structured JSON design specs |
+| ComponentBuilder | React/HTML/CSS implementation |
+| LayoutDesigner | CSS Grid/Flexbox optimization |
+| StyleDesigner | Design token systems |
+| AccessibilityAuditor | WCAG 2.1 AA (6 regex checks) |
+| UXReviewer | Nielsen's 10 heuristics |
+| DesignCritic | 5-dimension quality scoring |
+| PrototypeBuilder | Single-file HTML prototypes |
+| DesignSystem | Token + pattern library architecture |
 
 ---
 
-## Layer 7: Observability
+## Layer 8: Rust Performance Core
 
-### Prometheus Metrics (`pravaha/observability/prometheus.py`)
+### BlockAllocator (`rust/src/allocator.rs`)
 
-Standard metrics exported at `/metrics`:
+O(1) block allocation with:
 
-- `pravaha_requests_total` — Counter
-- `pravaha_tokens_generated` — Counter
-- `pravaha_ttft_seconds` — Histogram
-- `pravaha_vram_bytes` — Gauge
+- **allocate/free** — Single block operations with LRU tracking
+- **batch_allocate** — Atomic multi-request allocation
+- **evict_lru_batch** — Bulk LRU eviction for memory pressure
+- **get_block_age** — Block age calculation for eviction decisions
 
-### Tracer (`pravaha/observability/tracer.py`)
+### PrefixTrie (`rust/src/prefix_trie.rs`)
 
-OpenTelemetry-compatible request tracing.
+Token-level prefix trie for O(1) average prefix matching:
 
-### Cost Estimator (`pravaha/observability/cost_estimator.py`)
+- Uses `Arc<RwLock<T>>` for concurrent read access during continuous batching
+- `insert(tokens, block_id)` — Map token sequence to block
+- `longest_prefix_match(tokens)` — Find longest shared prefix
+- `decrement_ref(tokens)` — Return freed block IDs
 
-Per-request cost estimation based on token counts and model pricing.
+### AllocatorStats (`rust/src/stats.rs`)
 
-### Self-Benchmark (`pravaha/observability/self_benchmark.py`)
+Real-time observability:
 
-Runs on startup to establish baseline throughput and TTFT.
+- `hit_rate()` — Prefix cache hit ratio
+- `utilization(num_blocks)` — Block utilization percentage
+- `alloc_free_ratio()` — Allocation/free ratio
 
 ---
 
@@ -292,39 +260,9 @@ YAML-based configuration with layered defaults:
 configs/
 ├── default.yaml          # Full default configuration
 ├── phase1.yaml           # Minimal CPU testing
-├── swarm_default.yaml    # Swarm agent configuration
+├── swarm_default.yaml    # 51-agent swarm configuration
 └── rag_default.yaml      # RAG pipeline configuration
 ```
-
-Configuration is loaded via `EngineConfig.from_yaml()` with Pydantic validation.
-
----
-
-## Threading Model
-
-```
-Main Thread (asyncio)
-│
-├─ FastAPI/Uvicorn (async request handling)
-│   ├─ engine.generate() → yields tokens via asyncio.Queue
-│   └─ WebSocket handler → pushes tokens to client
-│
-└─ Background Thread (scheduler loop)
-    ├─ _ready_event.wait()  ← gates until initialization complete
-    ├─ scheduler.step()     ← continuous batching
-    ├─ decoder.step_prefill() / step_decode()
-    └─ _send_token()        ← loop.call_soon_threadsafe(queue.put_nowait)
-```
-
----
-
-## Security Considerations
-
-1. **Static security scanning**: 8 regex patterns for common vulnerabilities
-2. **LLM-based deep analysis**: SecurityAuditAgent scans for OWASP Top 10
-3. **Rate limiting**: IP-based middleware with configurable windows
-4. **Content filtering**: Guardrail layer for NSFW/PII/toxicity
-5. **No eval()**: All agent outputs are parsed, never executed
 
 ---
 
@@ -332,15 +270,30 @@ Main Thread (asyncio)
 
 ```
 tests/
-├── test_swarm.py      # Agent registry, SharedContext, routing
-├── test_api.py        # Health, models, swarm, middleware
-├── test_pipeline.py   # Pipeline validation, agent references
-├── test_config.py     # Configuration loading
-├── test_decoder.py    # Decoder and sampling
-├── test_kv_cache.py   # KV cache operations
-├── test_sampling.py   # Sampling strategies
-├── test_tokenizer.py  # Tokenizer encode/decode
-└── benchmarks/        # Performance benchmarks
+├── test_swarm.py              # 51-agent registry, SharedContext, routing
+├── test_api.py                # Health, models, swarm, middleware
+├── test_pipeline.py           # Pipeline validation
+├── test_security_agents.py    # Security static scan verification
+├── test_design_agents.py      # Accessibility + design agent tests
+├── test_react_loop.py         # ReAct loop, tool parsing, sandboxed tools
+├── test_agents_runtime.py     # Real agent execution with MockEngine
+├── test_memory.py             # MemoryStore, EpisodicMemory, SemanticMemory
+├── test_branching_fixed.py    # Branching CRUD operations
+├── test_debug_routes.py       # Debug routes + replayer
+└── benchmarks/                # Performance benchmarks
 ```
 
-Run: `pytest tests/ -v --cov=pravaha`
+Run: `pytest tests/ -v` (76 tests, all passing)
+
+---
+
+## Security Considerations
+
+1. **10 dedicated security agents** with CVSS scoring and CWE mapping
+2. **Shannon entropy detection** for unknown secret patterns (entropy > 4.5)
+3. **Sandboxed code execution** — 5s timeout, 256MB memory, no shell=True
+4. **Whitelisted file access** — Only .py, .js, .ts, .md, .json, .yaml, .toml
+5. **Whitelisted shell commands** — Blocks rm, sudo, chmod, curl, wget
+6. **Rate limiting** — IP-based middleware with configurable windows
+7. **Content filtering** — Guardrail layer for NSFW/PII/toxicity
+8. **No eval()** — All agent outputs are parsed, never executed
