@@ -16,6 +16,8 @@ Bug Fixes Applied:
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
+from typing import Any, cast
 
 import torch
 
@@ -329,7 +331,6 @@ class PagedKVCache:
 
         # Strategy 3: Iteration fallback for exotic cache implementations
         try:
-            from typing import cast, Iterable, Any
             for layer_idx, layer_data in enumerate(cast(Iterable[Any], past_key_values)):
                 k_full = getattr(
                     layer_data,

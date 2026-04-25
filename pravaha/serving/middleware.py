@@ -6,6 +6,7 @@ import logging
 import time
 import uuid
 from collections.abc import Callable
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -48,9 +49,6 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 status_code=500,
                 content={"error": {"message": str(e), "type": type(e).__name__}},
             )
-
-
-from typing import Any
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiter by client IP."""

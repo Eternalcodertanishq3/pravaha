@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal, cast
 
 import typer
 
@@ -45,7 +46,6 @@ def serve(
         engine_config = EngineConfig.default()
     engine_config.model.model_path = model
     if quantize:
-        from typing import cast, Literal
         engine_config.model.quantization = cast(Literal["8bit", "4bit"], quantize)
     if swarm:
         engine_config.swarm.enabled = True
