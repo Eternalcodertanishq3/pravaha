@@ -92,16 +92,15 @@ class EpisodicMemory:
         params = [f"%{kw}%" for kw in keywords]
         params_tuple = (agent_role, *params, top_k)
 
-        cursor = self._conn.execute(
-            f"""
+        query = f"""
             SELECT task, action, outcome, success, created_at
             FROM episodes
             WHERE agent_role=? AND ({conditions})
             ORDER BY created_at DESC
             LIMIT ?
-            """,
-            params_tuple,
-        )
+            """  # noqa: S608
+
+        cursor = self._conn.execute(query, params_tuple)
 
         return [
             {

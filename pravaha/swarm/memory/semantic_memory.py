@@ -138,7 +138,8 @@ class SemanticMemory:
         for fact, terms_json, source in cursor.fetchall():
             try:
                 fact_vec = json.loads(terms_json)
-            except Exception:
+            except json.JSONDecodeError:
+                logger.warning("Corrupted JSON in semantic memory: %s", terms_json)
                 continue
             sim = self._cosine_similarity(query_vec, fact_vec)
             if sim >= min_similarity:

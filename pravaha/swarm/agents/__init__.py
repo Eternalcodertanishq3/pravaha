@@ -9,11 +9,11 @@ Imports from 4 subfolders:
 
 from __future__ import annotations
 
-from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
-from pravaha.swarm.agents.workers import WORKER_AGENTS
 from pravaha.swarm.agents.auditors import AUDIT_AGENTS
-from pravaha.swarm.agents.security import SECURITY_AGENTS
+from pravaha.swarm.agents.base_agent import AgentOutput, BaseAgent, SharedContext
 from pravaha.swarm.agents.design import DESIGN_AGENTS
+from pravaha.swarm.agents.security import SECURITY_AGENTS
+from pravaha.swarm.agents.workers import WORKER_AGENTS
 
 # ── Unified Registry (51 agents) ─────────────────────────────────
 

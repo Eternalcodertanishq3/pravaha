@@ -34,7 +34,7 @@ class BranchManager:
         self,
         session_id: str,
         fork_at: int,
-        label: Optional[str] = None,
+        label: str | None = None,
     ) -> Branch:
         """Fork conversation at message index fork_at."""
         branch = Branch(

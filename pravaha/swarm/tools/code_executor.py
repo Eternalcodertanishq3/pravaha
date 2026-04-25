@@ -53,7 +53,7 @@ class CodeExecutor:
             env["TMP"] = os.environ.get("TMP", tempfile.gettempdir())
         else:
             env["PATH"] = "/usr/bin:/bin:/usr/local/bin"
-            env["HOME"] = "/tmp"
+            env["HOME"] = tempfile.gettempdir()
         return env
 
     def _get_preexec_fn(self):
