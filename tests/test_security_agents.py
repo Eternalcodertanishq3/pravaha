@@ -27,7 +27,7 @@ class TestSecurityAudit:
         ctx = SharedContext()
         ctx.code = 'password = "hunter2"\n'
         result = await agent.run("audit", ctx, None)
-        assert any(i["id"] == "hardcoded_secret" for i in result.issues)
+        assert any(i["id"] == "hardcoded_password" for i in result.issues)
 
 
 class TestInjectionScanner:

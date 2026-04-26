@@ -175,7 +175,7 @@ class JSONConstrainedSampler:
         """
         # For schema-level enforcement, delegate to outlines if available
         try:
-            from outlines.processors import JSONLogitsProcessor
+            from outlines.processors import JSONLogitsProcessor  # type: ignore[import-not-found]
 
             # Outlines handles schema enforcement natively
             return torch.ones(vocab_size, dtype=torch.bool)

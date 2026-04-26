@@ -224,20 +224,20 @@ class BaseAgent(ABC):
 
                 parsed.observation = observation
 
-                # Append observation to prompt for next iteration
+                # Append observation to prompt using XML delimiters
                 react_prompt += (
-                    f"\nThought: {parsed.thought}\n"
-                    f"Action: {parsed.action.tool_name}"
-                    f"({json.dumps(parsed.action.args)})\n"
-                    f"Observation: {observation}\n"
-                    f"Thought:"
+                    f"\n<thought>{parsed.thought}</thought>\n"
+                    f"<action>{parsed.action.tool_name}</action>\n"
+                    f"<args>{json.dumps(parsed.action.args, ensure_ascii=False)}</args>\n"
+                    f"<observation>{observation[:500]}</observation>\n\n"
+                    f"<thought>"
                 )
             else:
                 # No tool call — force final answer on next step
                 react_prompt += (
                     f"\n{output}\n"
-                    f"You must now provide your Final Answer.\n"
-                    f"Final Answer:"
+                    f"You must now provide your final answer.\n"
+                    f"<answer>"
                 )
 
         # Max steps reached — synthesize from trajectory
@@ -247,32 +247,71 @@ class BaseAgent(ABC):
         return self._build_output(task, final, trajectory, context, duration)
 
     def _build_react_prompt(self, task: str, context: SharedContext) -> str:
-        """Build the initial ReAct prompt with tool descriptions."""
+        """Build ReAct prompt using XML-style delimiters for reliable parsing."""
         tools_desc = ""
         if self._tool_registry:
             tools = self._tool_registry.get_available(self.available_tools)
+            ranked = self._rank_tools(task, tools)
             tools_desc = "\n".join(
-                f"- {t.name}: {t.description} | args: {t.arg_schema}"
-                for t in tools
+                f"- {t.name}: {t.description}"
+                f"\n  args: {t.arg_schema}"
+                for t in ranked
             )
 
-        memory_context = ""
+        memory_ctx = ""
         if self._memory:
-            recent = self._memory.get_recent(limit=5)
+            recent = self._memory.get_recent(limit=3)
             if recent:
-                memory_context = "\nMemory (recent relevant facts):\n"
-                memory_context += "\n".join(f"- {m}" for m in recent)
+                memory_ctx = "\nPAST CONTEXT:\n" + "\n".join(
+                    f"\u2022 {m}" for m in recent
+                )
 
         return (
-            f"[SYSTEM]\n{self.system_prompt}\n\n"
-            f"[TOOLS AVAILABLE]\n{tools_desc or 'None'}\n\n"
-            f"[CONTEXT]\n{self._get_context_summary(context)}"
-            f"{memory_context}\n\n"
-            f"[TASK]\n{task}\n\n"
-            f"Solve this step by step. Use tools when helpful.\n"
-            f"Format: Thought: ... | Action: tool_name({{\"arg\": \"val\"}}) | "
-            f"Observation: ... | Final Answer: ...\n\n"
-            f"Thought:"
+            f"<system>\n{self.system_prompt}\n</system>\n\n"
+            f"<tools>\n{tools_desc or 'None available'}\n</tools>\n\n"
+            f"<context>\n{self._get_context_summary(context)}"
+            f"{memory_ctx}\n</context>\n\n"
+            f"<task>\n{task}\n</task>\n\n"
+            "Respond in EXACTLY this format. Never deviate:\n"
+            "<thought>your reasoning here</thought>\n"
+            "<action>tool_name</action>\n"
+            '<args>{"key": "value"}</args>\n\n'
+            "OR if you have enough information:\n"
+            "<thought>your final reasoning</thought>\n"
+            "<answer>your complete final answer</answer>\n\n"
+            "<thought>"
+        )
+
+    @staticmethod
+    def _rank_tools(task: str, tools: list) -> list:  # type: ignore[type-arg]
+        """Sort tools by relevance to the task for better agent decisions."""
+        task_lower = task.lower()
+        relevance: dict[str, int] = {
+            "execute_python": 10 if any(
+                kw in task_lower for kw in
+                ["run", "test", "execute", "verify", "check", "compute"]
+            ) else 3,
+            "web_search": 10 if any(
+                kw in task_lower for kw in
+                ["find", "search", "look up", "what is", "latest", "current"]
+            ) else 2,
+            "read_file": 10 if any(
+                kw in task_lower for kw in
+                ["read", "analyze", "review", "check", "file", "code"]
+            ) else 2,
+            "fetch_url": 10 if any(
+                kw in task_lower for kw in
+                ["http", "url", "website", "page", "download"]
+            ) else 1,
+            "memory": 10 if any(
+                kw in task_lower for kw in
+                ["remember", "previous", "last time", "before", "past"]
+            ) else 3,
+        }
+        return sorted(
+            tools,
+            key=lambda t: relevance.get(t.name, 1),
+            reverse=True,
         )
 
     def _get_context_summary(self, context: SharedContext) -> str:
@@ -293,32 +332,73 @@ class BaseAgent(ABC):
         return "\n\n".join(parts) if parts else "No prior context."
 
     def _parse_react_output(self, text: str) -> ReActStep:
-        """Parse Thought/Action/Final Answer from model output."""
+        """Parse XML-delimited ReAct output. Robust against content in tags."""
         step = ReActStep()
 
-        if "Final Answer:" in text:
+        # Extract thought (first one only)
+        thought_match = re.search(
+            r"<thought>(.*?)</thought>",
+            text, re.DOTALL | re.IGNORECASE,
+        )
+        if thought_match:
+            step.thought = thought_match.group(1).strip()
+
+        # Check for final answer first (highest priority)
+        answer_match = re.search(
+            r"<answer>(.*?)</answer>",
+            text, re.DOTALL | re.IGNORECASE,
+        )
+        if answer_match:
+            step.is_final_answer = True
+            step.answer = answer_match.group(1).strip()
+            return step
+
+        # Legacy fallback: "Final Answer:" for backward compatibility
+        if "Final Answer:" in text and "<action>" not in text:
             step.is_final_answer = True
             step.answer = text.split("Final Answer:")[-1].strip()
             return step
 
-        # Extract thought
-        if "Thought:" in text:
-            thought_part = text.split("Action:")[0] if "Action:" in text else text
-            step.thought = thought_part.replace("Thought:", "").strip()
+        # Extract action + args
+        action_match = re.search(
+            r"<action>(.*?)</action>",
+            text, re.DOTALL | re.IGNORECASE,
+        )
+        args_match = re.search(
+            r"<args>(.*?)</args>",
+            text, re.DOTALL | re.IGNORECASE,
+        )
 
-        # Extract action
-        if "Action:" in text:
-            action_text = (
-                text.split("Action:")[-1].split("Observation:")[0].strip()
-            )
-            step.action = self._parse_tool_call(action_text)
+        if action_match:
+            tool_name = action_match.group(1).strip()
+            args: dict[str, Any] = {}
+            if args_match:
+                try:
+                    raw_args = args_match.group(1).strip()
+                    args = json.loads(raw_args)
+                except json.JSONDecodeError:
+                    args = {"raw": args_match.group(1).strip()}
+            step.action = ToolCall(tool_name=tool_name, args=args)
+        else:
+            # Legacy fallback: tool_name({"arg": "val"}) format
+            step.action = self._parse_tool_call_legacy(text)
+
+        # Fallback: if no structured tags found but text has content,
+        # treat entire output as final answer to avoid infinite loops
+        if not step.action and not step.thought and text.strip():
+            step.is_final_answer = True
+            step.answer = text.strip()
 
         return step
 
     @staticmethod
-    def _parse_tool_call(text: str) -> ToolCall | None:
-        """Parse 'tool_name({"arg": "val"})' format."""
-        match = re.match(r"(\w+)\s*\((.+)\)", text.strip(), re.DOTALL)
+    def _parse_tool_call_legacy(text: str) -> ToolCall | None:
+        """Legacy parser for 'tool_name({"arg": "val"})' format."""
+        # Try Action: prefix format
+        action_text = text
+        if "Action:" in text:
+            action_text = text.split("Action:")[-1].split("Observation:")[0].strip()
+        match = re.match(r"(\w+)\s*\((.+)\)", action_text.strip(), re.DOTALL)
         if match:
             name = match.group(1)
             try:

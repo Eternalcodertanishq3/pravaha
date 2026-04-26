@@ -27,7 +27,7 @@ class GGUFLoader:
     def load(self) -> Any:
         """Load the GGUF model."""
         try:
-            from llama_cpp import Llama
+            from llama_cpp import Llama  # type: ignore[import-not-found]
 
             self._model = Llama(
                 model_path=self.model_path,

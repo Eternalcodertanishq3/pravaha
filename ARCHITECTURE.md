@@ -1,8 +1,8 @@
-# Pravāha v3.1 — System Architecture
+# Pravāha v3.2 — System Architecture
 
 ## Overview
 
-Pravāha v3.1 is a **Full-Stack Autonomous AI Inference Operating System** built around four core innovations:
+Pravāha v3.2 is a **Self-Healing LLM Inference Framework with Autonomous Agent Swarm** built around four core innovations:
 
 1. **ReAct-Based Autonomous Agents** — 51 agents with real tool execution, persistent memory, and self-healing
 2. **Continuous Batching Engine** — PagedAttention with Rust-powered block allocation and prefix sharing
@@ -26,7 +26,9 @@ Pravāha v3.1 is a **Full-Stack Autonomous AI Inference Operating System** built
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4: Memory Plane                                   │
 │  PagedKVCache · BlockManager · SessionCache              │
-│  PrefixTrie (Rust) · LRU Swapping · Preemption           │
+│  PrefixTrie (Rust) — O(k) prefix matching, integrated as  │
+│  primary path with SHA-256 hash fallback                   │
+│  LRU Swapping · Preemption                                 │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 5: Intelligence (Swarm — 51 Agents)               │
 │  20 Workers · 12 Auditors · 10 Security · 9 Design      │
@@ -297,3 +299,21 @@ Run: `pytest tests/ -v` (76 tests, all passing)
 6. **Rate limiting** — IP-based middleware with configurable windows
 7. **Content filtering** — Guardrail layer for NSFW/PII/toxicity
 8. **No eval()** — All agent outputs are parsed, never executed
+
+---
+
+## Inference Performance Note
+
+Pravāha's inference path wraps HuggingFace Transformers.
+It does not use custom CUDA kernels. For benchmarks, measure
+on your actual hardware. Approximate numbers:
+
+| Setup | TTFT |
+|-------|------|
+| GPT-2 on CPU | ~80ms |
+| Llama-3-8B on A100 (4-bit) | ~40-60ms |
+
+For pure inference throughput, vLLM with custom CUDA kernels
+achieves 3-5x higher token generation speed. Pravāha's value
+is in the intelligent layer: agents, self-healing, RAG, and
+observable workflows.

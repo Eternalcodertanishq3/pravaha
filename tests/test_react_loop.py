@@ -9,17 +9,17 @@ from pravaha.swarm.agents.base_agent import BaseAgent, ReActStep, SharedContext,
 
 class TestToolCall:
     def test_parse_tool_call(self) -> None:
-        result = BaseAgent._parse_tool_call('execute_python({"code": "print(1)"})')
+        result = BaseAgent._parse_tool_call_legacy('execute_python({"code": "print(1)"})')
         assert result is not None
         assert result.tool_name == "execute_python"
         assert result.args == {"code": "print(1)"}
 
     def test_parse_invalid(self) -> None:
-        result = BaseAgent._parse_tool_call("just some text")
+        result = BaseAgent._parse_tool_call_legacy("just some text")
         assert result is None
 
     def test_parse_malformed_json(self) -> None:
-        result = BaseAgent._parse_tool_call("tool(not json)")
+        result = BaseAgent._parse_tool_call_legacy("tool(not json)")
         assert result is not None
         assert result.tool_name == "tool"
         assert "raw" in result.args

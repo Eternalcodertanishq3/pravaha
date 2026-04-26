@@ -4,12 +4,13 @@ Manages the 51-agent swarm: task decomposition, worker pipeline
 execution, and the self-healing audit loop. Uses SharedContext
 for cross-agent communication.
 
-v3.1: Initializes tool registry and persistent memory for all agents.
-Emits avatar state events for TUI integration.
+v3.2: Parallel static auditor execution, progressive confidence threshold,
+issue severity triage, execution-verified patching.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -20,14 +21,36 @@ from pravaha.swarm.tools import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
+# Phase A: Static-only auditors (no LLM, instant regex scans)
+STATIC_AUDITORS = [
+    "syntax_audit", "type_safety", "security_audit",
+    "injection_scanner", "crypto_audit", "secrets_scanner",
+    "privilege_audit", "network_security", "compliance",
+    "auth_audit", "dependency_audit", "api_security",
+]
+
+# Phase B: LLM auditors (require generation, expensive)
+LLM_AUDITORS = [
+    "logic_flaw", "hallucination_hunter", "consistency_guard",
+    "edge_case_hunter", "performance_profiler", "output_verifier",
+]
+
+# Progressive confidence threshold: exit early if score is high enough
+MIN_SCORES_BY_ITERATION = {
+    1: 90.0,  # After first iteration, need 90+ to exit early
+    2: 80.0,  # After second, 80+ is good enough
+    3: 70.0,  # After third, 70+ is the minimum
+}
+
 
 class SwarmOrchestrator:
     """Orchestrate the 51-agent swarm execution with self-healing audit.
 
-    v3.1 additions:
-    - Initializes ToolRegistry for all agents on construction
-    - Attaches persistent MemoryStore to each agent
-    - Emits avatar state events for TUI
+    v3.2 additions:
+    - Parallel static auditor execution via asyncio.gather
+    - Progressive confidence threshold for early exit
+    - Issue severity triage (only CRITICAL/HIGH go to PatchApplier)
+    - Execution-verified patching with result logging
     """
 
     def __init__(self, enabled_agents: list[str] | None = None) -> None:
@@ -49,7 +72,7 @@ class SwarmOrchestrator:
                 self._agents[name] = agent
 
         self.context = SharedContext()
-        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded (v3.1)")
+        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded (v3.2)")
 
     def set_avatar_callback(self, callback: Any) -> None:
         """Set callback for TUI avatar state updates."""
@@ -75,7 +98,7 @@ class SwarmOrchestrator:
         return result
 
     async def execute_pipeline(
-        self, pipeline: list[str], task: str, engine: Any
+        self, pipeline: list[str], task: str, engine: Any,
     ) -> list[AgentOutput]:
         """Execute a sequence of agents, piping context between them."""
         results: list[AgentOutput] = []
@@ -95,12 +118,12 @@ class SwarmOrchestrator:
     ) -> dict[str, Any]:
         """Execute worker pipeline, then run self-healing audit loop.
 
-        The audit loop:
-        1. Run auditor agents on the output
-        2. If issues found, run PatchApplier to fix them
-        3. Re-audit the patched output
-        4. Repeat up to max_iterations
-        5. Return final output with audit report
+        v3.2 improvements:
+        1. Static auditors run in parallel (asyncio.gather)
+        2. LLM auditors only run if static found issues OR first iteration
+        3. Progressive confidence threshold for early exit
+        4. Issue severity triage — only CRITICAL/HIGH go to PatchApplier
+        5. Patch execution verification with logging
         """
         self.context.task = task
         self._emit_avatar("thinking")
@@ -112,51 +135,91 @@ class SwarmOrchestrator:
 
         # Phase 2: Audit loop
         self._emit_avatar("audit")
-        audit_pipeline = [
-            "syntax_audit",
-            "type_safety",
-            "security_audit",
-            "logic_flaw",
-            "consistency_guard",
-            "hallucination_hunter",
-            "edge_case_hunter",
-            "performance_profiler",
-            "output_verifier",
-        ]
 
         score = 0.0
         iteration = 0
         for iteration in range(max_iterations):
             all_issues: list[dict[str, Any]] = []
-            audit_results: list[AgentOutput] = []
 
-            for auditor_name in audit_pipeline:
-                if auditor_name not in self._agents:
-                    continue
-                result = await self.execute_agent(auditor_name, task, engine)
-                audit_results.append(result)
-                all_issues.extend(result.issues)
-
-            self.context.audit_reports.append(
-                {
-                    "iteration": iteration + 1,
-                    "issues": all_issues,
-                    "auditor_count": len(audit_results),
-                }
+            # ── Phase A: Run all static auditors in parallel ──
+            static_tasks = [
+                self.execute_agent(name, task, engine)
+                for name in STATIC_AUDITORS
+                if name in self._agents
+            ]
+            static_results = await asyncio.gather(
+                *static_tasks, return_exceptions=True,
             )
 
+            static_issues: list[dict[str, Any]] = []
+            for result in static_results:
+                if isinstance(result, AgentOutput):
+                    static_issues.extend(result.issues)
+            all_issues.extend(static_issues)
+
+            # ── Phase B: LLM auditors (only if needed) ──
+            if static_issues or iteration == 0:
+                for auditor_name in LLM_AUDITORS:
+                    if auditor_name in self._agents:
+                        result = await self.execute_agent(
+                            auditor_name, task, engine,
+                        )
+                        all_issues.extend(result.issues)
+
+            # ── Issue severity triage ──
+            critical_issues = [
+                i for i in all_issues
+                if i.get("severity", "").upper()
+                in ("CRITICAL", "HIGH", "MAJOR")
+            ]
+            info_issues = [
+                i for i in all_issues
+                if i.get("severity", "").upper()
+                in ("LOW", "INFO", "WARNING", "MINOR", "warning")
+            ]
+
+            self.context.audit_reports.append({
+                "iteration": iteration + 1,
+                "issues": critical_issues,  # Only critical to PatchApplier
+                "info_issues": info_issues,  # Logged but not patched
+                "auditor_count": len(static_tasks) + len(LLM_AUDITORS),
+            })
+
+            # Get verifier score
             verifier = self.context.agent_outputs.get("output_verifier")
             score = verifier.metadata.get("score", 50) if verifier else 50
 
-            if score >= min_score and not all_issues:
+            # ── Progressive confidence threshold ──
+            threshold = MIN_SCORES_BY_ITERATION.get(iteration + 1, min_score)
+            if score >= threshold and not critical_issues:
                 self._emit_avatar("success")
-                logger.info(f"Audit PASSED: iteration {iteration + 1}, score {score}")
+                logger.info(
+                    f"Audit PASSED: iteration {iteration + 1}, "
+                    f"score {score}, threshold {threshold}",
+                )
                 break
 
-            if all_issues and "patch_applier" in self._agents:
-                patch_result = await self.execute_agent("patch_applier", task, engine)
+            # ── Patch only critical/high issues ──
+            if critical_issues and "patch_applier" in self._agents:
+                patch_result = await self.execute_agent(
+                    "patch_applier", task, engine,
+                )
                 self.context.output = patch_result.output
                 self.context.code = patch_result.output
+
+                # Log execution verification results
+                exec_verified = patch_result.metadata.get(
+                    "execution_verified", False,
+                )
+                logger.info(
+                    f"Patch applied: verified={exec_verified}, "
+                    f"confidence={patch_result.confidence:.2f}",
+                )
+                if not exec_verified:
+                    logger.warning(
+                        "Patched code failed execution check. "
+                        f"Error: {self.context.extra.get('patch_execution_error', 'unknown')}",
+                    )
 
         # Phase 3: Self-reflection
         if "self_reflection" in self._agents:
@@ -169,7 +232,9 @@ class SwarmOrchestrator:
             "worker_results": worker_results,
             "audit_iterations": iteration + 1,
             "final_score": score,
-            "issues_found": sum(len(r.get("issues", [])) for r in self.context.audit_reports),
+            "issues_found": sum(
+                len(r.get("issues", [])) for r in self.context.audit_reports
+            ),
         }
 
     def list_agents(self) -> list[dict[str, Any]]:

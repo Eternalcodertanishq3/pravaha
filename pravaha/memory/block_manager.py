@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,19 @@ class BlockManager:
 
         # Prefix sharing: content_hash → block_id
         self.hash_to_block: dict[str, int] = {}
+
+        # Try to use Rust PrefixTrie for O(k) prefix matching
+        self._prefix_trie: Any = None
+        self._trie_available = False
+        if self._rust_available:
+            try:
+                from pravaha.pravaha_core import PrefixTrie
+
+                self._prefix_trie = PrefixTrie()
+                self._trie_available = True
+                logger.info("BlockManager: Rust PrefixTrie enabled (O(k) prefix matching)")
+            except (ImportError, AttributeError):
+                logger.warning("PrefixTrie not available, falling back to SHA-256 hashing")
 
         logger.info(
             f"BlockManager initialized: {num_blocks} blocks × {block_size} tokens/block "
@@ -200,6 +214,79 @@ class BlockManager:
             token_ids: Token IDs stored in this block.
         """
         content_hash = self.compute_content_hash(token_ids)
+        self.hash_to_block[content_hash] = block_id
+
+    def find_longest_prefix_match(
+        self,
+        token_ids: list[int],
+    ) -> tuple[list[int], int]:
+        """Find the longest matching prefix in the cache.
+
+        Returns:
+            (matched_block_ids, tokens_covered)
+
+        Uses Rust PrefixTrie if available (O(k) average),
+        falls back to SHA-256 hash map (O(n) worst case).
+        """
+        if self._trie_available and self._prefix_trie is not None:
+            try:
+                matched_blocks, tokens_covered = (
+                    self._prefix_trie.longest_prefix_match(token_ids)
+                )
+                if matched_blocks:
+                    for bid in matched_blocks:
+                        try:
+                            self.increment_ref(bid)
+                        except Exception:
+                            pass
+                return matched_blocks, tokens_covered
+            except Exception as e:
+                logger.warning(f"PrefixTrie error, falling back: {e}")
+
+        # SHA-256 fallback (existing behavior)
+        fallback_blocks: list[int] = []
+        tokens_covered = 0
+        num_full_blocks = len(token_ids) // self.block_size
+
+        for block_idx in range(num_full_blocks):
+            start = block_idx * self.block_size
+            end = start + self.block_size
+            content = token_ids[start:end]
+            content_hash = self.compute_content_hash(content)
+            shared = self.hash_to_block.get(content_hash)
+
+            if shared is not None and self.get_ref_count(shared) > 0:
+                try:
+                    self.increment_ref(shared)
+                    fallback_blocks.append(shared)
+                    tokens_covered = end
+                except Exception:
+                    self.hash_to_block.pop(content_hash, None)
+                    break
+            else:
+                break
+
+        return fallback_blocks, tokens_covered
+
+    def register_prefix_block(
+        self,
+        token_ids: list[int],
+        block_id: int,
+        block_idx: int,
+    ) -> None:
+        """Register a block in both the trie and the hash map."""
+        start = block_idx * self.block_size
+        end = start + self.block_size
+        block_tokens = token_ids[start:end]
+
+        if self._trie_available and self._prefix_trie is not None:
+            try:
+                self._prefix_trie.insert(token_ids[:end], block_id)
+            except Exception:
+                pass
+
+        # Always update hash map as backup
+        content_hash = self.compute_content_hash(block_tokens)
         self.hash_to_block[content_hash] = block_id
 
     def get_usage_stats(self) -> dict[str, float]:

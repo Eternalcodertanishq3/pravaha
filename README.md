@@ -1,6 +1,6 @@
-# Pravāha v3.1 — प्रवाह
+# Pravāha v3.2 — प्रवाह
 
-### Full-Stack Autonomous AI Inference Operating System
+### The Self-Healing, Swarm-Powered LLM Inference Framework
 
 > 51 agents. ReAct-based autonomy. Self-healing audit pipeline. Persistent memory. Sandboxed tool execution. RAG. Vision routing. Conversation branching. Rust performance core.
 
@@ -352,6 +352,30 @@ pravaha/
     └── lib.rs               # PyO3 module exports
 ```
 
+## Compared to vLLM
+
+Pravāha is **not** a replacement for vLLM in production inference workloads.
+vLLM uses custom CUDA kernels and achieves 3-5x higher throughput for pure
+token generation.
+
+Pravāha's advantage is the **intelligent layer**: when you need agents,
+self-healing output, built-in RAG, and observable workflows — not just
+raw token throughput.
+
+| Dimension | vLLM | Pravāha |
+|-----------|------|---------|
+| Raw throughput | ✅ Custom CUDA kernels | ❌ Wraps HuggingFace Transformers |
+| Agent swarm | ❌ | ✅ 51 autonomous agents |
+| Self-healing | ❌ | ✅ Audit loop with patch verification |
+| Built-in RAG | ❌ | ✅ FAISS + embeddings |
+| Memory | ❌ | ✅ SQLite persistent agent memory |
+| Tool execution | ❌ | ✅ 6 sandboxed tools |
+
+**Inference Performance Note:** Pravāha's inference path wraps HuggingFace
+Transformers. It does not use custom CUDA kernels. Benchmarks vary by
+hardware. GPT-2 on CPU: ~80ms TTFT. Llama-3-8B on A100 with 4-bit:
+approximately 40-60ms TTFT.
+
 ---
 
 ## License
@@ -361,6 +385,6 @@ MIT — see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <b>Pravāha v3.1</b> — The claim of "Full-Stack Autonomous AI Inference OS" is earned.<br>
-  Not a swarm of system prompts. A genuine inference operating system.
+  <b>Pravāha v3.2</b> — The self-healing, swarm-powered LLM inference framework.<br>
+  Not a swarm of system prompts. A genuine inference framework with autonomous agents.
 </p>

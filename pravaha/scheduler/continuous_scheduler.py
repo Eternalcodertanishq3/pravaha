@@ -78,22 +78,27 @@ class ContinuousScheduler:
             assigned: list[int] = []
             possible = True
 
-            for i in range(full_blocks):
-                content = request.prompt_token_ids[i * self.block_size : (i + 1) * self.block_size]
-                h = self.block_manager.compute_content_hash(content)
-                shared = self.hash_to_block.get(h)
-                if shared is not None:
-                    try:
-                        if self.block_manager.get_ref_count(shared) > 0:
-                            self.block_manager.increment_ref(shared)
-                            assigned.append(shared)
-                            continue
-                    except Exception:
-                        self.hash_to_block.pop(h, None)
+            # Try longest prefix match first (O(k) with trie, O(n) fallback)
+            matched_blocks, tokens_covered = (
+                self.block_manager.find_longest_prefix_match(
+                    request.prompt_token_ids,
+                )
+            )
+
+            if matched_blocks:
+                assigned.extend(matched_blocks)
+                start_block = tokens_covered // self.block_size
+            else:
+                start_block = 0
+
+            # Allocate remaining blocks after the shared prefix
+            for i in range(start_block, full_blocks):
                 if self.block_manager.num_free_blocks() > 0:
                     new_id = self.block_manager.allocate(1)[0]
                     assigned.append(new_id)
-                    self.hash_to_block[h] = new_id
+                    self.block_manager.register_prefix_block(
+                        request.prompt_token_ids, new_id, i,
+                    )
                 else:
                     possible = False
                     break
