@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -221,17 +221,11 @@ class EngineConfig(BaseModel):
     guardrails: GuardrailsConfig = Field(default_factory=GuardrailsConfig)
 
     # Internal state (not serialized)
-    _watchers: list[Callable[[EngineConfig], None]] = []
-    _lock: threading.Lock = threading.Lock()
-    _source_path: Path | None = None
+    _watchers: list[Callable[[EngineConfig], None]] = PrivateAttr(default_factory=list)
+    _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    _source_path: Path | None = PrivateAttr(default=None)
 
     model_config = {"arbitrary_types_allowed": True}
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        object.__setattr__(self, "_watchers", [])
-        object.__setattr__(self, "_lock", threading.Lock())
-        object.__setattr__(self, "_source_path", None)
 
     def validate_consistency(self) -> None:
         """Validate configuration consistency.
