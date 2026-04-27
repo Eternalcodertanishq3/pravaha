@@ -1,1 +1,1 @@
-"""Pravaha TUI Avatar — Package init."""
+"""Pravaha Avatar — ASCII robot avatar widget."""

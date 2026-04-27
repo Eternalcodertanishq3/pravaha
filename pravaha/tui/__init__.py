@@ -1,1 +1,1 @@
-"""Pravaha TUI — Textual-based terminal dashboard."""
+"""Pravaha TUI — Terminal User Interface package."""
