@@ -34,25 +34,32 @@ class ChatHistory(VerticalScroll):
     }
     """
 
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._active_message_text: Text | None = None
+        self._active_message_widget: Static | None = None
+
     def add_message(self, role: str, content: str) -> None:
+        label = Text()
         if role == "user":
-            label = Text()
             label.append(" you > ", style="bold bright_cyan")
             label.append(content, style="grey85")
         else:
-            label = Text()
             label.append(" pravaha > ", style="bold bright_green")
             label.append(content, style="grey85")
-        self.mount(Static(label))
+            
+        widget = Static(label)
+        self.mount(widget)
         self.scroll_end(animate=False)
+        
+        self._active_message_text = label
+        self._active_message_widget = widget
 
     def append_token(self, token: str) -> None:
         """Append a token to the last message (streaming)."""
-        if self.children:
-            last = self.children[-1]
-            if isinstance(last, Static) and isinstance(last.renderable, Text):
-                last.renderable.append(token, style="grey85")
-                last.refresh()
+        if self._active_message_text is not None and self._active_message_widget is not None:
+            self._active_message_text.append(token, style="grey85")
+            self._active_message_widget.update(self._active_message_text)
 
     def add_system(self, msg: str) -> None:
         t = Text()

@@ -75,8 +75,12 @@ def serve(
         typer.echo("\nLaunching TUI dashboard...")
         try:
             from pravaha.tui.app import PravahaTUI
+            from pravaha.engine.async_engine import AsyncPravahaEngine
 
-            tui_app = PravahaTUI(engine_config=engine_config, host=host, port=port)
+            typer.echo("Initializing engine weights and GPU memory (this may take a moment)...")
+            engine = AsyncPravahaEngine(config=engine_config)
+
+            tui_app = PravahaTUI(engine_config=engine_config, host=host, port=port, engine=engine)
             tui_app.run()
         except ImportError:
             typer.echo("Textual not installed. Falling back to standard server.")

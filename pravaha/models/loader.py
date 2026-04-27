@@ -27,14 +27,17 @@ class ModelLoader:
         self,
         model_path: str,
         device: str = "cuda",
-        dtype: str = "float16",
+        dtype: Any = "float16",
         quantization: str | None = None,
         trust_remote_code: bool = False,
     ) -> tuple[Any, ArchConfig]:
         import torch
         from transformers import AutoConfig, AutoModelForCausalLM
 
-        torch_dtype = getattr(torch, dtype, torch.float16)
+        if isinstance(dtype, str):
+            torch_dtype = getattr(torch, dtype, torch.float16)
+        else:
+            torch_dtype = dtype
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=trust_remote_code)
         arch = ArchConfig(
             num_layers=getattr(config, "num_hidden_layers", 32),

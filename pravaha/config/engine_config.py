@@ -115,7 +115,7 @@ class SwarmInlineConfig(BaseModel):
     enabled: bool = False
     self_heal: bool = True
     max_audit_iterations: int = 3
-    agent_roles: list[str] = Field(default_factory=list)
+    agent_roles: list[str] = Field(default_factory=lambda: ["planner", "coder", "critic"])
     default_pipeline: str = "plan-execute-audit"
 
 

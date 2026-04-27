@@ -52,6 +52,9 @@ class PravahaTUI(App):
         self,
         engine: Any = None,
         orchestrator: Any = None,
+        engine_config: Any = None,
+        host: str | None = None,
+        port: int | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
