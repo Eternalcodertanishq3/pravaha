@@ -11,10 +11,10 @@ import ast
 import math
 import operator
 import statistics
-from typing import Any
+from typing import Any, Callable
 
 # Safe operators for AST evaluation
-SAFE_OPS = {
+SAFE_OPS: dict[type[ast.AST], Callable] = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,

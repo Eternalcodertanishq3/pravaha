@@ -72,9 +72,9 @@ class AgentGridWidget(Static):
 
     def on_mount(self) -> None:
         self._tick = 0
-        self.set_interval(1.5, self._animate)
+        self.set_interval(1.5, self._on_animate_tick)
 
-    def _animate(self) -> None:
+    def _on_animate_tick(self) -> None:
         self._tick += 1
         self.refresh()
 

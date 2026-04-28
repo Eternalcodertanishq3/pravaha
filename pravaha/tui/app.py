@@ -15,7 +15,11 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pravaha.config.engine_config import EngineConfig
+    from pravaha.engine.async_engine import AsyncPravahaEngine
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -61,6 +65,20 @@ class PravahaTUI(App):
     TITLE = "PRAVAHA v3.3"
     SUB_TITLE = "AI Agentic Orchestration Framework"
     CSS_PATH = CSS_PATH
+
+    def __init__(
+        self,
+        engine_config: EngineConfig | None = None,
+        host: str = "0.0.0.0",
+        port: int = 8000,
+        engine: AsyncPravahaEngine | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.engine_config = engine_config
+        self.host = host
+        self.port = port
+        self.engine = engine
 
     BINDINGS = [
         Binding("f1", "push_screen('chat')", "Chat", show=True),

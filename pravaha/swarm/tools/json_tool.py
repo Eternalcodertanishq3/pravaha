@@ -69,7 +69,7 @@ class JsonTool:
         """Navigate JSON with dot.path and [index] notation."""
         current = data
         # Split on dots but handle array indices
-        parts = []
+        parts: list[str | int] = []
         for part in path.split("."):
             if "[" in part:
                 name, rest = part.split("[", 1)
@@ -83,14 +83,14 @@ class JsonTool:
             else:
                 parts.append(part)
 
-        for part in parts:
+        for p in parts:
             try:
-                if isinstance(part, int):
-                    current = current[part]
+                if isinstance(p, int):
+                    current = current[p]
                 elif isinstance(current, dict):
-                    current = current[part]
-                elif isinstance(current, list) and part.isdigit():
-                    current = current[int(part)]
+                    current = current[p]
+                elif isinstance(current, list) and str(p).isdigit():
+                    current = current[int(p)]
                 else:
                     return _SENTINEL
             except (KeyError, IndexError, TypeError):

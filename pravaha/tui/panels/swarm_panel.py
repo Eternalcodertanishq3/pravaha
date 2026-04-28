@@ -63,10 +63,10 @@ class SwarmDetailStatic(Static):
         # ── Activity Grid ──
         t.append(" ◆ Activity Grid\n\n", style=f"bold {GREEN}")
         for row_start in range(0, len(agents), 8):
-            row = agents[row_start:row_start + 8]
-            for a in row:
-                name = a.get("name", "?")[:5]
-                calls = a.get("total_calls", 0)
+            agent_row = agents[row_start:row_start + 8]
+            for agent_item in agent_row:
+                name = agent_item.get("name", "?")[:5]
+                calls = agent_item.get("total_calls", 0)
                 if calls > 10:
                     sym, col = "●", GREEN
                 elif calls > 0:
@@ -83,14 +83,14 @@ class SwarmDetailStatic(Static):
         t.append(f" {'Name':20s} {'Priority':>8s} {'Calls':>6s} {'Tokens':>8s} {'Duration':>10s} {'Tools':>6s} {'Mem':>4s}\n", style="bold grey70")
         t.append(f" {'─'*20} {'─'*8} {'─'*6} {'─'*8} {'─'*10} {'─'*6} {'─'*4}\n", style="grey37")
 
-        for a in sorted(agents, key=lambda x: x.get("total_calls", 0), reverse=True):
-            name = a.get("name", "?")[:20]
-            priority = a.get("priority", 0)
-            calls = a.get("total_calls", 0)
-            tokens = a.get("total_tokens", 0)
-            dur = a.get("total_duration_ms", 0)
-            tools = "✓" if a.get("has_tools", False) else "·"
-            mem = "✓" if a.get("has_memory", False) else "·"
+        for agent_item in sorted(agents, key=lambda x: x.get("total_calls", 0), reverse=True):
+            name = agent_item.get("name", "?")[:20]
+            priority = agent_item.get("priority", 0)
+            calls = agent_item.get("total_calls", 0)
+            tokens = agent_item.get("total_tokens", 0)
+            dur = agent_item.get("total_duration_ms", 0)
+            tools = "✓" if agent_item.get("has_tools", False) else "·"
+            mem = "✓" if agent_item.get("has_memory", False) else "·"
 
             name_col = GREEN if calls > 0 else "grey50"
             t.append(f" {name:20s}", style=name_col)
