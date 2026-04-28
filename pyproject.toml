@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pravaha"
-version = "3.1.0"
+version = "3.3.0"
 description = "Pravāha — Full-Stack Autonomous AI Inference Operating System"
 readme = "README.md"
 requires-python = ">=3.11"

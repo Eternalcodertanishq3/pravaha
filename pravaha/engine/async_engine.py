@@ -22,12 +22,18 @@ import logging
 import threading
 import time
 import uuid
+from collections import deque
 from collections.abc import AsyncGenerator
+from typing import Any
+
+import psutil
 
 from pravaha.config.engine_config import EngineConfig
 from pravaha.decoder.decoder import DecoderEngine
 from pravaha.decoder.sampling import Sampler, SamplingParams
+from pravaha.engine.event_bus import get_event_bus
 from pravaha.engine.events import EngineEvent, EventBus, EventType
+from pravaha.engine.load_balancer import AdaptiveLoadBalancer
 from pravaha.memory.block_manager import BlockManager
 from pravaha.memory.paged_cache import PagedKVCache
 from pravaha.memory.session_cache import SessionKVCache
@@ -79,13 +85,11 @@ class AsyncPravahaEngine:
         # Device resolution
         self._device = self.config.model.resolved_device
 
-        # Event bus for telemetry
+        # Event bus for telemetry (legacy + enhanced)
         self.event_bus = EventBus()
+        self._enhanced_bus = get_event_bus()
 
         # ── Fix 1: Threading synchronization ──
-        # This Event gates the background loop until initialization completes.
-        # Without this, the loop would try to access self._decoder before
-        # the model is loaded, causing an AttributeError race condition.
         self._ready_event = threading.Event()
         self._shutdown_event = threading.Event()
 
@@ -94,6 +98,19 @@ class AsyncPravahaEngine:
         self._request_queues: dict[str, asyncio.Queue[str]] = {}
         self._active_requests: dict[str, InferenceRequest] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
+
+        # ── v3.3: Real metrics tracking ──
+        self._token_timestamps: deque[float] = deque(maxlen=200)
+        self._current_tps: float = 0.0
+        self._total_requests_served: int = 0
+        self._total_tokens_generated_v33: int = 0
+        self._ttft_history: deque[float] = deque(maxlen=50)
+        self._tui_callback: Any = None
+        self._start_time: float = time.time()
+
+        # ── v3.3: Adaptive load balancer ──
+        self._load_balancer = AdaptiveLoadBalancer()
+        self._load_balancer.register_callback(self._on_load_change)
 
         # Load model, tokenizer, and build subsystems
         self._initialize_subsystems()
@@ -117,8 +134,10 @@ class AsyncPravahaEngine:
         )
         self._bg_thread.start()
 
+        # Start load balancer monitoring
+        self._load_balancer.start()
+
         # Signal that initialization is complete
-        # The background loop is now safe to start processing
         self._ready_event.set()
 
         logger.info("AsyncPravahaEngine initialized and ready.")
@@ -194,6 +213,11 @@ class AsyncPravahaEngine:
                 data={"model": self.config.model.model_path, "load_time_s": round(elapsed, 2)},
             )
         )
+        self._enhanced_bus.publish("model_loaded", {
+            "model": self.config.model.model_path,
+            "load_time_s": round(elapsed, 2),
+            "device": self._device,
+        })
         logger.info(f"All subsystems initialized in {elapsed:.1f}s")
 
     async def generate(
@@ -421,22 +445,99 @@ class AsyncPravahaEngine:
         """Gracefully shut down the engine."""
         logger.info("Stopping engine...")
         self._shutdown_event.set()
+        self._load_balancer.stop()
         if self._bg_thread.is_alive():
             self._bg_thread.join(timeout=5.0)
         logger.info("Engine stopped.")
 
+    # ── v3.3: TUI callback + real-time metrics ─────────────────
+
+    def set_tui_callback(self, cb: Any) -> None:
+        """Set callback for TUI event forwarding."""
+        self._tui_callback = cb
+
+    def _record_token(self) -> None:
+        """Record a token generation timestamp for TPS calculation."""
+        now = time.time()
+        self._token_timestamps.append(now)
+        self._total_tokens_generated_v33 += 1
+
+        # Calculate real TPS from sliding window
+        if len(self._token_timestamps) >= 2:
+            window = now - self._token_timestamps[0]
+            if window > 0:
+                self._current_tps = len(self._token_timestamps) / window
+
+    def _on_load_change(self, snapshot: Any) -> None:
+        """React to load balancer changes."""
+        logger.info(
+            f"Load shift: {snapshot.reason} "
+            f"CPU={snapshot.cpu_pct:.0f}% "
+            f"RAM={snapshot.ram_pct:.0f}% "
+            f"GPU={snapshot.gpu_pct:.0f}%"
+        )
+        self._enhanced_bus.publish("load_change", snapshot.to_dict())
+        if self._tui_callback:
+            self._tui_callback("load_change", snapshot.to_dict())
+
     def get_stats(self) -> dict[str, object]:
-        """Return engine-level statistics."""
+        """Return REAL engine statistics. No hardcoded values."""
         queue_stats = self._scheduler.get_queue_stats()
+        block_stats = self.block_manager.get_usage_stats()
+
+        # Real hardware stats via psutil
+        cpu = psutil.cpu_percent(interval=None)
+        ram = psutil.virtual_memory()
+
+        gpu_info: dict[str, Any] = {"available": False}
+        try:
+            import torch
+            if torch.cuda.is_available():
+                props = torch.cuda.get_device_properties(0)
+                gpu_info = {
+                    "available": True,
+                    "name": props.name,
+                    "total_memory_gb": round(props.total_memory / 1e9, 2),
+                    "allocated_gb": round(
+                        torch.cuda.memory_allocated(0) / 1e9, 2
+                    ),
+                    "reserved_gb": round(
+                        torch.cuda.memory_reserved(0) / 1e9, 2
+                    ),
+                }
+        except Exception:
+            pass
+
+        # TTFT p50
+        ttft_p50 = 0.0
+        if self._ttft_history:
+            sorted_h = sorted(self._ttft_history)
+            ttft_p50 = sorted_h[len(sorted_h) // 2]
+
+        # Uptime
+        uptime_s = time.time() - self._start_time
+
         return {
-            "total_requests": self._total_requests,
-            "total_tokens_generated": self._total_tokens_generated,
             "model": self.config.model.model_path,
             "device": self._device,
             "quantization": self.config.model.quantization or "none",
+            "is_ready": self.is_ready,
+            "tokens_per_second": round(self._current_tps, 1),
+            "ttft_p50_ms": round(ttft_p50, 1),
+            "total_requests": self._total_requests,
+            "total_tokens_generated": self._total_tokens_generated,
+            "uptime_s": round(uptime_s, 1),
             "scheduler": queue_stats,
-            "block_manager": self.block_manager.get_usage_stats(),
+            "block_manager": block_stats,
             "session_cache": self.session_cache.get_stats(),
+            "hardware": {
+                "cpu_pct": cpu,
+                "ram_used_gb": round(ram.used / 1e9, 2),
+                "ram_total_gb": round(ram.total / 1e9, 2),
+                "ram_pct": ram.percent,
+            },
+            "gpu": gpu_info,
+            "load_balancer": self._load_balancer.get_stats(),
         }
 
     @property

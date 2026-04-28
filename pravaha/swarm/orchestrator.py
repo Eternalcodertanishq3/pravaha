@@ -4,19 +4,22 @@ Manages the 51-agent swarm: task decomposition, worker pipeline
 execution, and the self-healing audit loop. Uses SharedContext
 for cross-agent communication.
 
-v3.2: Parallel static auditor execution, progressive confidence threshold,
-issue severity triage, execution-verified patching.
+v3.3: EventBus integration, SwarmProfiler, memory warm-up,
+audit score progression tracking.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 
+from pravaha.engine.event_bus import get_event_bus
 from pravaha.swarm.agents import ALL_AGENTS
 from pravaha.swarm.agents.base_agent import AgentMemory, AgentOutput, BaseAgent, SharedContext
 from pravaha.swarm.memory.memory_store import MemoryStore
+from pravaha.swarm.profiler import SwarmProfiler
 from pravaha.swarm.tools import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -61,10 +64,14 @@ class SwarmOrchestrator:
         self._tools = ToolRegistry.default()
         self._memory = MemoryStore()
 
+        # v3.3: Event bus and profiler
+        self._bus = get_event_bus()
+        self._profiler = SwarmProfiler()
+        self._score_progression: list[float] = []
+
         for name, cls in ALL_AGENTS.items():
             if enabled_agents is None or name in enabled_agents:
                 agent = cls()
-                # Attach tools and memory to every agent
                 agent.attach_tools(self._tools)
                 agent.attach_memory(
                     AgentMemory(self._memory, agent.role)
@@ -72,7 +79,8 @@ class SwarmOrchestrator:
                 self._agents[name] = agent
 
         self.context = SharedContext()
-        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded (v3.2)")
+        logger.info(f"SwarmOrchestrator: {len(self._agents)} agents loaded (v3.3)")
+        self._bus.publish("swarm_init", {"agents_loaded": len(self._agents)})
 
     def set_avatar_callback(self, callback: Any) -> None:
         """Set callback for TUI avatar state updates."""
@@ -93,8 +101,27 @@ class SwarmOrchestrator:
             return AgentOutput(role=name, output=f"Agent '{name}' not found", confidence=0.0)
 
         self._emit_avatar("working", name)
+        self._bus.publish("agent_started", {"agent": name, "task": task[:80]})
+
+        t0 = time.time()
         result = await agent.run(task, self.context, engine)
+        duration = (time.time() - t0) * 1000
+
         self.context.agent_outputs[name] = result
+
+        # Record in profiler
+        self._profiler.record(
+            role=name,
+            duration_ms=duration,
+            tokens=result.tokens_used,
+        )
+
+        self._bus.publish("agent_completed", {
+            "agent": name,
+            "duration_ms": round(duration, 1),
+            "tokens": result.tokens_used,
+            "confidence": result.confidence,
+        })
         return result
 
     async def execute_pipeline(
@@ -102,11 +129,38 @@ class SwarmOrchestrator:
     ) -> list[AgentOutput]:
         """Execute a sequence of agents, piping context between them."""
         results: list[AgentOutput] = []
+        self._bus.publish("pipeline_started", {"agents": pipeline, "task": task[:80]})
         for agent_name in pipeline:
             result = await self.execute_agent(agent_name, task, engine)
             results.append(result)
             self.context.output = result.output
+        self._bus.publish("pipeline_completed", {"agents": pipeline, "total_results": len(results)})
         return results
+
+    def warm_up_agent_memories(self, pipeline: list[str] | None = None) -> int:
+        """Pre-load agent memories from the persistent store.
+
+        Warms up the memory cache for agents in the pipeline
+        (or all agents if no pipeline specified).
+        """
+        targets = pipeline if pipeline else list(self._agents.keys())
+        warmed = 0
+        for name in targets:
+            agent = self._agents.get(name)
+            if agent and agent._memory:
+                count = self._memory.count(agent.role)
+                if count > 0:
+                    # Trigger memory access to warm cache
+                    agent._memory.get_recent(limit=5)
+                    warmed += 1
+                    logger.debug(f"Memory warm-up: {name} ({count} memories)")
+        logger.info(f"Memory warm-up complete: {warmed}/{len(targets)} agents warmed")
+        self._bus.publish("memory_warmup", {"agents_warmed": warmed})
+        return warmed
+
+    def get_profiler(self) -> SwarmProfiler:
+        """Get the swarm profiler instance."""
+        return self._profiler
 
     async def execute_with_audit(
         self,

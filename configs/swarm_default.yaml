@@ -1,4 +1,4 @@
-# Pravaha v3.1 — Swarm Default Configuration
+# Pravaha v3.3 — Swarm Default Configuration
 # 51 agents: 20 workers + 12 auditors + 10 security + 9 design
 
 swarm:
@@ -6,7 +6,7 @@ swarm:
   max_iterations: 3
   min_score: 70.0
 
-  # ── Worker Agents (20) ──────────────────────────────────
+  # ── Worker Agents (20) ─────────────────────────────────
   agent_roles:
     - planner
     - researcher
@@ -70,6 +70,53 @@ swarm:
     - prototype_builder
     - design_system
 
+  # ── v3.3: Temperature Profiles ─────────────────────────
+  # Agent-specific temperature overrides for optimal behavior
+  temperature_profiles:
+    # Creative agents: higher temperature for diversity
+    creative:
+      temperature: 0.8
+      top_p: 0.95
+      agents: [narrator, expander, ui_designer, prototype_builder]
+
+    # Analytical agents: lower temperature for precision
+    analytical:
+      temperature: 0.2
+      top_p: 0.9
+      agents: [coder, debugger, validator, syntax_audit, type_safety]
+
+    # Reasoning agents: balanced temperature
+    reasoning:
+      temperature: 0.5
+      top_p: 0.92
+      agents: [planner, reasoning, critic, judge, logic_flaw]
+
+    # Security agents: very low temperature for accuracy
+    security:
+      temperature: 0.1
+      top_p: 0.85
+      agents: [security_audit, injection_scanner, crypto_audit, auth_audit]
+
+  # ── v3.3: Token Budgets ────────────────────────────────
+  # Per-agent token limits to control inference costs
+  token_budgets:
+    default: 1024
+    overrides:
+      planner: 2048
+      researcher: 2048
+      coder: 4096
+      debugger: 2048
+      expander: 2048
+      narrator: 2048
+      summarizer: 512
+      classifier: 256
+      router: 256
+      validator: 512
+      syntax_audit: 256
+      type_safety: 256
+      security_audit: 512
+      output_verifier: 512
+
   # ── Pipelines ──────────────────────────────────────────
   default_pipeline: plan-execute-audit
 
@@ -105,3 +152,14 @@ swarm:
       auditors: [syntax_audit, type_safety, security_audit, logic_flaw,
                  hallucination_hunter, edge_case_hunter, performance_profiler,
                  output_verifier, patch_applier]
+
+  # ── v3.3: DAG Pipeline Support ─────────────────────────
+  # Enable parallel execution for compatible pipelines
+  dag_execution:
+    enabled: true
+    max_parallel: 4
+    # Pipelines that can benefit from DAG parallelism
+    dag_pipelines:
+      - full-pipeline
+      - secure-code-review
+      - full-secure-design

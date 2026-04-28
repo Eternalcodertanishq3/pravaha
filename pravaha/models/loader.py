@@ -34,10 +34,16 @@ class ModelLoader:
         import torch
         from transformers import AutoConfig, AutoModelForCausalLM
 
+        from pravaha.models.hf_compat import HFCompatLayer
+
+        # Use HFCompatLayer for universal model support
+        compat = HFCompatLayer()
+
         if isinstance(dtype, str):
-            torch_dtype = getattr(torch, dtype, torch.float16)
+            dtype_str = dtype
         else:
-            torch_dtype = dtype
+            dtype_str = "float16"
+
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=trust_remote_code)
         arch = ArchConfig(
             num_layers=getattr(config, "num_hidden_layers", 32),
@@ -52,21 +58,20 @@ class ModelLoader:
             hidden_size=getattr(config, "hidden_size", 4096),
             vocab_size=getattr(config, "vocab_size", 32000),
         )
-        kwargs: dict[str, Any] = {
-            "torch_dtype": torch_dtype,
-            "trust_remote_code": trust_remote_code,
-            "device_map": "auto" if device == "cuda" else device,
-        }
-        if quantization == "4bit":
-            from pravaha.quantization.bitsandbytes import BitsAndBytesQuantizer
 
-            kwargs["quantization_config"] = BitsAndBytesQuantizer(4).get_config()
-        elif quantization == "8bit":
-            from pravaha.quantization.bitsandbytes import BitsAndBytesQuantizer
+        # Build kwargs via compatibility layer (handles Flash Attn, RoPE, etc.)
+        kwargs = compat.get_model_kwargs(
+            model_path=model_path,
+            device=device,
+            dtype_str=dtype_str,
+            quantization=quantization,
+            trust_remote_code=trust_remote_code,
+        )
 
-            kwargs["quantization_config"] = BitsAndBytesQuantizer(8).get_config()
         logger.info(
-            f"Loading model: {model_path} (device={device}, dtype={dtype}, quant={quantization or 'none'})"
+            f"Loading model: {model_path} (device={device}, dtype={dtype}, "
+            f"quant={quantization or 'none'}, "
+            f"flash_attn={'yes' if compat._flash_attn_available else 'no'})"
         )
         model = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
         model.eval()

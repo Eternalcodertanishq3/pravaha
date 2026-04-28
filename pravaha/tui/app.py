@@ -1,131 +1,142 @@
-"""Pravaha TUI — Terminal-native Textual application.
+"""Pravaha v3.3 TUI — Full cyberpunk dashboard.
 
-Launch with:  python -m pravaha.tui.app
-              pravaha tui              (if CLI is wired)
+All panels visible at once in a 3-column layout:
+- Left:   SystemStatus, FlowVisualizer
+- Center: Avatar, Chat, LiveEvents
+- Right:  AgentGrid, Metrics
 
-The dashboard opens *in the terminal*, not in a browser.
-When an ``AsyncPravahaEngine`` is passed the dashboard pulls live
-telemetry; otherwise it starts in demo/standby mode with real
-system metrics (CPU, RAM via psutil).
+Bottom: MetricsBar, LiveEvents
+Footer: Wave animation + keybindings
+
+F-keys still open detail screens for deep-dive views.
 """
 
 from __future__ import annotations
 
-import sys
+import os
+from pathlib import Path
 from typing import Any
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.containers import Container, Horizontal, Vertical
 
-from pravaha.tui.dashboard import PravahaDashboard, get_connector
+# Dashboard connector (singleton)
+from pravaha.tui.dashboard import (
+    CenterFlowPanel,
+    FlowVisualizerPanel,
+    LiveEventsPanel,
+    MetricsBar,
+    PravahaDashboard,
+    PravahaFooter,
+    get_connector,
+)
+
+# New v3.3 panels
+from pravaha.tui.panels.agent_grid_panel import AgentGridWidget
+from pravaha.tui.panels.header import PravahaHeader
+from pravaha.tui.panels.system_status_panel import SystemStatusWidget
+from pravaha.tui.panels.wave_panel import WaveWidget
+
+# Detail screens (F-key overlays)
+from pravaha.tui.panels.audit_panel import AuditScreen
+from pravaha.tui.panels.chat_panel import ChatScreen
+from pravaha.tui.panels.log_panel import LogScreen
+from pravaha.tui.panels.metrics_panel import MetricsScreen
+from pravaha.tui.panels.queue_panel import QueueScreen
+from pravaha.tui.panels.rag_panel import RAGScreen
+from pravaha.tui.panels.swarm_panel import SwarmScreen
+
+# CSS path
+CSS_PATH = Path(__file__).parent / "pravaha.tcss"
 
 
 class PravahaTUI(App):
-    """Cyberpunk terminal dashboard for the Pravaha inference framework.
+    """Pravaha v3.3 — Cyberpunk TUI Dashboard.
 
-    This runs entirely in the terminal — no browser window.
+    Full 3-column layout with all panels visible at once.
+    F-keys open detail screens for deep-dive views.
     """
 
-    CSS_PATH = "pravaha.tcss"
-    TITLE = "Pravaha v3.2"
+    TITLE = "PRAVAHA v3.3"
     SUB_TITLE = "AI Agentic Orchestration Framework"
-
-    SCREENS = {} # Registered in on_mount
+    CSS_PATH = CSS_PATH
 
     BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("d", "toggle_dark", "Dark/Light"),
-        ("1", "set_state('idle')", "Idle"),
-        ("2", "set_state('thinking')", "Think"),
-        ("3", "set_state('working')", "Work"),
-        ("4", "set_state('success')", "Done"),
-        ("5", "set_state('error')", "Error"),
-        ("f1", "show_screen('chat')", "F1 Chat"),
-        ("f2", "show_screen('swarm')", "F2 Swarm"),
-        ("f3", "show_screen('audit')", "F3 Audit"),
-        ("f4", "show_screen('metrics')", "F4 Metrics"),
-        ("f5", "show_screen('queue')", "F5 Queue"),
-        ("f6", "show_screen('rag')", "F6 RAG"),
-        ("f7", "show_screen('log')", "F7 Log"),
+        Binding("f1", "push_screen('chat')", "Chat", show=True),
+        Binding("f2", "push_screen('swarm')", "Swarm", show=True),
+        Binding("f3", "push_screen('audit')", "Audit", show=True),
+        Binding("f4", "push_screen('metrics')", "Metrics", show=True),
+        Binding("f5", "push_screen('queue')", "Queue", show=True),
+        Binding("f6", "push_screen('rag')", "RAG", show=True),
+        Binding("f7", "push_screen('log')", "Log", show=True),
+        Binding("q", "quit", "Quit", show=True),
     ]
 
-    def __init__(
-        self,
-        engine: Any = None,
-        orchestrator: Any = None,
-        engine_config: Any = None,
-        host: str | None = None,
-        port: int | None = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        conn = get_connector()
-        if engine is not None:
-            conn.attach_engine(engine)
-        if orchestrator is not None:
-            conn.attach_orchestrator(orchestrator)
+    SCREENS = {
+        "chat": ChatScreen,
+        "swarm": SwarmScreen,
+        "audit": AuditScreen,
+        "metrics": MetricsScreen,
+        "queue": QueueScreen,
+        "rag": RAGScreen,
+        "log": LogScreen,
+    }
 
     def compose(self) -> ComposeResult:
-        yield PravahaDashboard()
+        # ── Header ──
+        yield PravahaHeader(id="dash-header")
+
+        # ── Main 3-column layout ──
+        with Horizontal(id="main-row"):
+            # Left column: System Status + Flow Visualizer
+            with Vertical(id="left-col"):
+                yield SystemStatusWidget(id="sys-status")
+                yield FlowVisualizerPanel(id="flow-vis")
+
+            # Center column: Avatar + Events
+            with Vertical(id="center-col"):
+                yield CenterFlowPanel(id="center-avatar")
+                yield LiveEventsPanel(id="center-events")
+
+            # Right column: Agent Grid + Metrics
+            with Vertical(id="right-col"):
+                yield AgentGridWidget(id="agent-grid")
+                yield MetricsBar(id="right-metrics")
+
+        # ── Wave animation ──
+        yield WaveWidget(id="wave-panel")
+
+        # ── Footer ──
+        yield PravahaFooter(id="dash-footer")
 
     def on_mount(self) -> None:
-        """Log startup event and install screens."""
-        from pravaha.tui.panels.chat_panel import ChatScreen
-        from pravaha.tui.panels.swarm_panel import SwarmScreen
-        from pravaha.tui.panels.audit_panel import AuditScreen
-        from pravaha.tui.panels.metrics_panel import MetricsScreen
-        from pravaha.tui.panels.queue_panel import QueueScreen
-        from pravaha.tui.panels.rag_panel import RAGScreen
-        from pravaha.tui.panels.log_panel import LogScreen
-
-        self.install_screen(ChatScreen(), name="chat")
-        self.install_screen(SwarmScreen(), name="swarm")
-        self.install_screen(AuditScreen(), name="audit")
-        self.install_screen(MetricsScreen(), name="metrics")
-        self.install_screen(QueueScreen(), name="queue")
-        self.install_screen(RAGScreen(), name="rag")
-        self.install_screen(LogScreen(), name="log")
+        """Push boot events when dashboard mounts."""
+        import psutil
 
         conn = get_connector()
-        conn.push_event("Dashboard launched (terminal mode)", "bright_green")
+        conn.push_event("Pravaha v3.3 TUI initialized", "bright_cyan")
+        conn.push_event(
+            f"PID {os.getpid()} │ {psutil.cpu_count(logical=True)} cores │ "
+            f"{psutil.virtual_memory().total // (1024**3)} GB RAM",
+            "grey70",
+        )
 
-    # ── keybindings ─────────────────────────────────────────────
-    def action_show_screen(self, screen_name: str) -> None:
-        """Push a detail screen."""
-        self.push_screen(screen_name)
-    def action_set_state(self, state: str) -> None:
-        """Cycle the centre avatar through states (keys 1-5)."""
-        from pravaha.tui.avatar.pravaha_avatar import PravahaAvatar
-
-        try:
-            avatar = self.query_one(PravahaAvatar)
-            avatar.set_state(state)
-            get_connector().push_event(f"Avatar -> {state}", "bright_cyan")
-        except Exception:
-            pass
-
-    # ── public helpers for external wiring ──────────────────────
-    def attach_engine(self, engine: Any) -> None:
-        """Attach a live engine after the app has started."""
-        get_connector().attach_engine(engine)
-
-    def attach_orchestrator(self, orchestrator: Any) -> None:
-        """Attach a live orchestrator after the app has started."""
-        get_connector().attach_orchestrator(orchestrator)
+        # Sample system metrics immediately
+        conn.sample_system()
 
 
-def main() -> None:
-    """Launch the Pravaha TUI dashboard in the terminal."""
-    # Ensure proper UTF-8 on Windows
-    if sys.platform == "win32":
-        try:
-            sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-            sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-        except Exception:
-            pass
+def run_tui(engine: Any = None, orchestrator: Any = None) -> None:
+    """Launch the Pravaha TUI, optionally wired to a live engine."""
+    conn = get_connector()
+    if engine is not None:
+        conn.attach_engine(engine)
+    if orchestrator is not None:
+        conn.attach_orchestrator(orchestrator)
 
     app = PravahaTUI()
     app.run()
 
 
 if __name__ == "__main__":
-    main()
+    run_tui()

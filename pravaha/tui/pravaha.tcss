@@ -1,142 +1,206 @@
-/* ═══════════════════════════════════════════════════════════
-   Pravaha v3.2 — Cyberpunk Dashboard TCSS
-   Dark neon aesthetic with cyan / green / magenta accents.
-   ═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+ * PRAVAHA v3.3 — CYBERPUNK TERMINAL THEME
+ * Background: #0a0a0f  |  Primary: #00e5cc  |  Borders: #1a2a3a
+ * ══════════════════════════════════════════════════════════════ */
 
-/* ── Global ──────────────────────────────────────────────── */
+/* ── Global ──────────────────────────────────────────────────── */
 
 Screen {
-    background: #0a0e14;
-    color: #c0d0d8;
+    background: #0a0a0f;
+    color: #c0c8d4;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────── */
 
 #dash-header {
-    width: 100%;
     height: 4;
-    background: #0a0e14;
-    border: round #1a3a4a;
+    background: #080810;
+    border-bottom: solid #1a2a3a;
     content-align: center middle;
     text-align: center;
-    margin: 0 0 0 0;
 }
 
-/* ── Main 3-column row ───────────────────────────────────── */
+/* ── Main Row (3-column layout) ──────────────────────────────── */
 
 #main-row {
-    width: 100%;
     height: 1fr;
-    min-height: 24;
 }
-
-/* Left column — System Status + Flow Visualizer */
 
 #left-col {
-    width: 26;
-    min-width: 24;
-    height: 100%;
-    border: round #1a3a4a;
-    background: #0c1218;
+    width: 32;
+    min-width: 28;
+    border-right: solid #1a2a3a;
 }
 
+#center-col {
+    width: 1fr;
+}
+
+#right-col {
+    width: 36;
+    min-width: 30;
+    border-left: solid #1a2a3a;
+}
+
+/* ── Left Column Panels ──────────────────────────────────────── */
+
 #sys-status {
-    height: 1fr;
-    border-bottom: dashed #1a3a4a;
+    height: auto;
+    max-height: 60%;
+    background: #0c0c16;
+    border-bottom: solid #1a2a3a;
+    padding: 0 1;
 }
 
 #flow-vis {
     height: 1fr;
+    background: #0a0a12;
+    padding: 0 1;
 }
 
-/* Centre column — Flow Art + Avatar */
+/* ── Center Column ───────────────────────────────────────────── */
 
-#center-flow {
-    width: 1fr;
-    height: 100%;
-    border: round #1a3a4a;
-    background: #0a0e14;
-    content-align: center middle;
-    text-align: center;
-    overflow-y: auto;
-}
-
-#flow-top-art {
-    width: 100%;
-    content-align: center middle;
-    text-align: center;
+#center-top {
+    height: auto;
+    max-height: 45%;
 }
 
 #center-avatar {
-    width: 100%;
+    height: auto;
+    max-height: 20;
     content-align: center middle;
     text-align: center;
-    margin: 0 0;
-}
-
-#flow-bottom-art {
-    width: 100%;
-    content-align: center middle;
-    text-align: center;
-}
-
-#flow-tagline {
-    width: 100%;
-    content-align: center middle;
-    text-align: center;
-    margin: 0 0;
-}
-
-/* Right column — Active Agents + Pipeline */
-
-#right-col {
-    width: 28;
-    min-width: 26;
-    height: 100%;
+    background: #080810;
     border: round #1a3a4a;
-    background: #0c1218;
 }
 
-#active-agents {
+#chat-inline {
     height: 1fr;
-    border-bottom: dashed #1a3a4a;
+    background: #0a0e14;
+    border: round #1a3a4a;
+    padding: 0 1;
 }
 
-#cur-pipeline {
+#center-events {
+    height: auto;
+    max-height: 12;
+    background: #0c0c16;
+    border-top: solid #1a2a3a;
+    padding: 0 1;
+}
+
+/* ── Right Column Panels ─────────────────────────────────────── */
+
+#agent-grid {
+    height: auto;
+    max-height: 55%;
+    background: #0c0c16;
+    border-bottom: solid #1a2a3a;
+    padding: 0 1;
+}
+
+#right-metrics {
     height: 1fr;
+    background: #0a0a12;
+    padding: 0 1;
 }
 
-/* ── Bottom row — Metrics + Live Events ─────────────────── */
+/* ── Bottom Row ──────────────────────────────────────────────── */
 
 #bottom-row {
-    width: 100%;
-    height: 12;
-    min-height: 10;
+    height: auto;
+    max-height: 8;
+    border-top: solid #1a2a3a;
 }
 
 #metrics-bar {
     width: 1fr;
-    height: 100%;
-    border: round #1a3a4a;
-    background: #0c1218;
-    overflow-y: auto;
+    background: #0a0a0f;
+    padding: 0 1;
 }
 
 #live-events {
     width: 1fr;
-    height: 100%;
-    border: round #1a3a4a;
-    background: #0c1218;
-    overflow-y: auto;
+    background: #0a0a0f;
+    padding: 0 1;
+    border-left: solid #1a2a3a;
 }
 
-/* ── Footer ──────────────────────────────────────────────── */
+/* ── Wave ────────────────────────────────────────────────────── */
+
+#wave-panel {
+    height: 5;
+    background: #0a0a0f;
+    border-top: solid #0d1a24;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
 
 #dash-footer {
-    width: 100%;
     height: 2;
-    background: #0a0e14;
-    border-top: dashed #1a3a4a;
+    background: #080810;
     content-align: center middle;
     text-align: center;
+    border-top: solid #1a2a3a;
+}
+
+/* ── Detail Screens (F-key overlays) ─────────────────────────── */
+
+ChatScreen {
+    background: #0a0a0f;
+}
+
+ChatHistory {
+    height: 1fr;
+    background: #0a0e14;
+    border: round #1a3a4a;
+    padding: 1 2;
+}
+
+SwarmScreen, AuditScreen, MetricsScreen, QueueScreen, RAGScreen, LogScreen {
+    background: #0a0a0f;
+}
+
+/* ── Scrollbars ──────────────────────────────────────────────── */
+
+VerticalScroll > .scrollbar {
+    background: #0d0d18;
+    color: #1a3a4a;
+}
+
+VerticalScroll > .scrollbar--bar {
+    color: #00e5cc 40%;
+}
+
+/* ── Input ────────────────────────────────────────────────────── */
+
+Input {
+    background: #0d0d1a;
+    border: solid #1a3a4a;
+    color: #c0c8d4;
+}
+
+Input:focus {
+    border: solid #00e5cc;
+}
+
+/* ── Header/Footer widgets ───────────────────────────────────── */
+
+Header {
+    background: #080810;
+    color: #00e5cc;
+}
+
+Footer {
+    background: #080810;
+    color: #c0c8d4;
+}
+
+FooterKey {
+    background: #0d0d1a;
+    color: #00e5cc;
+}
+
+FooterKey:hover {
+    background: #1a3a4a;
 }
