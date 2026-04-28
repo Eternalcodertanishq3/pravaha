@@ -62,7 +62,7 @@ class BashTool:
             return {"error": f"Working directory not found: {work_dir}", "success": False}
 
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S602
                 command,
                 shell=True,
                 capture_output=True,

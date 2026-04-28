@@ -7,9 +7,9 @@ frame index cycles on a timer to produce a breathing/blinking effect.
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.reactive import reactive
 from textual.widget import Widget
-from rich.text import Text
 
 # ── palette shortcuts ────────────────────────────────────────────
 C = "bright_cyan"

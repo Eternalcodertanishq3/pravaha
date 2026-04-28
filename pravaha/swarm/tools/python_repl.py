@@ -41,11 +41,11 @@ class PythonRepl:
                 # Try exec first for statements, eval for expressions
                 try:
                     compiled = compile(code, "<repl>", "eval")
-                    result = eval(compiled, self._namespace)
+                    result = eval(compiled, self._namespace)  # noqa: S307
                     if result is not None:
                         stdout_buf.write(repr(result))
                 except SyntaxError:
-                    exec(compile(code, "<repl>", "exec"), self._namespace)
+                    exec(compile(code, "<repl>", "exec"), self._namespace)  # noqa: S102
 
             new_keys = set(self._namespace.keys()) - keys_before - {"__builtins__"}
             return {

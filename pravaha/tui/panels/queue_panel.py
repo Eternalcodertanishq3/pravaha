@@ -5,11 +5,11 @@ Shows active, waiting, and swapped requests inside the continuous batching sched
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-from rich.text import Text
 
 from pravaha.tui.dashboard import get_connector
 
@@ -56,18 +56,18 @@ class QueueDetailStatic(Static):
 
         # ── Active Requests ──
         t.append(" ◆ Active Requests In-Flight\n\n", style=f"bold {GREEN}")
-        
+
         if not reqs:
             t.append("   (No active requests)\n", style="grey50")
         else:
             t.append(f"   {'Request ID':12s} {'Tokens':>8s} {'Progress':>10s}  {'Bar':30s}\n", style="bold grey70")
             t.append(f"   {'─'*12} {'─'*8} {'─'*10}  {'─'*30}\n", style="grey37")
-            
+
             for r in reqs:
                 rid = str(r.get("id", "?"))[:12]
                 toks = r.get("tokens", 0)
                 prog = r.get("progress", 0.0)
-                
+
                 t.append(f"   {rid:12s} ", style=CYAN)
                 t.append(f"{toks:>8d} ", style=YELLOW)
                 t.append(f"{prog:>9.1f}%  ", style=GREEN)

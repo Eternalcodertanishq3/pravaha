@@ -74,8 +74,8 @@ def serve(
     if tui:
         typer.echo("\nLaunching TUI dashboard...")
         try:
-            from pravaha.tui.app import PravahaTUI
             from pravaha.engine.async_engine import AsyncPravahaEngine
+            from pravaha.tui.app import PravahaTUI
 
             typer.echo("Initializing engine weights and GPU memory (this may take a moment)...")
             engine = AsyncPravahaEngine(config=engine_config)

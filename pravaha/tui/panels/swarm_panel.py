@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-from rich.text import Text
 
 from pravaha.tui.dashboard import get_connector
 

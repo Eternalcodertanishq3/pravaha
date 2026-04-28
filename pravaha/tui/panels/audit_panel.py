@@ -10,13 +10,13 @@ import time
 from datetime import datetime
 from typing import Any
 
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-from rich.text import Text
-from rich.table import Table
-from rich.panel import Panel
 
 from pravaha.tui.dashboard import get_connector
 

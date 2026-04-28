@@ -34,18 +34,18 @@ from pravaha.tui.dashboard import (
 
 # New v3.3 panels
 from pravaha.tui.panels.agent_grid_panel import AgentGridWidget
-from pravaha.tui.panels.header import PravahaHeader
-from pravaha.tui.panels.system_status_panel import SystemStatusWidget
-from pravaha.tui.panels.wave_panel import WaveWidget
 
 # Detail screens (F-key overlays)
 from pravaha.tui.panels.audit_panel import AuditScreen
 from pravaha.tui.panels.chat_panel import ChatScreen
+from pravaha.tui.panels.header import PravahaHeader
 from pravaha.tui.panels.log_panel import LogScreen
 from pravaha.tui.panels.metrics_panel import MetricsScreen
 from pravaha.tui.panels.queue_panel import QueueScreen
 from pravaha.tui.panels.rag_panel import RAGScreen
 from pravaha.tui.panels.swarm_panel import SwarmScreen
+from pravaha.tui.panels.system_status_panel import SystemStatusWidget
+from pravaha.tui.panels.wave_panel import WaveWidget
 
 # CSS path
 CSS_PATH = Path(__file__).parent / "pravaha.tcss"

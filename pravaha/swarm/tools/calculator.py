@@ -13,7 +13,6 @@ import operator
 import statistics
 from typing import Any
 
-
 # Safe operators for AST evaluation
 SAFE_OPS = {
     ast.Add: operator.add,

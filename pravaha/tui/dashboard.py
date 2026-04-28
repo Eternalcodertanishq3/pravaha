@@ -18,12 +18,12 @@ from datetime import datetime
 from typing import Any
 
 import psutil
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Static
-from rich.text import Text
 
 from pravaha.tui.avatar.pravaha_avatar import PravahaAvatar
 
@@ -197,29 +197,39 @@ class SystemStatusPanel(Static):
 
         # orchestrator
         val, col = ("ONLINE", GREEN) if online else ("STANDBY", YELLOW)
-        t.append(" ☑ ", style=CYAN); t.append("Orchestrator  ", style="grey70")
-        t.append(": ", style="grey50"); t.append(f"{val}\n", style=f"bold {col}")
+        t.append(" ☑ ", style=CYAN)
+        t.append("Orchestrator  ", style="grey70")
+        t.append(": ", style="grey50")
+        t.append(f"{val}\n", style=f"bold {col}")
 
         # agents
         n_agents = len(agents) if agents else 0
-        t.append(" ⊛ ", style=CYAN); t.append("Agents        ", style="grey70")
-        t.append(": ", style="grey50"); t.append(f"{n_agents:02d} LOADED\n", style=f"bold {GREEN}")
+        t.append(" ⊛ ", style=CYAN)
+        t.append("Agents        ", style="grey70")
+        t.append(": ", style="grey50")
+        t.append(f"{n_agents:02d} LOADED\n", style=f"bold {GREEN}")
 
         # tasks
         running = sched.get("running", 0)
         waiting = sched.get("waiting", 0)
-        t.append(" ◔ ", style=CYAN); t.append("Tasks         ", style="grey70")
-        t.append(": ", style="grey50"); t.append(f"{running + waiting:02d} ACTIVE\n", style=f"bold {YELLOW}")
+        t.append(" ◔ ", style=CYAN)
+        t.append("Tasks         ", style="grey70")
+        t.append(": ", style="grey50")
+        t.append(f"{running + waiting:02d} ACTIVE\n", style=f"bold {YELLOW}")
 
         # pipelines
         pipelines = sched.get("running", 0)
-        t.append(" ⊘ ", style=CYAN); t.append("Pipelines     ", style="grey70")
-        t.append(": ", style="grey50"); t.append(f"{pipelines:02d} RUNNING\n", style=f"bold {GREEN}")
+        t.append(" ⊘ ", style=CYAN)
+        t.append("Pipelines     ", style="grey70")
+        t.append(": ", style="grey50")
+        t.append(f"{pipelines:02d} RUNNING\n", style=f"bold {GREEN}")
 
         # total tokens
         total_tok = stats.get("total_tokens_generated", 0)
-        t.append(" ⊕ ", style=CYAN); t.append("Tokens        ", style="grey70")
-        t.append(": ", style="grey50"); t.append(f"{total_tok}\n", style=f"bold {CYAN}")
+        t.append(" ⊕ ", style=CYAN)
+        t.append("Tokens        ", style="grey70")
+        t.append(": ", style="grey50")
+        t.append(f"{total_tok}\n", style=f"bold {CYAN}")
 
         return t
 
@@ -253,9 +263,12 @@ class FlowVisualizerPanel(Static):
                 line += _FLOW_CHARS[idx]
             t.append(f"{line}\n", style=DIM_CYAN)
         t.append("\n")
-        t.append("  ─→  ", style=CYAN); t.append("DATA FLOW\n", style="grey70")
-        t.append("  ┈┈  ", style=DIM_CYAN); t.append("CONTROL FLOW\n", style="grey70")
-        t.append("  ╌╌  ", style=DIM_CYAN); t.append("CONTEXT STREAM\n", style="grey70")
+        t.append("  ─→  ", style=CYAN)
+        t.append("DATA FLOW\n", style="grey70")
+        t.append("  ┈┈  ", style=DIM_CYAN)
+        t.append("CONTROL FLOW\n", style="grey70")
+        t.append("  ╌╌  ", style=DIM_CYAN)
+        t.append("CONTEXT STREAM\n", style="grey70")
         return t
 
 
@@ -510,13 +523,20 @@ class PravahaFooter(Static):
         t.append(f"{left}  ", style=DIM_CYAN)
         t.append("PRAVAHA", style=f"bold {CYAN}")
         t.append(" • ", style="grey50")
-        t.append("[F1] ", style=CYAN); t.append("Chat │ ", style="grey50")
-        t.append("[F2] ", style=CYAN); t.append("Swarm │ ", style="grey50")
-        t.append("[F3] ", style=CYAN); t.append("Audit │ ", style="grey50")
-        t.append("[F4] ", style=CYAN); t.append("Metrics │ ", style="grey50")
-        t.append("[F5] ", style=CYAN); t.append("Queue │ ", style="grey50")
-        t.append("[F6] ", style=CYAN); t.append("RAG │ ", style="grey50")
-        t.append("[F7] ", style=CYAN); t.append("Log", style="grey50")
+        t.append("[F1] ", style=CYAN)
+        t.append("Chat │ ", style="grey50")
+        t.append("[F2] ", style=CYAN)
+        t.append("Swarm │ ", style="grey50")
+        t.append("[F3] ", style=CYAN)
+        t.append("Audit │ ", style="grey50")
+        t.append("[F4] ", style=CYAN)
+        t.append("Metrics │ ", style="grey50")
+        t.append("[F5] ", style=CYAN)
+        t.append("Queue │ ", style="grey50")
+        t.append("[F6] ", style=CYAN)
+        t.append("RAG │ ", style="grey50")
+        t.append("[F7] ", style=CYAN)
+        t.append("Log", style="grey50")
         t.append(f"  {left}", style=DIM_CYAN)
         return t
 

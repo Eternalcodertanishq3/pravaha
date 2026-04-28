@@ -6,11 +6,11 @@ and ingestion progress.
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-from rich.text import Text
 
 from pravaha.tui.dashboard import get_connector
 
@@ -38,16 +38,23 @@ class RAGDetailStatic(Static):
 
         # ── Document Store ──
         t.append(" ◆ Document Store\n\n", style=f"bold {GREEN}")
-        t.append(f"   Documents Indexed:    ", style="grey70"); t.append("0\n", style=GREEN)
-        t.append(f"   Total Chunks:         ", style="grey70"); t.append("0\n", style=GREEN)
-        t.append(f"   Embedding Model:      ", style="grey70"); t.append("n/a\n", style=GREEN)
-        t.append(f"   Vector Dimensions:    ", style="grey70"); t.append("n/a\n\n", style=GREEN)
+        t.append("   Documents Indexed:    ", style="grey70")
+        t.append("0\n", style=GREEN)
+        t.append("   Total Chunks:         ", style="grey70")
+        t.append("0\n", style=GREEN)
+        t.append("   Embedding Model:      ", style="grey70")
+        t.append("n/a\n", style=GREEN)
+        t.append("   Vector Dimensions:    ", style="grey70")
+        t.append("n/a\n\n", style=GREEN)
 
         # ── Semantic Cache ──
         t.append(" ◆ Semantic Cache Stats\n\n", style=f"bold {MAGENTA}")
-        t.append(f"   Cache Hits:           ", style="grey70"); t.append("0\n", style=MAGENTA)
-        t.append(f"   Cache Misses:         ", style="grey70"); t.append("0\n", style=MAGENTA)
-        t.append(f"   Hit Rate:             ", style="grey70"); t.append("0.0%\n\n", style=MAGENTA)
+        t.append("   Cache Hits:           ", style="grey70")
+        t.append("0\n", style=MAGENTA)
+        t.append("   Cache Misses:         ", style="grey70")
+        t.append("0\n", style=MAGENTA)
+        t.append("   Hit Rate:             ", style="grey70")
+        t.append("0.0%\n\n", style=MAGENTA)
 
         return t
 

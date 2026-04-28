@@ -9,11 +9,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, Static
-from rich.text import Text
 
 from pravaha.tui.dashboard import get_connector
 
@@ -47,11 +47,11 @@ class ChatHistory(VerticalScroll):
         else:
             label.append(" pravaha > ", style="bold bright_green")
             label.append(content, style="grey85")
-            
+
         widget = Static(label)
         self.mount(widget)
         self.scroll_end(animate=False)
-        
+
         self._active_message_text = label
         self._active_message_widget = widget
 

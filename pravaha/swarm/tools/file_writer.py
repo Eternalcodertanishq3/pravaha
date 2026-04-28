@@ -7,6 +7,7 @@ Agents can create, append, or overwrite files.
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,7 @@ class FileWriter:
     description = "Write content to a file (whitelisted paths and extensions)"
     arg_schema = '{"path": "string", "content": "string", "mode": "w|a"}'
 
-    ALLOWED_DIRS = ["output/", "data/agents/", "data/", "/tmp/pravaha/", "temp/"]
+    ALLOWED_DIRS = ["output/", "data/agents/", "data/", os.path.join(tempfile.gettempdir(), "pravaha/").replace("\\", "/"), "temp/"]
     ALLOWED_EXTENSIONS = {
         ".py", ".txt", ".md", ".json", ".yaml", ".yml",
         ".csv", ".html", ".css", ".js", ".ts", ".toml",

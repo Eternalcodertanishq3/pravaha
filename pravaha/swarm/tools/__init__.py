@@ -62,20 +62,19 @@ class ToolRegistry:
     def default(cls) -> ToolRegistry:
         """Create registry with all 12 standard tools pre-registered."""
         # Original 5 tools
-        from pravaha.swarm.tools.code_executor import CodeExecutor
-        from pravaha.swarm.tools.file_reader import FileReader
-        from pravaha.swarm.tools.search_tool import SearchTool
-        from pravaha.swarm.tools.shell_runner import ShellRunner
-        from pravaha.swarm.tools.web_fetcher import WebFetcher
-
         # v3.3: 7 new tools
         from pravaha.swarm.tools.bash_tool import BashTool
         from pravaha.swarm.tools.calculator import Calculator
+        from pravaha.swarm.tools.code_executor import CodeExecutor
+        from pravaha.swarm.tools.file_reader import FileReader
         from pravaha.swarm.tools.file_writer import FileWriter
         from pravaha.swarm.tools.git_tool import GitTool
         from pravaha.swarm.tools.http_client import HttpClient
         from pravaha.swarm.tools.json_tool import JsonTool
         from pravaha.swarm.tools.python_repl import PythonRepl
+        from pravaha.swarm.tools.search_tool import SearchTool
+        from pravaha.swarm.tools.shell_runner import ShellRunner
+        from pravaha.swarm.tools.web_fetcher import WebFetcher
 
         registry = cls()
 

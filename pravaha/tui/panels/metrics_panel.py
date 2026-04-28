@@ -6,11 +6,11 @@ and engine statistics.
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-from rich.text import Text
 
 from pravaha.tui.dashboard import get_connector
 
@@ -43,11 +43,11 @@ class MetricsDetailStatic(Static):
         t.append(" ◆ Hardware Utilization\n\n", style=f"bold {GREEN}")
         cpu = conn.cpu_pct()
         mem = conn.mem_pct()
-        
-        t.append(f"   CPU Usage:    ", style="grey70")
+
+        t.append("   CPU Usage:    ", style="grey70")
         t.append(f"{self._gauge(cpu, 100, 40)}  {cpu:5.1f}%\n", style=GREEN)
-        
-        t.append(f"   Memory Usage: ", style="grey70")
+
+        t.append("   Memory Usage: ", style="grey70")
         t.append(f"{self._gauge(mem, 100, 40)}  {mem:5.1f}%\n\n", style=CYAN)
 
         # ── Engine Core ──
@@ -58,11 +58,16 @@ class MetricsDetailStatic(Static):
         total_req = stats.get("total_requests", 0)
         total_tok = stats.get("total_tokens_generated", 0)
 
-        t.append(f"   Model:        ", style="grey70"); t.append(f"{model}\n", style=YELLOW)
-        t.append(f"   Device:       ", style="grey70"); t.append(f"{device}\n", style=YELLOW)
-        t.append(f"   Quantization: ", style="grey70"); t.append(f"{quant}\n", style=YELLOW)
-        t.append(f"   Total Reqs:   ", style="grey70"); t.append(f"{total_req:,}\n", style=YELLOW)
-        t.append(f"   Total Tokens: ", style="grey70"); t.append(f"{total_tok:,}\n\n", style=YELLOW)
+        t.append("   Model:        ", style="grey70")
+        t.append(f"{model}\n", style=YELLOW)
+        t.append("   Device:       ", style="grey70")
+        t.append(f"{device}\n", style=YELLOW)
+        t.append("   Quantization: ", style="grey70")
+        t.append(f"{quant}\n", style=YELLOW)
+        t.append("   Total Reqs:   ", style="grey70")
+        t.append(f"{total_req:,}\n", style=YELLOW)
+        t.append("   Total Tokens: ", style="grey70")
+        t.append(f"{total_tok:,}\n\n", style=YELLOW)
 
         # ── KV Cache & Blocks ──
         t.append(" ◆ KV Cache & Memory Blocks\n\n", style=f"bold {MAGENTA}")
@@ -72,11 +77,14 @@ class MetricsDetailStatic(Static):
             free_blocks = block_stats.get("free_blocks", 0)
             usage_pct = block_stats.get("usage_pct", 0.0)
 
-            t.append(f"   Block Usage:  ", style="grey70")
+            t.append("   Block Usage:  ", style="grey70")
             t.append(f"{self._gauge(usage_pct, 100, 40)}  {usage_pct:5.1f}%\n", style=MAGENTA)
-            t.append(f"   Total Blocks: ", style="grey70"); t.append(f"{total_blocks:,}\n", style=MAGENTA)
-            t.append(f"   Used Blocks:  ", style="grey70"); t.append(f"{used_blocks:,}\n", style=MAGENTA)
-            t.append(f"   Free Blocks:  ", style="grey70"); t.append(f"{free_blocks:,}\n", style=MAGENTA)
+            t.append("   Total Blocks: ", style="grey70")
+            t.append(f"{total_blocks:,}\n", style=MAGENTA)
+            t.append("   Used Blocks:  ", style="grey70")
+            t.append(f"{used_blocks:,}\n", style=MAGENTA)
+            t.append("   Free Blocks:  ", style="grey70")
+            t.append(f"{free_blocks:,}\n", style=MAGENTA)
         else:
             t.append("   (Block statistics unavailable)\n", style=DIM)
 

@@ -74,7 +74,6 @@ class PravahaHeader(Static):
         t.append("  │  ", style="grey37")
 
         # Device
-        device = stats.get("device", "cpu")
         gpu_info = stats.get("gpu", {})
         if gpu_info.get("available"):
             gpu_name = gpu_info.get("name", "GPU")[:15]
