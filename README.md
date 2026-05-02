@@ -1,23 +1,21 @@
+````md
 <div align="center">
 
-<!-- HERO -->
-
+<!-- Hero -->
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" />
 
 <a href="https://github.com/pravaha/pravaha">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1000&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1100&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
 </a>
 
 <br />
 
 <img src="https://img.shields.io/badge/Status-Actively%20Evolving-0F172A?style=for-the-badge&logo=githubactions&logoColor=38BDF8" />
 <img src="https://img.shields.io/badge/Architecture-Swarm%20Native-0F172A?style=for-the-badge&logo=hyper&logoColor=38BDF8" />
-<img src="https://img.shields.io/badge/Engine-OpenAI%20Compatible-0F172A?style=for-the-badge&logo=openai&logoColor=white" />
+<img src="https://img.shields.io/badge/API-OpenAI%20Compatible-0F172A?style=for-the-badge&logo=openai&logoColor=white" />
 <img src="https://img.shields.io/badge/Core-Rust%20%2B%20Python-0F172A?style=for-the-badge&logo=rust&logoColor=white" />
 
-<br />
-
-<!-- LIVE LOOK / DASHBOARD -->
+<br /><br />
 
 <details open>
 <summary><b>Live system pulse</b></summary>
@@ -32,7 +30,7 @@
 │  Agents: 51 total  |  ReAct enabled  |  Tools sandboxed  |  Branching ON    │
 │  Observability: Prometheus ▸ Tracer ▸ CostEstimator ▸ SelfBenchmark         │
 └──────────────────────────────────────────────────────────────────────────────┘
-```
+````
 
 </details>
 
@@ -48,21 +46,26 @@
 
 Most LLM inference tools solve **one** problem. Pravāha solves **all of them** — and wraps them in an autonomous orchestration layer.
 
-<div align="center">
+<details open>
+<summary><b>Flow map</b></summary>
 
 ```mermaid
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
 flowchart LR
-  A[Model Inference] --> B[Swarm Orchestration]
-  B --> C[ReAct Planning]
-  C --> D[Tool Execution]
-  D --> E[Audit + Self-Heal]
-  E --> F[Persistent Memory]
-  F --> G[RAG / Vision / Branching]
-  G --> H[Observable Output]
+  A["Model Inference"] --> B["Swarm Orchestration"]
+  B --> C["ReAct Planning"]
+  C --> D["Tool Execution"]
+  D --> E["Audit + Self-Heal"]
+  E --> F["Persistent Memory"]
+  F --> G["RAG / Vision / Branching"]
+  G --> H["Observable Output"]
   H --> B
+
+  classDef cyber fill:#0f172a,stroke:#38bdf8,color:#ffffff,stroke-width:1px;
+  class A,B,C,D,E,F,G,H cyber;
 ```
 
-</div>
+</details>
 
 | Capability                | vLLM | Ollama | llama.cpp | **Pravāha v3.1** |
 | ------------------------- | :--: | :----: | :-------: | :--------------: |
@@ -97,13 +100,9 @@ flowchart LR
 
 Every agent in Pravāha v3.1 uses the **ReAct (Reason + Act) loop**:
 
-<div align="center">
-
 ```text
 THINK → ACT → OBSERVE → THINK → ACT → OBSERVE → ... → ANSWER
 ```
-
-</div>
 
 This is NOT prompt wrapping. Agents:
 
@@ -158,55 +157,62 @@ docker compose -f docker/docker-compose.yml up
 
 ## Architecture
 
-<div align="center">
+<details open>
+<summary><b>Interactive architecture stack</b></summary>
 
 ```mermaid
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
 flowchart TB
-  subgraph L1[Layer 1: Interface]
-    A1[CLI · FastAPI · WebSocket · TUI]
+  subgraph L1["Layer 1 · Interface"]
+    A1["CLI · FastAPI · WebSocket · TUI"]
   end
 
-  subgraph L2[Layer 2: Engine]
-    A2[AsyncPravahaEngine · EventBus · RequestQueue]
+  subgraph L2["Layer 2 · Engine"]
+    A2["AsyncPravahaEngine · EventBus · RequestQueue"]
   end
 
-  subgraph L3[Layer 3: Inference Pipeline]
-    A3[Tokenizer → Scheduler → Decoder → Sampler]
+  subgraph L3["Layer 3 · Inference Pipeline"]
+    A3["Tokenizer → Scheduler → Decoder → Sampler"]
   end
 
-  subgraph L4[Layer 4: Memory Plane]
-    A4[PagedKVCache · BlockManager · PrefixTrie (Rust)]
-    A4b[Prefix Sharing · LRU Swapping · Preemption]
+  subgraph L4["Layer 4 · Memory Plane"]
+    A4["PagedKVCache"]
+    A5["BlockManager"]
+    A6["PrefixTrie · Rust"]
+    A7["Prefix sharing · LRU swapping · Preemption"]
+    A4 --> A5 --> A6 --> A7
   end
 
-  subgraph L5[Layer 5: Intelligence (Swarm — 51 Agents)]
-    A5[20 Workers · 12 Auditors · 10 Security · 9 Design]
-    A5b[ReAct Loop · Tools · Persistent Memory]
+  subgraph L5["Layer 5 · Intelligence · Swarm — 51 Agents"]
+    A8["20 Workers · 12 Auditors · 10 Security · 9 Design"]
+    A9["ReAct Loop · Tools · Persistent Memory"]
   end
 
-  subgraph L6[Layer 6: Extensions]
-    A6[RAG · Vision · Branching · Plugins · Guardrails]
+  subgraph L6["Layer 6 · Extensions"]
+    A10["RAG · Vision · Branching · Plugins · Guardrails"]
   end
 
-  subgraph L7[Layer 7: Observability]
-    A7[Prometheus · Tracer · CostEstimator · SelfBenchmark]
+  subgraph L7["Layer 7 · Observability"]
+    A11["Prometheus · Tracer · CostEstimator · SelfBenchmark"]
   end
 
-  subgraph L8[Layer 8: Rust Performance Core]
-    A8[BlockAllocator · PrefixTrie · AllocatorStats]
+  subgraph L8["Layer 8 · Rust Performance Core"]
+    A12["BlockAllocator · PrefixTrie · AllocatorStats"]
   end
 
-  A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8
+  A1 --> A2 --> A3 --> A4 --> A8 --> A10 --> A11 --> A12
+
+  classDef cyber fill:#0f172a,stroke:#38bdf8,color:#ffffff,stroke-width:1px;
+  class A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12 cyber;
 ```
 
-</div>
+</details>
 
 ---
 
 ## 51-Agent Swarm
 
-<details open>
-<summary><b>Workers (20 agents)</b></summary>
+### Workers (20 agents)
 
 | Agent           | Role                           | ReAct? | Tools                                 |
 | --------------- | ------------------------------ | :----: | ------------------------------------- |
@@ -231,10 +237,7 @@ flowchart TB
 | NarratorAgent   | Narrative writing              |    —   | —                                     |
 | EnsembleAgent   | Multi-model ensemble           |    —   | —                                     |
 
-</details>
-
-<details>
-<summary><b>Auditors (12 agents)</b></summary>
+### Auditors (12 agents)
 
 Static regex-first analysis with zero LLM cost for detection.
 
@@ -253,10 +256,7 @@ Static regex-first analysis with zero LLM cost for detection.
 | TestGeneratorAgent       |     —    | Auto-generate tests                                                   |
 | RegressionGuardAgent     |     —    | Detect regressions from patches                                       |
 
-</details>
-
-<details>
-<summary><b>Security Agents (10)</b></summary>
+### Security Agents (10)
 
 | Agent                 |  Patterns | CVSS? | Focus                                     |
 | --------------------- | :-------: | :---: | ----------------------------------------- |
@@ -271,10 +271,7 @@ Static regex-first analysis with zero LLM cost for detection.
 | APISecurityAgent      |     4     |   —   | Rate limiting, header injection           |
 | ComplianceAgent       |     5     |   —   | GDPR/PCI/OWASP logging                    |
 
-</details>
-
-<details>
-<summary><b>Design Agents (9)</b></summary>
+### Design Agents (9)
 
 | Agent                 | Role                  | Tools          | Focus                               |
 | --------------------- | --------------------- | -------------- | ----------------------------------- |
@@ -287,8 +284,6 @@ Static regex-first analysis with zero LLM cost for detection.
 | DesignCriticAgent     | design_critic         | —              | 5-dimension scoring                 |
 | PrototypeAgent        | prototype_builder     | read_file      | Single-file HTML prototypes         |
 | DesignSystemAgent     | design_system         | —              | Token + pattern library             |
-
-</details>
 
 ---
 
@@ -331,7 +326,8 @@ Agents maintain memory across sessions via SQLite in WAL mode.
 
 ## TUI Dashboard
 
-<div align="center">
+<details open>
+<summary><b>Console view</b></summary>
 
 ```text
 ┌──────────────────────────────────────────────────────┐
@@ -351,7 +347,7 @@ Agents maintain memory across sessions via SQLite in WAL mode.
 └──────────────────────────────────────────────────────┘
 ```
 
-</div>
+</details>
 
 Avatar states: **idle** (cyan) → **thinking** (yellow) → **working** (green) → **audit** (magenta) → **success** (green ✦)
 
@@ -470,6 +466,8 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/Platane/snk/output/github-contribution-grid-snake.svg" alt="Contribution snake animation" />
+
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,50:1D4ED8,100:020617&height=160&section=footer&animation=fadeIn" width="100%" />
 
 ### ✦ Pravāha v3.2
@@ -479,3 +477,4 @@ MIT — see [LICENSE](LICENSE) for details.
 ### Not a swarm of system prompts. A genuine inference framework with autonomous agents.
 
 </div>
+```
