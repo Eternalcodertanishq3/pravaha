@@ -1,8 +1,7 @@
-````md
 <div align="center">
 
-<!-- Hero -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" />
+<!-- HERO -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" alt="Pravaha header" />
 
 <a href="https://github.com/pravaha/pravaha">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1100&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
@@ -10,10 +9,10 @@
 
 <br />
 
-<img src="https://img.shields.io/badge/Status-Actively%20Evolving-0F172A?style=for-the-badge&logo=githubactions&logoColor=38BDF8" />
-<img src="https://img.shields.io/badge/Architecture-Swarm%20Native-0F172A?style=for-the-badge&logo=hyper&logoColor=38BDF8" />
-<img src="https://img.shields.io/badge/API-OpenAI%20Compatible-0F172A?style=for-the-badge&logo=openai&logoColor=white" />
-<img src="https://img.shields.io/badge/Core-Rust%20%2B%20Python-0F172A?style=for-the-badge&logo=rust&logoColor=white" />
+<img src="https://img.shields.io/badge/Status-Actively%20Evolving-0F172A?style=for-the-badge&logo=githubactions&logoColor=38BDF8" alt="Status badge" />
+<img src="https://img.shields.io/badge/Architecture-Swarm%20Native-0F172A?style=for-the-badge&logo=hyper&logoColor=38BDF8" alt="Architecture badge" />
+<img src="https://img.shields.io/badge/API-OpenAI%20Compatible-0F172A?style=for-the-badge&logo=openai&logoColor=white" alt="API badge" />
+<img src="https://img.shields.io/badge/Core-Rust%20%2B%20Python-0F172A?style=for-the-badge&logo=rust&logoColor=white" alt="Core badge" />
 
 <br /><br />
 
@@ -30,7 +29,7 @@
 │  Agents: 51 total  |  ReAct enabled  |  Tools sandboxed  |  Branching ON    │
 │  Observability: Prometheus ▸ Tracer ▸ CostEstimator ▸ SelfBenchmark         │
 └──────────────────────────────────────────────────────────────────────────────┘
-````
+```
 
 </details>
 
@@ -67,32 +66,31 @@ flowchart LR
 
 </details>
 
-| Capability                | vLLM | Ollama | llama.cpp | **Pravāha v3.1** |
-| ------------------------- | :--: | :----: | :-------: | :--------------: |
-| Continuous Batching       |   ✅  |    ✅   |     ✅     |         ✅        |
-| PagedAttention            |   ✅  |    ✅   |     ✅     |         ✅        |
-| OpenAI-Compatible API     |   ✅  |    ✅   |     ✅     |         ✅        |
-| 51-Agent Autonomous Swarm |   ❌  |    ❌   |     ❌     |         ✅        |
-| ReAct Loop (Reason + Act) |   ❌  |    ❌   |     ❌     |         ✅        |
-| Self-Healing Audit Loop   |   ❌  |    ❌   |     ❌     |         ✅        |
-| Persistent Agent Memory   |   ❌  |    ❌   |     ❌     |         ✅        |
-| Sandboxed Tool Execution  |   ❌  |    ❌   |     ❌     |         ✅        |
-| 10 Security Audit Agents  |   ❌  |    ❌   |     ❌     |         ✅        |
-| 9 Design Agents           |   ❌  |    ❌   |     ❌     |         ✅        |
-| Built-in RAG Pipeline     |   ❌  |    ✅   |     ❌     |         ✅        |
-| Vision Routing            |   ❌  |    ✅   |     ❌     |         ✅        |
-| Conversation Branching    |   ❌  |    ❌   |     ❌     |         ✅        |
-| Terminal Dashboard (TUI)  |   ❌  |    ❌   |     ❌     |         ✅        |
-| Pixel Avatar Animation    |   ❌  |    ❌   |     ❌     |         ✅        |
-| Rust Performance Core     |   ✅  |    ❌   |     ✅     |         ✅        |
-| Plugin System             |   ❌  |    ❌   |     ❌     |         ✅        |
-| Token-Level Debugging     |   ❌  |    ❌   |     ❌     |         ✅        |
+| Capability | vLLM | Ollama | llama.cpp | **Pravāha v3.1** |
+|---|:---:|:---:|:---:|:---:|
+| Continuous Batching | ✅ | ✅ | ✅ | ✅ |
+| PagedAttention | ✅ | ✅ | ✅ | ✅ |
+| OpenAI-Compatible API | ✅ | ✅ | ✅ | ✅ |
+| 51-Agent Autonomous Swarm | ❌ | ❌ | ❌ | ✅ |
+| ReAct Loop (Reason + Act) | ❌ | ❌ | ❌ | ✅ |
+| Self-Healing Audit Loop | ❌ | ❌ | ❌ | ✅ |
+| Persistent Agent Memory | ❌ | ❌ | ❌ | ✅ |
+| Sandboxed Tool Execution | ❌ | ❌ | ❌ | ✅ |
+| 10 Security Audit Agents | ❌ | ❌ | ❌ | ✅ |
+| 9 Design Agents | ❌ | ❌ | ❌ | ✅ |
+| Built-in RAG Pipeline | ❌ | ✅ | ❌ | ✅ |
+| Vision Routing | ❌ | ✅ | ❌ | ✅ |
+| Conversation Branching | ❌ | ❌ | ❌ | ✅ |
+| Terminal Dashboard (TUI) | ❌ | ❌ | ❌ | ✅ |
+| Pixel Avatar Animation | ❌ | ❌ | ❌ | ✅ |
+| Rust Performance Core | ✅ | ❌ | ✅ | ✅ |
+| Plugin System | ❌ | ❌ | ❌ | ✅ |
+| Token-Level Debugging | ❌ | ❌ | ❌ | ✅ |
 
 > **Think of it this way:**
->
-> * **LLaMA** = the car engine 🛠️
-> * **CUDA** = the fuel ⛽
-> * **Pravāha** = the entire self-driving race car 🏎️ with pit crew, dashboard, and autopilot
+> - **LLaMA** = the car engine 🛠️
+> - **CUDA** = the fuel ⛽
+> - **Pravāha** = the entire self-driving race car 🏎️ with pit crew, dashboard, and autopilot
 
 ---
 
@@ -106,11 +104,11 @@ THINK → ACT → OBSERVE → THINK → ACT → OBSERVE → ... → ANSWER
 
 This is NOT prompt wrapping. Agents:
 
-1. **Plan** their own sub-steps before executing
-2. **Execute real tools** (code runner, web search, file reader)
-3. **Observe** results and adapt
-4. **Persist memory** across sessions (SQLite-backed)
-5. **Self-heal** through a 12-auditor feedback loop
+1. **Plan** their own sub-steps before executing  
+2. **Execute real tools** (code runner, web search, file reader)  
+3. **Observe** results and adapt  
+4. **Persist memory** across sessions (SQLite-backed)  
+5. **Self-heal** through a 12-auditor feedback loop  
 
 ---
 
@@ -214,76 +212,76 @@ flowchart TB
 
 ### Workers (20 agents)
 
-| Agent           | Role                           | ReAct? | Tools                                 |
-| --------------- | ------------------------------ | :----: | ------------------------------------- |
-| PlannerAgent    | Task decomposition             |    ✅   | memory                                |
-| CoderAgent      | Code generation + verification |    ✅   | execute_python, read_file, web_search |
-| DebuggerAgent   | Root cause analysis + fix      |    ✅   | execute_python, read_file             |
-| ResearcherAgent | Web research + cross-reference |    ✅   | web_search, fetch_url                 |
-| ReasoningAgent  | Chain-of-thought + math verify |    ✅   | execute_python                        |
-| CriticAgent     | Quality critique               |    —   | —                                     |
-| ValidatorAgent  | Output validation              |    —   | —                                     |
-| SummarizerAgent | Text summarization             |    —   | —                                     |
-| ExpanderAgent   | Content expansion              |    —   | —                                     |
-| TranslatorAgent | Language translation           |    —   | —                                     |
-| MergerAgent     | Output merging                 |    —   | —                                     |
-| RouterAgent     | Task routing                   |    —   | —                                     |
-| MemoryAgent     | Memory management              |    —   | —                                     |
-| ToolAgent       | Tool orchestration             |    ✅   | all tools                             |
-| JudgeAgent      | Quality judging                |    —   | —                                     |
-| RefinerAgent    | Output refinement              |    —   | —                                     |
-| ClassifierAgent | Task classification            |    —   | —                                     |
-| ExtractorAgent  | Data extraction                |    —   | —                                     |
-| NarratorAgent   | Narrative writing              |    —   | —                                     |
-| EnsembleAgent   | Multi-model ensemble           |    —   | —                                     |
+| Agent | Role | ReAct? | Tools |
+|-------|------|:------:|-------|
+| PlannerAgent | Task decomposition | ✅ | memory |
+| CoderAgent | Code generation + verification | ✅ | execute_python, read_file, web_search |
+| DebuggerAgent | Root cause analysis + fix | ✅ | execute_python, read_file |
+| ResearcherAgent | Web research + cross-reference | ✅ | web_search, fetch_url |
+| ReasoningAgent | Chain-of-thought + math verify | ✅ | execute_python |
+| CriticAgent | Quality critique | — | — |
+| ValidatorAgent | Output validation | — | — |
+| SummarizerAgent | Text summarization | — | — |
+| ExpanderAgent | Content expansion | — | — |
+| TranslatorAgent | Language translation | — | — |
+| MergerAgent | Output merging | — | — |
+| RouterAgent | Task routing | — | — |
+| MemoryAgent | Memory management | — | — |
+| ToolAgent | Tool orchestration | ✅ | all tools |
+| JudgeAgent | Quality judging | — | — |
+| RefinerAgent | Output refinement | — | — |
+| ClassifierAgent | Task classification | — | — |
+| ExtractorAgent | Data extraction | — | — |
+| NarratorAgent | Narrative writing | — | — |
+| EnsembleAgent | Multi-model ensemble | — | — |
 
 ### Auditors (12 agents)
 
 Static regex-first analysis with zero LLM cost for detection.
 
-| Agent                    | Patterns | Focus                                                                 |
-| ------------------------ | :------: | --------------------------------------------------------------------- |
-| SyntaxAuditAgent         |     7    | eval, exec, bare except, star import, mutable default, global, assert |
-| TypeSafetyAgent          |     3    | isinstance chains, bare type(), Any overuse                           |
-| LogicFlawAgent           |     4    | == None, while True break, unreachable code, empty catch              |
-| PerformanceProfilerAgent |     3    | nested loops, string concat, repeated computation                     |
-| ConsistencyGuardAgent    |     —    | Cross-output consistency                                              |
-| HallucinationHunterAgent |     —    | Factual verification                                                  |
-| EdgeCaseHunterAgent      |     —    | Boundary conditions                                                   |
-| OutputVerifierAgent      |     —    | Final quality gate                                                    |
-| PatchApplierAgent        |     —    | Auto-fix issues                                                       |
-| SelfReflectionAgent      |     —    | Meta-cognitive review                                                 |
-| TestGeneratorAgent       |     —    | Auto-generate tests                                                   |
-| RegressionGuardAgent     |     —    | Detect regressions from patches                                       |
+| Agent | Patterns | Focus |
+|-------|:--------:|-------|
+| SyntaxAuditAgent | 7 | eval, exec, bare except, star import, mutable default, global, assert |
+| TypeSafetyAgent | 3 | isinstance chains, bare type(), Any overuse |
+| LogicFlawAgent | 4 | == None, while True break, unreachable code, empty catch |
+| PerformanceProfilerAgent | 3 | nested loops, string concat, repeated computation |
+| ConsistencyGuardAgent | — | Cross-output consistency |
+| HallucinationHunterAgent | — | Factual verification |
+| EdgeCaseHunterAgent | — | Boundary conditions |
+| OutputVerifierAgent | — | Final quality gate |
+| PatchApplierAgent | — | Auto-fix issues |
+| SelfReflectionAgent | — | Meta-cognitive review |
+| TestGeneratorAgent | — | Auto-generate tests |
+| RegressionGuardAgent | — | Detect regressions from patches |
 
 ### Security Agents (10)
 
-| Agent                 |  Patterns | CVSS? | Focus                                     |
-| --------------------- | :-------: | :---: | ----------------------------------------- |
-| SecurityAuditAgent    |     12    |   ✅   | eval/exec/pickle + CWE mapping            |
-| InjectionScannerAgent |     10    |   —   | SQL/XSS/XXE/command/template injection    |
-| AuthAuditAgent        |     5     |   —   | JWT, session fixation, hardcoded creds    |
-| CryptoAuditAgent      |     8     |   —   | MD5/SHA1/DES/RC4/ECB/weak keys            |
-| DependencyAuditAgent  |     6     |   —   | pickle/marshal/ctypes/telnet              |
-| SecretsScannerAgent   | 8+entropy |   —   | AWS/GitHub/OpenAI/Slack + Shannon entropy |
-| NetworkSecurityAgent  |     5     |   —   | HTTP/SSL/CORS/bind/SSRF                   |
-| PrivilegeAuditAgent   |     5     |   —   | Root escalation, chmod 777                |
-| APISecurityAgent      |     4     |   —   | Rate limiting, header injection           |
-| ComplianceAgent       |     5     |   —   | GDPR/PCI/OWASP logging                    |
+| Agent | Patterns | CVSS? | Focus |
+|-------|:--------:|:-----:|-------|
+| SecurityAuditAgent | 12 | ✅ | eval/exec/pickle + CWE mapping |
+| InjectionScannerAgent | 10 | — | SQL/XSS/XXE/command/template injection |
+| AuthAuditAgent | 5 | — | JWT, session fixation, hardcoded creds |
+| CryptoAuditAgent | 8 | — | MD5/SHA1/DES/RC4/ECB/weak keys |
+| DependencyAuditAgent | 6 | — | pickle/marshal/ctypes/telnet |
+| SecretsScannerAgent | 8+entropy | — | AWS/GitHub/OpenAI/Slack + Shannon entropy |
+| NetworkSecurityAgent | 5 | — | HTTP/SSL/CORS/bind/SSRF |
+| PrivilegeAuditAgent | 5 | — | Root escalation, chmod 777 |
+| APISecurityAgent | 4 | — | Rate limiting, header injection |
+| ComplianceAgent | 5 | — | GDPR/PCI/OWASP logging |
 
 ### Design Agents (9)
 
-| Agent                 | Role                  | Tools          | Focus                               |
-| --------------------- | --------------------- | -------------- | ----------------------------------- |
-| UIDesignerAgent       | ui_designer           | web_search     | Layout + visual + interaction specs |
-| ComponentBuilderAgent | component_builder     | execute_python | React/HTML/CSS components           |
-| LayoutAgent           | layout_designer       | —              | CSS Grid/Flexbox layouts            |
-| StyleAgent            | style_designer        | —              | Design token systems                |
-| AccessibilityAgent    | accessibility_auditor | —              | WCAG 2.1 AA compliance (6 checks)   |
-| UXReviewerAgent       | ux_reviewer           | —              | Nielsen's 10 heuristics             |
-| DesignCriticAgent     | design_critic         | —              | 5-dimension scoring                 |
-| PrototypeAgent        | prototype_builder     | read_file      | Single-file HTML prototypes         |
-| DesignSystemAgent     | design_system         | —              | Token + pattern library             |
+| Agent | Role | Tools | Focus |
+|-------|------|-------|-------|
+| UIDesignerAgent | ui_designer | web_search | Layout + visual + interaction specs |
+| ComponentBuilderAgent | component_builder | execute_python | React/HTML/CSS components |
+| LayoutAgent | layout_designer | — | CSS Grid/Flexbox layouts |
+| StyleAgent | style_designer | — | Design token systems |
+| AccessibilityAgent | accessibility_auditor | — | WCAG 2.1 AA compliance (6 checks) |
+| UXReviewerAgent | ux_reviewer | — | Nielsen's 10 heuristics |
+| DesignCriticAgent | design_critic | — | 5-dimension scoring |
+| PrototypeAgent | prototype_builder | read_file | Single-file HTML prototypes |
+| DesignSystemAgent | design_system | — | Token + pattern library |
 
 ---
 
@@ -291,14 +289,14 @@ Static regex-first analysis with zero LLM cost for detection.
 
 Agents can execute **real tools** during the ReAct loop.
 
-| Tool         | Name             | Description                    | Security                          |
-| ------------ | ---------------- | ------------------------------ | --------------------------------- |
-| CodeExecutor | `execute_python` | Subprocess sandbox, 5s timeout | No shell=True, 8KB max output     |
-| FileReader   | `read_file`      | Whitelisted extensions only    | .py,.js,.ts,.md,.json,.yaml,.toml |
-| WebFetcher   | `fetch_url`      | HTTP GET + HTML→text           | 10s timeout, follow redirects     |
-| SearchTool   | `web_search`     | DuckDuckGo API                 | No API key needed                 |
-| ShellRunner  | `run_shell`      | Whitelisted commands only      | Blocked: rm, sudo, chmod, curl    |
-| MemoryTool   | `memory`         | Agent-scoped SQLite store      | Namespaced per agent role         |
+| Tool | Name | Description | Security |
+|------|------|-------------|----------|
+| CodeExecutor | `execute_python` | Subprocess sandbox, 5s timeout | No shell=True, 8KB max output |
+| FileReader | `read_file` | Whitelisted extensions only | .py,.js,.ts,.md,.json,.yaml,.toml |
+| WebFetcher | `fetch_url` | HTTP GET + HTML→text | 10s timeout, follow redirects |
+| SearchTool | `web_search` | DuckDuckGo API | No API key needed |
+| ShellRunner | `run_shell` | Whitelisted commands only | Blocked: rm, sudo, chmod, curl |
+| MemoryTool | `memory` | Agent-scoped SQLite store | Namespaced per agent role |
 
 ---
 
@@ -306,21 +304,21 @@ Agents can execute **real tools** during the ReAct loop.
 
 Agents maintain memory across sessions via SQLite in WAL mode.
 
-| Module           | Purpose              | Key Feature                                |
-| ---------------- | -------------------- | ------------------------------------------ |
-| `MemoryStore`    | Key-value store      | Importance weighting, access-time tracking |
-| `EpisodicMemory` | Task-result episodes | Keyword-overlap recall for learning        |
-| `SemanticMemory` | Fact store           | TF-IDF cosine similarity                   |
+| Module | Purpose | Key Feature |
+|--------|---------|-------------|
+| `MemoryStore` | Key-value store | Importance weighting, access-time tracking |
+| `EpisodicMemory` | Task-result episodes | Keyword-overlap recall for learning |
+| `SemanticMemory` | Fact store | TF-IDF cosine similarity |
 
 ---
 
 ## Rust Performance Core
 
-| Module           | Thread Safety | Key Methods                                     |
-| ---------------- | :-----------: | ----------------------------------------------- |
-| `BlockAllocator` |       —       | allocate, free, batch_allocate, evict_lru_batch |
-| `PrefixTrie`     | `Arc<RwLock>` | insert, longest_prefix_match, decrement_ref     |
-| `AllocatorStats` |       —       | hit_rate(), utilization(), alloc_free_ratio()   |
+| Module | Thread Safety | Key Methods |
+|--------|:------------:|-------------|
+| `BlockAllocator` | — | allocate, free, batch_allocate, evict_lru_batch |
+| `PrefixTrie` | `Arc<RwLock>` | insert, longest_prefix_match, decrement_ref |
+| `AllocatorStats` | — | hit_rate(), utilization(), alloc_free_ratio() |
 
 ---
 
@@ -355,14 +353,14 @@ Avatar states: **idle** (cyan) → **thinking** (yellow) → **working** (green)
 
 ## Pipelines
 
-| Pipeline             | Workers                                      | Auditors                               |
-| -------------------- | -------------------------------------------- | -------------------------------------- |
-| `plan-execute-audit` | planner → coder → critic                     | syntax + security + verifier           |
-| `research-summarize` | researcher → reasoning → summarizer          | hallucination + consistency            |
-| `code-review`        | coder → debugger → critic → refiner          | syntax + type + security + perf + test |
-| `secure-code-review` | planner → coder → debugger                   | ALL 10 security agents                 |
-| `design-component`   | ui_designer → layout → style → builder       | accessibility + UX + critic            |
-| `full-secure-design` | planner → designer → builder → coder → debug | security + design + perf               |
+| Pipeline | Workers | Auditors |
+|----------|---------|----------|
+| `plan-execute-audit` | planner → coder → critic | syntax + security + verifier |
+| `research-summarize` | researcher → reasoning → summarizer | hallucination + consistency |
+| `code-review` | coder → debugger → critic → refiner | syntax + type + security + perf + test |
+| `secure-code-review` | planner → coder → debugger | ALL 10 security agents |
+| `design-component` | ui_designer → layout → style → builder | accessibility + UX + critic |
+| `full-secure-design` | planner → designer → builder → coder → debug | security + design + perf |
 
 ---
 
@@ -445,14 +443,14 @@ Pravāha is **not** a replacement for vLLM in production inference workloads. vL
 
 Pravāha's advantage is the **intelligent layer**: when you need agents, self-healing output, built-in RAG, and observable workflows — not just raw token throughput.
 
-| Dimension      | vLLM                  | Pravāha                              |
-| -------------- | --------------------- | ------------------------------------ |
-| Raw throughput | ✅ Custom CUDA kernels | ❌ Wraps HuggingFace Transformers     |
-| Agent swarm    | ❌                     | ✅ 51 autonomous agents               |
-| Self-healing   | ❌                     | ✅ Audit loop with patch verification |
-| Built-in RAG   | ❌                     | ✅ FAISS + embeddings                 |
-| Memory         | ❌                     | ✅ SQLite persistent agent memory     |
-| Tool execution | ❌                     | ✅ 6 sandboxed tools                  |
+| Dimension | vLLM | Pravāha |
+|-----------|------|---------|
+| Raw throughput | ✅ Custom CUDA kernels | ❌ Wraps HuggingFace Transformers |
+| Agent swarm | ❌ | ✅ 51 autonomous agents |
+| Self-healing | ❌ | ✅ Audit loop with patch verification |
+| Built-in RAG | ❌ | ✅ FAISS + embeddings |
+| Memory | ❌ | ✅ SQLite persistent agent memory |
+| Tool execution | ❌ | ✅ 6 sandboxed tools |
 
 **Inference Performance Note:** Pravāha's inference path wraps HuggingFace Transformers. It does not use custom CUDA kernels. Benchmarks vary by hardware. GPT-2 on CPU: ~80ms TTFT. Llama-3-8B on A100 with 4-bit: approximately 40–60ms TTFT.
 
@@ -468,13 +466,10 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <img src="https://raw.githubusercontent.com/Platane/snk/output/github-contribution-grid-snake.svg" alt="Contribution snake animation" />
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,50:1D4ED8,100:020617&height=160&section=footer&animation=fadeIn" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,50:1D4ED8,100:020617&height=160&section=footer&animation=fadeIn" width="100%" alt="Footer wave" />
 
 ### ✦ Pravāha v3.2
-
 ### The self-healing, swarm-powered LLM inference framework.
-
 ### Not a swarm of system prompts. A genuine inference framework with autonomous agents.
 
 </div>
-```
