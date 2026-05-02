@@ -1,20 +1,40 @@
 <div align="center">
 
-<!-- Animated Header -->
+<!-- HERO -->
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,50:1D4ED8,100:38BDF8&height=260&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" />
 
 <a href="https://github.com/pravaha/pravaha">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=1000&color=38BDF8&center=true&vCenter=true&width=1000&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1000&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
 </a>
 
 <br />
 
-[![CI](https://github.com/pravaha/pravaha/actions/workflows/ci.yml/badge.svg)](https://github.com/pravaha/pravaha/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![Rust Core](https://img.shields.io/badge/Rust-Performance%20Core-orange.svg)](https://www.rust-lang.org/)
-[![OpenAI-Compatible API](https://img.shields.io/badge/API-OpenAI%20Compatible-10B981.svg)](#quick-start)
+<img src="https://img.shields.io/badge/Status-Actively%20Evolving-0F172A?style=for-the-badge&logo=githubactions&logoColor=38BDF8" />
+<img src="https://img.shields.io/badge/Architecture-Swarm%20Native-0F172A?style=for-the-badge&logo=hyper&logoColor=38BDF8" />
+<img src="https://img.shields.io/badge/Engine-OpenAI%20Compatible-0F172A?style=for-the-badge&logo=openai&logoColor=white" />
+<img src="https://img.shields.io/badge/Core-Rust%20%2B%20Python-0F172A?style=for-the-badge&logo=rust&logoColor=white" />
+
+<br />
+
+<!-- LIVE LOOK / DASHBOARD -->
+
+<details open>
+<summary><b>Live system pulse</b></summary>
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PRAVAHA v3.2 · Swarm mode · Self-heal ON · Memory ON · Rust core ACTIVE   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  INFERENCE FLOW  →  SCHEDULER  →  DECODER  →  SWARM  →  AUDIT  →  OUTPUT    │
+│                                                                             │
+│  Avatar: idle ▸ thinking ▸ working ▸ auditing ▸ success                     │
+│  Agents: 51 total  |  ReAct enabled  |  Tools sandboxed  |  Branching ON    │
+│  Observability: Prometheus ▸ Tracer ▸ CostEstimator ▸ SelfBenchmark         │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+</details>
 
 <br />
 
@@ -185,7 +205,8 @@ flowchart TB
 
 ## 51-Agent Swarm
 
-### Workers (20 agents)
+<details open>
+<summary><b>Workers (20 agents)</b></summary>
 
 | Agent           | Role                           | ReAct? | Tools                                 |
 | --------------- | ------------------------------ | :----: | ------------------------------------- |
@@ -210,7 +231,10 @@ flowchart TB
 | NarratorAgent   | Narrative writing              |    —   | —                                     |
 | EnsembleAgent   | Multi-model ensemble           |    —   | —                                     |
 
-### Auditors (12 agents)
+</details>
+
+<details>
+<summary><b>Auditors (12 agents)</b></summary>
 
 Static regex-first analysis with zero LLM cost for detection.
 
@@ -229,7 +253,10 @@ Static regex-first analysis with zero LLM cost for detection.
 | TestGeneratorAgent       |     —    | Auto-generate tests                                                   |
 | RegressionGuardAgent     |     —    | Detect regressions from patches                                       |
 
-### Security Agents (10)
+</details>
+
+<details>
+<summary><b>Security Agents (10)</b></summary>
 
 | Agent                 |  Patterns | CVSS? | Focus                                     |
 | --------------------- | :-------: | :---: | ----------------------------------------- |
@@ -244,7 +271,10 @@ Static regex-first analysis with zero LLM cost for detection.
 | APISecurityAgent      |     4     |   —   | Rate limiting, header injection           |
 | ComplianceAgent       |     5     |   —   | GDPR/PCI/OWASP logging                    |
 
-### Design Agents (9)
+</details>
+
+<details>
+<summary><b>Design Agents (9)</b></summary>
 
 | Agent                 | Role                  | Tools          | Focus                               |
 | --------------------- | --------------------- | -------------- | ----------------------------------- |
@@ -257,6 +287,8 @@ Static regex-first analysis with zero LLM cost for detection.
 | DesignCriticAgent     | design_critic         | —              | 5-dimension scoring                 |
 | PrototypeAgent        | prototype_builder     | read_file      | Single-file HTML prototypes         |
 | DesignSystemAgent     | design_system         | —              | Token + pattern library             |
+
+</details>
 
 ---
 
@@ -438,12 +470,12 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-## ✦ Pravāha v3.2
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,50:1D4ED8,100:020617&height=160&section=footer&animation=fadeIn" width="100%" />
+
+### ✦ Pravāha v3.2
 
 ### The self-healing, swarm-powered LLM inference framework.
 
 ### Not a swarm of system prompts. A genuine inference framework with autonomous agents.
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,100:0F172A&height=160&section=footer&animation=fadeIn" width="100%" />
 
 </div>
