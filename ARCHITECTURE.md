@@ -1,13 +1,13 @@
-# Pravāha v3.2 — System Architecture
+# Pravāha v3.3 — System Architecture
 
 ## Overview
 
-Pravāha v3.2 is a **Self-Healing LLM Inference Framework with Autonomous Agent Swarm** built around four core innovations:
+Pravāha v3.3 is a **Self-Healing LLM Inference Framework with Autonomous Agent Swarm** built around four core innovations:
 
-1. **ReAct-Based Autonomous Agents** — 51 agents with real tool execution, persistent memory, and self-healing
+1. **ReAct-Based Autonomous Agents** — 52 agents with real tool execution, persistent memory, and self-healing
 2. **Continuous Batching Engine** — PagedAttention with Rust-powered block allocation and prefix sharing
 3. **Security-First Design** — 10 dedicated security agents with CVSS scoring and CWE mapping
-4. **Full-Stack Serving** — OpenAI-compatible API, TUI dashboard with animated avatar, CLI, and WebSocket streaming
+4. **Full-Stack Serving** — OpenAI-compatible API, TUI dashboard with animated avatar, CLI, 3D visualizer, and WebSocket streaming
 
 ---
 
@@ -17,6 +17,7 @@ Pravāha v3.2 is a **Self-Healing LLM Inference Framework with Autonomous Agent 
 ┌──────────────────────────────────────────────────────────┐
 │  Layer 1: Interface                                      │
 │  CLI (Typer) · FastAPI · WebSocket · TUI (Textual+Avatar)│
+│  3D Swarm Visualizer (Plexus Cortex Web interface)       │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2: Engine                                         │
 │  AsyncPravahaEngine · EventBus · RequestQueue            │
@@ -30,9 +31,9 @@ Pravāha v3.2 is a **Self-Healing LLM Inference Framework with Autonomous Agent 
 │  primary path with SHA-256 hash fallback                   │
 │  LRU Swapping · Preemption                                 │
 ├──────────────────────────────────────────────────────────┤
-│  Layer 5: Intelligence (Swarm — 51 Agents)               │
-│  20 Workers · 12 Auditors · 10 Security · 9 Design      │
-│  ReAct Loop · ToolRegistry · Persistent Memory           │
+│  Layer 5: Intelligence (Swarm — 52 Agents)               │
+│  21 Workers · 12 Auditors · 10 Security · 9 Design      │
+│  ReAct Loop · ToolRegistry (13 tools) · Persistent Memory│
 ├──────────────────────────────────────────────────────────┤
 │  Layer 6: Extensions                                     │
 │  RAG · Vision · Branching · Plugins · Guardrails         │
@@ -61,7 +62,7 @@ Built with **Typer** + **Rich** for a premium terminal experience.
 
 OpenAI-compatible API server with:
 
-- **11 route modules** under `routes/`
+- **12 route modules** under `routes/`
 - **3 middleware layers**: RequestID, Timing, ErrorHandler
 - **Rate limiting** with in-memory IP tracking
 - **WebSocket** endpoint for real-time token streaming
@@ -72,7 +73,7 @@ OpenAI-compatible API server with:
 Built with **Textual** for a full terminal dashboard:
 
 - 9 panels: Header, Chat, Metrics, Queue, Swarm, Audit, RAG, Log, **Avatar**
-- Pixel-art animated avatar with 5 states (idle, thinking, working, success, audit)
+- Robotic ASCII animated avatar with 5 states (idle, thinking, working, success, error)
 - Dark green terminal aesthetic (`pravaha.tcss`)
 - Real-time metrics with ASCII gauge bars
 
@@ -97,7 +98,7 @@ The central orchestrator. Manages:
 
 ---
 
-## Layer 5: Swarm Intelligence (v3.1 — Complete Rewrite)
+## Layer 5: Swarm Intelligence (v3.3 — Complete Rewrite)
 
 ### The Fundamental Change: ReAct vs Prompt Wrapping
 
@@ -128,7 +129,7 @@ for step in range(self.max_react_steps):
 
 ### Agent Architecture
 
-All 51 agents inherit from `BaseAgent` which provides:
+All 52 agents inherit from `BaseAgent` which provides:
 
 ```python
 class BaseAgent(ABC):
@@ -169,7 +170,7 @@ SQLite-backed memory that persists across sessions:
 
 ### Orchestrator (`pravaha/swarm/orchestrator.py`)
 
-Coordinates the 51-agent swarm:
+Coordinates the 52-agent swarm:
 
 1. Initializes `ToolRegistry` and `MemoryStore` for every agent on construction
 2. `execute_agent(name, task, engine)` — Run single agent with avatar state
@@ -262,7 +263,7 @@ YAML-based configuration with layered defaults:
 configs/
 ├── default.yaml          # Full default configuration
 ├── phase1.yaml           # Minimal CPU testing
-├── swarm_default.yaml    # 51-agent swarm configuration
+├── swarm_default.yaml    # 52-agent swarm configuration
 └── rag_default.yaml      # RAG pipeline configuration
 ```
 
@@ -272,7 +273,7 @@ configs/
 
 ```
 tests/
-├── test_swarm.py              # 51-agent registry, SharedContext, routing
+├── test_swarm.py              # 52-agent registry, SharedContext, routing
 ├── test_api.py                # Health, models, swarm, middleware
 ├── test_pipeline.py           # Pipeline validation
 ├── test_security_agents.py    # Security static scan verification
@@ -285,7 +286,7 @@ tests/
 └── benchmarks/                # Performance benchmarks
 ```
 
-Run: `pytest tests/ -v` (76 tests, all passing)
+Run: `pytest tests/ -v` (89 tests, all passing)
 
 ---
 

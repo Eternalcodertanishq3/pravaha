@@ -1,7 +1,7 @@
-"""Swarm Agent Registry — Unified registry for all 51 agents.
+"""Swarm Agent Registry — Unified registry for all 52 agents.
 
 Imports from 4 subfolders:
-- workers/ (20 agents) — task execution
+- workers/ (21 agents) — task execution
 - auditors/ (12 agents) — quality assurance
 - security/ (10 agents) — security analysis
 - design/ (9 agents) — UI/UX design
@@ -15,14 +15,14 @@ from pravaha.swarm.agents.design import DESIGN_AGENTS
 from pravaha.swarm.agents.security import SECURITY_AGENTS
 from pravaha.swarm.agents.workers import WORKER_AGENTS
 
-# ── Unified Registry (51 agents) ─────────────────────────────────
+# ── Unified Registry (52 agents) ─────────────────────────────────
 
 ALL_AGENTS: dict[str, type] = {}
-ALL_AGENTS.update(WORKER_AGENTS)     # 20
+ALL_AGENTS.update(WORKER_AGENTS)     # 21
 ALL_AGENTS.update(AUDIT_AGENTS)      # 12
 ALL_AGENTS.update(SECURITY_AGENTS)   # 10
 ALL_AGENTS.update(DESIGN_AGENTS)     #  9
-# Total: 51
+# Total: 52
 
 # ── Category Maps ────────────────────────────────────────────────
 

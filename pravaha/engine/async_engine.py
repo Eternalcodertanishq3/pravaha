@@ -159,6 +159,7 @@ class AsyncPravahaEngine:
             dtype=self.config.model.torch_dtype,
             quantization=self.config.model.quantization,
             trust_remote_code=self.config.model.trust_remote_code,
+            use_torch_compile=self.config.model.use_torch_compile,
         )
 
         # 3. Block manager
@@ -388,7 +389,9 @@ class AsyncPravahaEngine:
             logger.error(f"Prefill error: {e}", exc_info=True)
             for req in requests:
                 req.mark_finished(FinishReason.ABORTED)
-                self._send_token(req.request_id, "<|ERROR|>")
+                # Don't send <|ERROR|> directly to the user output if we can avoid it.
+                # Send an explicit aborted signal instead.
+                self._send_token(req.request_id, "<|ERROR: Request Aborted|>")
 
     def _process_decode(self, requests: list[InferenceRequest]) -> None:
         """Execute one decode step for running requests."""
@@ -419,7 +422,7 @@ class AsyncPravahaEngine:
             logger.error(f"Decode error: {e}", exc_info=True)
             for req in requests:
                 req.mark_finished(FinishReason.ABORTED)
-                self._send_token(req.request_id, "<|ERROR|>")
+                self._send_token(req.request_id, "<|ERROR: Request Aborted|>")
 
     def _send_token(self, request_id: str, text: str) -> None:
         """Thread-safe: push a token to the request's async queue."""

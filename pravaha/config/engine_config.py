@@ -42,6 +42,7 @@ class ModelConfig(BaseModel):
     quantization: Literal["8bit", "4bit"] | None = None
     trust_remote_code: bool = False
     revision: str | None = None
+    use_torch_compile: bool = False
 
     @property
     def resolved_device(self) -> str:

@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- HERO -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.2%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" alt="Pravaha header" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,25:0F172A,55:1D4ED8,100:38BDF8&height=280&section=header&text=Pravāha%20v3.3%20—%20प्रवाह&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=The%20Self-Healing,%20Swarm-Powered%20LLM%20Inference%20Framework&descAlignY=58&descSize=18" width="100%" alt="Pravaha header" />
 
 <!-- SNAKE MOVED TO TOP -->
 <br />
@@ -10,7 +10,7 @@
 </p>
 
 <a href="https://github.com/pravaha/pravaha">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1100&lines=51+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&pause=950&color=38BDF8&center=true&vCenter=true&width=1100&lines=52+agents.+ReAct+autonomy.+Self-healing+audit+pipeline.;Persistent+memory.+Sandboxed+tools.+RAG.+Vision+routing.;Conversation+branching.+Rust+performance+core.;Not+a+swarm+of+prompts.+A+real+inference+framework." alt="Typing SVG" />
 </a>
 
 <br />
@@ -27,12 +27,12 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  PRAVAHA v3.2 · Swarm mode · Self-heal ON · Memory ON · Rust core ACTIVE   │
+│  PRAVAHA v3.3 · Swarm mode · Self-heal ON · Memory ON · Rust core ACTIVE   │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  INFERENCE FLOW  →  SCHEDULER  →  DECODER  →  SWARM  →  AUDIT  →  OUTPUT    │
 │                                                                             │
-│  Avatar: idle ▸ thinking ▸ working ▸ auditing ▸ success                     │
-│  Agents: 51 total  |  ReAct enabled  |  Tools sandboxed  |  Branching ON    │
+│  Avatar: idle ▸ thinking ▸ working ▸ success ▸ error                        │
+│  Agents: 52 total  |  ReAct enabled  |  Tools sandboxed  |  Branching ON    │
 │  Observability: Prometheus ▸ Tracer ▸ CostEstimator ▸ SelfBenchmark         │
 └──────────────────────────────────────────────────────────────────────────────┘
 ````
@@ -72,12 +72,12 @@ flowchart LR
 
 </details>
 
-| Capability                | vLLM | Ollama | llama.cpp | **Pravāha v3.1** |
+| Capability                | vLLM | Ollama | llama.cpp | **Pravāha v3.3** |
 | ------------------------- | :--: | :----: | :-------: | :--------------: |
 | Continuous Batching       |   ✅  |    ✅   |     ✅     |         ✅        |
 | PagedAttention            |   ✅  |    ✅   |     ✅     |         ✅        |
 | OpenAI-Compatible API     |   ✅  |    ✅   |     ✅     |         ✅        |
-| 51-Agent Autonomous Swarm |   ❌  |    ❌   |     ❌     |         ✅        |
+| 52-Agent Autonomous Swarm |   ❌  |    ❌   |     ❌     |         ✅        |
 | ReAct Loop (Reason + Act) |   ❌  |    ❌   |     ❌     |         ✅        |
 | Self-Healing Audit Loop   |   ❌  |    ❌   |     ❌     |         ✅        |
 | Persistent Agent Memory   |   ❌  |    ❌   |     ❌     |         ✅        |
@@ -88,7 +88,8 @@ flowchart LR
 | Vision Routing            |   ❌  |    ✅   |     ❌     |         ✅        |
 | Conversation Branching    |   ❌  |    ❌   |     ❌     |         ✅        |
 | Terminal Dashboard (TUI)  |   ❌  |    ❌   |     ❌     |         ✅        |
-| Pixel Avatar Animation    |   ❌  |    ❌   |     ❌     |         ✅        |
+| Robotic ASCII Avatar      |   ❌  |    ❌   |     ❌     |         ✅        |
+| 3D Swarm Visualizer (Cortex) | ❌  |    ❌   |     ❌     |         ✅        |
 | Rust Performance Core     |   ✅  |    ❌   |     ✅     |         ✅        |
 | Plugin System             |   ❌  |    ❌   |     ❌     |         ✅        |
 | Token-Level Debugging     |   ❌  |    ❌   |     ❌     |         ✅        |
@@ -101,9 +102,9 @@ flowchart LR
 
 ---
 
-## What Makes v3.1 Different: True Autonomy
+## What Makes v3.3 Different: Production Autonomy
 
-Every agent in Pravāha v3.1 uses the **ReAct (Reason + Act) loop**:
+Every agent in Pravāha v3.3 uses the **ReAct (Reason + Act) loop**:
 
 ```text
 THINK → ACT → OBSERVE → THINK → ACT → OBSERVE → ... → ANSWER
@@ -112,10 +113,10 @@ THINK → ACT → OBSERVE → THINK → ACT → OBSERVE → ... → ANSWER
 This is NOT prompt wrapping. Agents:
 
 1. **Plan** their own sub-steps before executing
-2. **Execute real tools** (code runner, web search, file reader)
+2. **Execute real tools** (13 built-in sandboxed tools like REPL, code executor, git, calculator)
 3. **Observe** results and adapt
 4. **Persist memory** across sessions (SQLite-backed)
-5. **Self-heal** through a 12-auditor feedback loop
+5. **Self-heal** through a 12-auditor feedback loop (Now robust against agent crashes!)
 
 ---
 
@@ -169,7 +170,7 @@ docker compose -f docker/docker-compose.yml up
 %%{init: {'flowchart': {'curve': 'basis'}}}%%
 flowchart TB
   subgraph L1["Layer 1 · Interface"]
-    A1["CLI · FastAPI · WebSocket · TUI"]
+    A1["CLI · FastAPI · WebSocket · TUI · 3D Plexus Cortex"]
   end
 
   subgraph L2["Layer 2 · Engine"]
@@ -188,9 +189,9 @@ flowchart TB
     A4 --> A5 --> A6 --> A7
   end
 
-  subgraph L5["Layer 5 · Intelligence · Swarm — 51 Agents"]
-    A8["20 Workers · 12 Auditors · 10 Security · 9 Design"]
-    A9["ReAct Loop · Tools · Persistent Memory"]
+  subgraph L5["Layer 5 · Intelligence · Swarm — 52 Agents"]
+    A8["21 Workers · 12 Auditors · 10 Security · 9 Design"]
+    A9["ReAct Loop · Tools (13) · Persistent Memory"]
   end
 
   subgraph L6["Layer 6 · Extensions"]
@@ -215,9 +216,9 @@ flowchart TB
 
 ---
 
-## 51-Agent Swarm
+## 52-Agent Swarm
 
-### Workers (20 agents)
+### Workers (21 agents)
 
 | Agent           | Role                           | ReAct? | Tools                                 |
 | --------------- | ------------------------------ | :----: | ------------------------------------- |
@@ -241,6 +242,7 @@ flowchart TB
 | ExtractorAgent  | Data extraction                |    —   | —                                     |
 | NarratorAgent   | Narrative writing              |    —   | —                                     |
 | EnsembleAgent   | Multi-model ensemble           |    —   | —                                     |
+| ToolMakerAgent  | Write, test, and persist tools |    ✅   | file_reader, file_writer, python_repl, shell_runner, bash |
 
 ### Auditors (12 agents)
 
@@ -294,15 +296,22 @@ Static regex-first analysis with zero LLM cost for detection.
 
 ## Tool System
 
-Agents can execute **real tools** during the ReAct loop.
+Agents can execute **real tools** (13 built-in tools) during the ReAct loop.
 
 | Tool         | Name             | Description                    | Security                          |
 | ------------ | ---------------- | ------------------------------ | --------------------------------- |
 | CodeExecutor | `execute_python` | Subprocess sandbox, 5s timeout | No shell=True, 8KB max output     |
 | FileReader   | `read_file`      | Whitelisted extensions only    | .py,.js,.ts,.md,.json,.yaml,.toml |
+| FileWriter   | `write_file`     | Write files to disk            | Path & extension whitelisting     |
 | WebFetcher   | `fetch_url`      | HTTP GET + HTML→text           | 10s timeout, follow redirects     |
 | SearchTool   | `web_search`     | DuckDuckGo API                 | No API key needed                 |
 | ShellRunner  | `run_shell`      | Whitelisted commands only      | Blocked: rm, sudo, chmod, curl    |
+| PythonRepl   | `python_repl`    | Persistent Python REPL console | Sandboxed environment             |
+| BashTool     | `bash`           | Bash commands with pipes       | Command whitelist, no escalation  |
+| JsonTool     | `json_query`     | Query JSON via dot-path access | Safe AST parsing                  |
+| HttpClient   | `http_request`   | Safe HTTP client (GET/POST)    | Timeout-guarded                   |
+| GitTool      | `git`            | Local git operations           | Safe subset (no push/pull/reset)  |
+| Calculator   | `calculate`      | Math expression evaluator      | AST parsed, no eval()             |
 | MemoryTool   | `memory`         | Agent-scoped SQLite store      | Namespaced per agent role         |
 
 ---
@@ -336,7 +345,7 @@ Agents maintain memory across sessions via SQLite in WAL mode.
 
 ```text
 ┌──────────────────────────────────────────────────────┐
-│  PRAVAHA v3.1  ·  Llama-3  ·  4-bit  ·  RTX4090     │
+│  PRAVAHA v3.3  ·  Llama-3  ·  4-bit  ·  RTX4090     │
 ├──────────┬───────────────────┬────────────────────────┤
 │ [AVATAR] │   Chat Panel      │   Metrics Panel        │
 │  ╭━━━━━╮ │   (streaming)     │   Throughput gauge      │
@@ -354,20 +363,22 @@ Agents maintain memory across sessions via SQLite in WAL mode.
 
 </details>
 
-Avatar states: **idle** (cyan) → **thinking** (yellow) → **working** (green) → **audit** (magenta) → **success** (green ✦)
+Avatar states: **idle** (cyan) → **thinking** (yellow) → **working** (green) → **success** (green ✦) or **error** (magenta)
 
 ---
 
 ## Pipelines
 
-| Pipeline             | Workers                                      | Auditors                               |
-| -------------------- | -------------------------------------------- | -------------------------------------- |
-| `plan-execute-audit` | planner → coder → critic                     | syntax + security + verifier           |
-| `research-summarize` | researcher → reasoning → summarizer          | hallucination + consistency            |
-| `code-review`        | coder → debugger → critic → refiner          | syntax + type + security + perf + test |
-| `secure-code-review` | planner → coder → debugger                   | ALL 10 security agents                 |
-| `design-component`   | ui_designer → layout → style → builder       | accessibility + UX + critic            |
-| `full-secure-design` | planner → designer → builder → coder → debug | security + design + perf               |
+| Pipeline             | Workers                                                      | Auditors                                               |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
+| `plan-execute-audit` | planner → researcher → coder                                 | syntax + security + logic + edge + verifier            |
+| `research-summarize` | researcher → reasoning → summarizer                          | hallucination + consistency + verifier                 |
+| `code-review`        | coder → debugger → critic → refiner                          | syntax + type + security + perf + test + verifier      |
+| `creative-write`     | narrator → expander → refiner                                | consistency + verifier                                 |
+| `extract-classify`   | extractor → classifier → validator                           | verifier                                               |
+| `secure-code-review` | planner → coder → debugger                                   | ALL 10 security agents + syntax + verifier             |
+| `design-component`   | ui_designer → layout → style → builder                       | accessibility + UX + critic + verifier                 |
+| `full-secure-design` | planner → ui_designer → component_builder → coder → debugger | security + design + perf + verifier                    |
 
 ---
 
@@ -379,7 +390,7 @@ YAML-based with layered defaults.
 configs/
 ├── default.yaml          # Full engine configuration
 ├── phase1.yaml           # Minimal CPU testing
-├── swarm_default.yaml    # 51-agent swarm configuration
+├── swarm_default.yaml    # 52-agent swarm configuration
 └── rag_default.yaml      # RAG pipeline configuration
 ```
 
@@ -388,14 +399,14 @@ configs/
 ## Testing
 
 ```bash
-# Run all tests (76 tests)
+# Run all tests (89 tests)
 pytest tests/ -v
 
 # Run with coverage
 pytest tests/ --cov=pravaha
 
 # Run specific test suites
-pytest tests/test_swarm.py           # Agent registry (51 agents)
+pytest tests/test_swarm.py           # Agent registry (52 agents)
 pytest tests/test_security_agents.py # Security static scans
 pytest tests/test_design_agents.py   # Accessibility + design
 pytest tests/test_react_loop.py      # ReAct loop + tools
@@ -416,14 +427,14 @@ pravaha/
 ├── decoder/                # Model forward pass + sampling
 ├── memory/                 # PagedKVCache + BlockManager
 ├── tokenizer/              # HuggingFace tokenizer wrapper
-├── serving/                # FastAPI server + 11 routes
+├── serving/                # FastAPI server + 12 routes files (including 3D Visualizer Cortex route)
 ├── swarm/
 │   ├── agents/
-│   │   ├── workers/        # 20 worker agents (5 ReAct-enabled)
+│   │   ├── workers/        # 21 worker agents (including ToolMakerAgent)
 │   │   ├── auditors/       # 12 audit agents (regex-first)
 │   │   ├── security/       # 10 security agents (CVSS+CWE)
 │   │   └── design/         # 9 design agents (WCAG+Nielsen)
-│   ├── tools/              # 6 sandboxed tools
+│   ├── tools/              # 13 tools (12 standard + 1 persistent agent memory tool)
 │   ├── memory/             # SQLite persistent memory
 │   ├── orchestrator.py     # Agent coordination
 │   └── pipeline.py         # 8 named pipelines
@@ -453,13 +464,14 @@ Pravāha's advantage is the **intelligent layer**: when you need agents, self-he
 | Dimension      | vLLM                  | Pravāha                              |
 | -------------- | --------------------- | ------------------------------------ |
 | Raw throughput | ✅ Custom CUDA kernels | ❌ Wraps HuggingFace Transformers     |
-| Agent swarm    | ❌                     | ✅ 51 autonomous agents               |
+| Agent swarm    | ❌                     | ✅ 52 autonomous agents               |
 | Self-healing   | ❌                     | ✅ Audit loop with patch verification |
 | Built-in RAG   | ❌                     | ✅ FAISS + embeddings                 |
 | Memory         | ❌                     | ✅ SQLite persistent agent memory     |
-| Tool execution | ❌                     | ✅ 6 sandboxed tools                  |
+| Tool execution | ❌                     | ✅ 13 sandboxed tools                  |
+| 3D Swarm Visualizer | ❌               | ✅ Real-time WebGL Plexus Cortex     |
 
-**Inference Performance Note:** Pravāha's inference path wraps HuggingFace Transformers. It does not use custom CUDA kernels. Benchmarks vary by hardware. GPT-2 on CPU: ~80ms TTFT. Llama-3-8B on A100 with 4-bit: approximately 40–60ms TTFT.
+**Inference Performance Note:** Pravāha's inference path wraps HuggingFace Transformers. While we lack custom CUDA kernels, **v3.3 introduces `torch.compile()`** support for significant speedups. Enable `use_torch_compile: true` in your `default.yaml` config for an immediate boost to token generation speed.
 
 ---
 
@@ -473,7 +485,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:38BDF8,50:1D4ED8,100:020617&height=160&section=footer&animation=fadeIn" width="100%" alt="Footer wave" />
 
-### ✦ Pravāha v3.2
+### ✦ Pravāha v3.3
 
 ### The self-healing, swarm-powered LLM inference framework.
 

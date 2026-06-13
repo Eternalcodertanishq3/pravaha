@@ -1,8 +1,8 @@
 # PRAVAHA v3.3 — Agent & Swarm Reference Guide
 
 > **Version**: 3.3.0
-> **Agents**: 51 (20 workers + 13 auditors + 10 security + 9 design)
-> **Tools**: 12
+> **Agents**: 52 (21 workers + 12 auditors + 10 security + 9 design)
+> **Tools**: 13
 > **Pipelines**: 8 pre-built + custom
 
 ---
@@ -11,11 +11,11 @@
 
 1. [Architecture Overview](#architecture-overview)
 2. [Agent Categories](#agent-categories)
-3. [Worker Agents (20)](#worker-agents-20)
-4. [Audit Agents (13)](#audit-agents-13)
+3. [Worker Agents (21)](#worker-agents-21)
+4. [Audit Agents (12)](#audit-agents-12)
 5. [Security Agents (10)](#security-agents-10)
 6. [Design Agents (9)](#design-agents-9)
-7. [Tool Suite (12)](#tool-suite-12)
+7. [Tool Suite (13)](#tool-suite-13)
 8. [Pipelines (8)](#pipelines-8)
 9. [ReAct Loop](#react-loop)
 10. [SharedContext](#sharedcontext)
@@ -43,13 +43,13 @@
 │  │          Swarm Orchestrator               │   │
 │  │  ┌──────┐  ┌──────┐  ┌──────┐            │   │
 │  │  │Worker│  │Audit │  │Secur │  ┌──────┐  │   │
-│  │  │ (20) │  │ (13) │  │ (10) │  │Design│  │   │
+│  │  │ (21) │  │ (12) │  │ (10) │  │Design│  │   │
 │  │  └──────┘  └──────┘  └──────┘  │ (9)  │  │   │
 │  │                                └──────┘  │   │
 │  └──────────────────────────────────────────┘   │
 │                       │                          │
 │  ┌────────────────────▼─────────────────────┐   │
-│  │   Tool Registry (12) + Memory Store      │   │
+│  │   Tool Registry (13) + Memory Store      │   │
 │  └──────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────┘
 ```
@@ -58,7 +58,7 @@
 
 - **BaseAgent**: Abstract class with ReAct loop, tool access, persistent memory
 - **SharedContext**: Mutable state shared between agents in a pipeline
-- **ToolRegistry**: Central registry of 12 tools agents can invoke
+- **ToolRegistry**: Central registry of 13 tools agents can invoke
 - **EventBus**: Pub/sub system for engine↔swarm↔TUI communication
 - **SwarmProfiler**: Per-agent performance tracking (mean/p95 duration, token efficiency)
 - **PipelineDAG**: DAG-based execution for parallel agent steps
@@ -69,15 +69,15 @@
 
 | Category   | Count | Purpose                                    |
 |-----------|------:|--------------------------------------------|
-| Workers   |    20 | Core task execution — coding, planning, research |
-| Auditors  |    13 | Quality assurance — syntax, logic, output verification |
+| Workers   |    21 | Core task execution — coding, planning, research |
+| Auditors  |    12 | Quality assurance — syntax, logic, output verification |
 | Security  |    10 | Vulnerability scanning — injection, auth, crypto |
 | Design    |     9 | UI/UX — layouts, components, accessibility |
-| **Total** |**51** | **Full swarm ecosystem**                   |
+| **Total** |**52** | **Full swarm ecosystem**                   |
 
 ---
 
-## Worker Agents (20)
+## Worker Agents (21)
 
 | Agent          | Role          | Priority | Temperature | Tools | Description |
 |---------------|--------------|----------|-------------|-------|-------------|
@@ -101,10 +101,11 @@
 | MemoryAgent    | `memory`     | 7        | 0.3         | ✓     | Retrieve and store agent memories |
 | ToolAgent      | `tool`       | 7        | 0.3         | ✓     | Execute tool operations |
 | ValidatorAgent | `validator`  | 6        | 0.2         | ✓     | Validate outputs against requirements |
+| ToolMakerAgent | `tool_maker` | 0        | 0.8         | ✓     | Write, test, and persist custom tools for the swarm |
 
 ---
 
-## Audit Agents (13)
+## Audit Agents (12)
 
 ### Phase A: Static Auditors (instant, no LLM)
 
@@ -160,11 +161,11 @@ form a dedicated security sub-swarm that can be activated for
 
 ---
 
-## Tool Suite (12)
+## Tool Suite (13)
 
 | # | Tool            | Name             | Description |
 |---|----------------|------------------|-------------|
-| 1 | CodeExecutor   | `execute_code`   | Execute Python code in sandboxed environment |
+| 1 | CodeExecutor   | `execute_python` | Execute Python code in sandboxed environment |
 | 2 | FileReader     | `read_file`      | Read file contents from disk |
 | 3 | WebFetcher     | `fetch_url`      | Fetch web page content |
 | 4 | SearchTool     | `web_search`     | Web search via DuckDuckGo |
@@ -176,6 +177,7 @@ form a dedicated security sub-swarm that can be activated for
 |10 | FileWriter     | `write_file`     | Write files to whitelisted paths |
 |11 | GitTool        | `git`            | Safe git: status/diff/log/add/commit |
 |12 | Calculator     | `calculate`      | Safe math via AST + optional sympy |
+|13 | MemoryTool     | `memory`         | Store or retrieve facts in agent persistent memory |
 
 ### Tool Security Model
 

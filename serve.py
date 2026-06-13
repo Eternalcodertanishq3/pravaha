@@ -29,6 +29,7 @@ Examples:
 
 Once running, visit:
   http://localhost:8000/docs         Interactive API documentation
+  http://localhost:8000/world        3D Swarm Visualizer (NEW!)
   http://localhost:8000/v1/models    List loaded models
   http://localhost:8000/metrics      Live GPU telemetry
         """,
@@ -36,6 +37,7 @@ Once running, visit:
     parser.add_argument("--host", default="0.0.0.0", help="Bind address (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+    parser.add_argument("--tui", action="store_true", help="Launch the TUI Dashboard")
     
     args = parser.parse_args()
     
@@ -44,16 +46,52 @@ Once running, visit:
     print(f"  🔗 http://localhost:{args.port}")
     print(f"  📄 http://localhost:{args.port}/docs")
     print(f"  📊 http://localhost:{args.port}/metrics")
+    print(f"  🌐 http://localhost:{args.port}/world  (3D Swarm Visualizer)")
     print("=" * 60)
     
-    uvicorn.run(
-        "pravaha.serving.app:create_app",
-        factory=True,
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-        log_level="info",
-    )
+    if args.tui:
+        import asyncio
+        import uvicorn
+        from pravaha.tui.app import PravahaTUI, get_connector
+        from pravaha.serving.app import create_app
+        
+        print("\n[+] Launching TUI Dashboard alongside backend...\n")
+        app = create_app()
+        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="error")
+        server = uvicorn.Server(config)
+        
+        tui = PravahaTUI()
+        
+        async def run_both():
+            server_task = asyncio.create_task(server.serve())
+            
+            # Wait for lifespan to initialize engine
+            for _ in range(20):
+                if hasattr(app.state, "engine") and app.state.engine:
+                    break
+                await asyncio.sleep(0.5)
+                
+            if hasattr(app.state, "engine") and app.state.engine:
+                conn = get_connector()
+                conn.attach_engine(app.state.engine)
+                
+            await tui.run_async()
+            server.should_exit = True
+            await server_task
+
+        try:
+            asyncio.run(run_both())
+        except KeyboardInterrupt:
+            pass
+    else:
+        uvicorn.run(
+            "pravaha.serving.app:create_app",
+            factory=True,
+            host=args.host,
+            port=args.port,
+            reload=args.reload,
+            log_level="info",
+        )
 
 
 if __name__ == "__main__":

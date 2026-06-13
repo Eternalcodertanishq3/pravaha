@@ -18,6 +18,7 @@ from pravaha.swarm.agents.workers.researcher_agent import ResearcherAgent
 from pravaha.swarm.agents.workers.router_agent import RouterAgent
 from pravaha.swarm.agents.workers.summarizer_agent import SummarizerAgent
 from pravaha.swarm.agents.workers.tool_agent import ToolAgent
+from pravaha.swarm.agents.workers.tool_maker_agent import ToolMakerAgent
 from pravaha.swarm.agents.workers.translator_agent import TranslatorAgent
 from pravaha.swarm.agents.workers.validator_agent import ValidatorAgent
 
@@ -41,6 +42,7 @@ WORKER_AGENTS: dict[str, type] = {
     "judge": JudgeAgent,
     "memory": MemoryAgent,
     "tool": ToolAgent,
+    "tool_maker": ToolMakerAgent,
     "validator": ValidatorAgent,
 }
 

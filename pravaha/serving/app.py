@@ -72,6 +72,7 @@ def create_app() -> FastAPI:
     from pravaha.serving.routes.rag import router as rag_router
     from pravaha.serving.routes.swarm import router as swarm_router
     from pravaha.serving.routes.vision import router as vision_router
+    from pravaha.serving.routes.world import router as world_router
     from pravaha.serving.websocket import router as ws_router
 
     app.include_router(completions_router, prefix="/v1")
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(branches_router, prefix="/v1")
     app.include_router(debug_router, prefix="/v1")
     app.include_router(admin_router)
+    app.include_router(world_router)
     app.include_router(ws_router)
 
     return app

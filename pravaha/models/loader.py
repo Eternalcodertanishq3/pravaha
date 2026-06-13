@@ -30,6 +30,7 @@ class ModelLoader:
         dtype: Any = "float16",
         quantization: str | None = None,
         trust_remote_code: bool = False,
+        use_torch_compile: bool = False,
     ) -> tuple[Any, ArchConfig]:
         import torch
         from transformers import AutoConfig, AutoModelForCausalLM
@@ -75,5 +76,14 @@ class ModelLoader:
         )
         model = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
         model.eval()
+
+        if use_torch_compile:
+            try:
+                logger.info("Applying torch.compile() for accelerated inference...")
+                # Reduce overhead for generation, using max-autotune if possible in prod
+                model = torch.compile(model)
+            except Exception as e:
+                logger.warning(f"Failed to apply torch.compile: {e}")
+
         logger.info(f"Model loaded: layers={arch.num_layers}, kv_heads={arch.num_kv_heads}")
         return model, arch

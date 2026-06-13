@@ -20,7 +20,7 @@ def client():
     app.state.engine.tokenizer.encode.return_value = [1, 2, 3]
     app.state.engine.config = MagicMock()
     app.state.engine.config.model.model_path = "mock-model"
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(app)
 
 
 class TestHealthEndpoint:

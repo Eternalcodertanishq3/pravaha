@@ -94,5 +94,30 @@ class ToolRegistry:
         registry.register(GitTool())
         registry.register(Calculator())
 
+        # v4.0: Dynamic Custom Tools Auto-Discovery
+        try:
+            import importlib
+            import pkgutil
+            import inspect
+            from pravaha.swarm.tools import custom
+
+            for _, module_name, _ in pkgutil.iter_modules(custom.__path__):
+                try:
+                    module = importlib.import_module(f"pravaha.swarm.tools.custom.{module_name}")
+                    for obj_name, obj in inspect.getmembers(module, inspect.isclass):
+                        if (
+                            hasattr(obj, "execute") 
+                            and hasattr(obj, "name") 
+                            and not obj.__name__.startswith("Base")
+                            and obj.__module__ == module.__name__
+                        ):
+                            tool_instance = obj()
+                            registry.register(tool_instance)
+                            logger.info(f"Dynamically loaded custom tool: {tool_instance.name}")
+                except Exception as e:
+                    logger.error(f"Failed to load custom tool {module_name}: {e}")
+        except Exception as e:
+            logger.warning(f"Could not load custom tools: {e}")
+
         logger.info(f"ToolRegistry: {len(registry._tools)} tools registered")
         return registry

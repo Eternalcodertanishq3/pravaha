@@ -18,7 +18,7 @@ class TestAgentRegistry:
     """Verify all 51 agents are registered and valid."""
 
     def test_worker_count(self) -> None:
-        assert len(WORKER_AGENTS) == 20, f"Expected 20 workers, got {len(WORKER_AGENTS)}"
+        assert len(WORKER_AGENTS) == 21, f"Expected 21 workers, got {len(WORKER_AGENTS)}"
 
     def test_audit_count(self) -> None:
         assert len(AUDIT_AGENTS) == 12, f"Expected 12 auditors, got {len(AUDIT_AGENTS)}"
@@ -30,7 +30,7 @@ class TestAgentRegistry:
         assert len(DESIGN_AGENTS) == 9, f"Expected 9 design, got {len(DESIGN_AGENTS)}"
 
     def test_total_count(self) -> None:
-        assert len(ALL_AGENTS) == 51, f"Expected 51 total, got {len(ALL_AGENTS)}"
+        assert len(ALL_AGENTS) == 52, f"Expected 52 total, got {len(ALL_AGENTS)}"
 
     def test_no_overlap_workers_auditors(self) -> None:
         overlap = set(WORKER_AGENTS.keys()) & set(AUDIT_AGENTS.keys())

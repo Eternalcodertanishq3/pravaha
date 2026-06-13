@@ -1,12 +1,12 @@
 # Pravaha v3.3 — Swarm Default Configuration
-# 51 agents: 20 workers + 12 auditors + 10 security + 9 design
+# 52 agents: 21 workers + 12 auditors + 10 security + 9 design
 
 swarm:
   enabled: true
   max_iterations: 3
   min_score: 70.0
 
-  # ── Worker Agents (20) ─────────────────────────────────
+  # ── Worker Agents (21) ─────────────────────────────────
   agent_roles:
     - planner
     - researcher
@@ -28,6 +28,7 @@ swarm:
     - extractor
     - narrator
     - ensemble
+    - tool_maker
 
   # ── Audit Agents (12) ──────────────────────────────────
   audit_roles:

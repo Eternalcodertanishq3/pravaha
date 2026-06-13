@@ -196,29 +196,44 @@ class SwarmOrchestrator:
             all_issues: list[dict[str, Any]] = []
 
             # ── Phase A: Run all static auditors in parallel ──
+            active_static = [name for name in STATIC_AUDITORS if name in self._agents]
             static_tasks = [
                 self.execute_agent(name, task, engine)
-                for name in STATIC_AUDITORS
-                if name in self._agents
+                for name in active_static
             ]
             static_results = await asyncio.gather(
                 *static_tasks, return_exceptions=True,
             )
 
             static_issues: list[dict[str, Any]] = []
-            for result in static_results:
+            for result, name in zip(static_results, active_static):
                 if isinstance(result, AgentOutput):
                     static_issues.extend(result.issues)
+                elif isinstance(result, Exception):
+                    logger.error(f"Static auditor '{name}' crashed: {result}", exc_info=result)
+                    static_issues.append({
+                        "type": "auditor_crash",
+                        "severity": "CRITICAL",
+                        "description": f"The static auditor '{name}' crashed with error: {str(result)}"
+                    })
             all_issues.extend(static_issues)
 
             # ── Phase B: LLM auditors (only if needed) ──
             if static_issues or iteration == 0:
                 for auditor_name in LLM_AUDITORS:
                     if auditor_name in self._agents:
-                        result = await self.execute_agent(
-                            auditor_name, task, engine,
-                        )
-                        all_issues.extend(result.issues)
+                        try:
+                            result = await self.execute_agent(
+                                auditor_name, task, engine,
+                            )
+                            all_issues.extend(result.issues)
+                        except Exception as e:
+                            logger.error(f"LLM auditor '{auditor_name}' crashed: {e}", exc_info=e)
+                            all_issues.append({
+                                "type": "auditor_crash",
+                                "severity": "CRITICAL",
+                                "description": f"LLM auditor '{auditor_name}' crashed: {str(e)}"
+                            })
 
             # ── Issue severity triage ──
             critical_issues = [

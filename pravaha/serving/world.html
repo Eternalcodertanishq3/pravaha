@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pravaha Plexus Cortex</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #fff; }
+
+    /* UI */
+    #ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+
+    #topbar {
+      pointer-events: auto; display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 20px; background: rgba(0,2,8,0.7); border-bottom: 1px solid rgba(0,255,255,0.2);
+    }
+    #topbar h1 { font-size: 15px; letter-spacing: 3px; text-transform: uppercase; color: #0df; text-shadow: 0 0 10px #0df8; }
+    #topbar .sub { font-size: 11px; color: #579; margin-left: 10px; }
+
+    /* Side Panel */
+    #panel {
+      pointer-events: auto; position: absolute; top: 40px; right: 0; width: 280px; height: calc(100% - 40px);
+      background: rgba(0,2,8,0.7); border-left: 1px solid rgba(0,255,255,0.2); overflow-y: auto;
+      backdrop-filter: blur(6px);
+    }
+    .sec-title { padding: 10px 12px; font-size: 11px; color: #0df; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid #112; }
+    .node-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 7px 12px;
+      border-bottom: 1px solid #0a0a15; cursor: pointer; transition: 0.15s; font-size: 12px; color: #68a;
+    }
+    .node-item:hover { background: rgba(0,255,255,0.1); color: #fff; }
+    .node-item.active { background: rgba(0,255,255,0.2); color: #fff; border-left: 2px solid #0df; }
+    .node-dot { width: 8px; height: 8px; border-radius: 50%; background: #223; transition: 0.3s; flex-shrink: 0; }
+    .node-dot.lit { box-shadow: 0 0 10px currentColor; }
+
+    /* HUD */
+    #hud {
+      display: none; pointer-events: none; position: absolute; bottom: 16px; left: 16px; width: 320px;
+      background: rgba(0,5,15,0.88); border: 1px solid rgba(0,255,255,0.3); border-radius: 4px;
+      padding: 14px 16px; font-size: 12px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0,255,255,0.1);
+    }
+    #hud h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
+    .hud-r { margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .hud-l { color: #468; }
+    .hud-v { color: #ade; }
+    #hud-feed { margin-top: 8px; padding-top: 8px; border-top: 1px solid #112; color: #579; font-style: italic; font-size: 11px; max-height: 60px; overflow: hidden; }
+
+    /* Activity Log */
+    #log {
+      pointer-events: auto; position: absolute; bottom: 0; right: 280px; width: 340px; height: 130px;
+      background: rgba(0,2,8,0.8); border-top: 1px solid rgba(0,255,255,0.2); border-left: 1px solid rgba(0,255,255,0.2);
+      overflow-y: auto; padding: 8px 10px; font-size: 11px; color: #579;
+    }
+    .log-l { margin-bottom: 3px; }
+
+    /* Loading */
+    #loader {
+      position: absolute; inset: 0; background: #000; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; z-index: 999; transition: opacity 1s;
+    }
+    #loader h2 { color: #0df; font-size: 18px; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; text-shadow: 0 0 10px #0df; }
+    #loader p { color: #468; font-size: 12px; }
+    .bar { width: 200px; height: 2px; background: #112; margin-top: 14px; border-radius: 1px; overflow: hidden; }
+    .bar-inner { width: 0%; height: 100%; background: #0df; transition: width 0.5s; box-shadow: 0 0 8px #0df; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+</head>
+<body>
+
+<div id="loader">
+  <h2>Plexus Cortex</h2>
+  <p>Initializing neural network...</p>
+  <div class="bar"><div class="bar-inner" id="load-bar"></div></div>
+</div>
+
+<div id="ui">
+  <div id="topbar">
+    <div><h1>Pravaha Plexus Cortex</h1></div>
+    <div style="pointer-events:auto;">
+      <span class="sub" id="status-text">Connecting...</span>
+    </div>
+  </div>
+  <div id="panel">
+    <div class="sec-title">Active Nodes</div>
+    <div id="node-list"></div>
+  </div>
+  <div id="hud">
+    <h3 id="hud-name"></h3>
+    <div class="hud-r"><span class="hud-l">State</span><span class="hud-v" id="hud-state">Dormant</span></div>
+    <div class="hud-r"><span class="hud-l">Connections</span><span class="hud-v" id="hud-conn">0</span></div>
+    <div class="hud-r"><span class="hud-l">Firings</span><span class="hud-v" id="hud-fires">0</span></div>
+    <div id="hud-feed">Idle...</div>
+  </div>
+  <div id="log"></div>
+</div>
+
+<script>
+// ===================== RENDERER =====================
+const W = window.innerWidth, H = window.innerHeight;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x01050a); // Deep dark teal/blue
+scene.fog = new THREE.FogExp2(0x01050a, 0.002);
+
+const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 2000);
+camera.position.set(0, 20, 90);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+// Bloom for the glowing plexus effect
+const renderPass = new THREE.RenderPass(scene, camera);
+const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 2.5, 0.8, 0.15); // Strong, wide bloom
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(renderPass);
+composer.addPass(bloom);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+controls.minDistance = 30;
+controls.maxDistance = 250;
+
+// ===================== DYNAMIC BACKGROUND PLEXUS =====================
+const bgParticleCount = 350;
+const bgGeo = new THREE.BufferGeometry();
+const bgPos = new Float32Array(bgParticleCount * 3);
+const bgVel = [];
+
+for (let i = 0; i < bgParticleCount; i++) {
+  bgPos[i*3] = (Math.random() - 0.5) * 300;
+  bgPos[i*3+1] = (Math.random() - 0.5) * 300;
+  bgPos[i*3+2] = (Math.random() - 0.5) * 300;
+  bgVel.push(new THREE.Vector3((Math.random()-0.5)*0.15, (Math.random()-0.5)*0.15, (Math.random()-0.5)*0.15));
+}
+bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
+const bgPointsMat = new THREE.PointsMaterial({ color: 0x0088ff, size: 0.6, transparent: true, opacity: 0.8 });
+const bgPoints = new THREE.Points(bgGeo, bgPointsMat);
+scene.add(bgPoints);
+
+// Pre-allocate max line segments for the background
+const maxBgLines = bgParticleCount * 10; 
+const bgLineGeo = new THREE.BufferGeometry();
+bgLineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(maxBgLines * 6), 3));
+const bgLineMat = new THREE.LineBasicMaterial({ color: 0x0055aa, transparent: true, opacity: 0.15 });
+const bgLines = new THREE.LineSegments(bgLineGeo, bgLineMat);
+scene.add(bgLines);
+
+function updateBackgroundPlexus() {
+  const pos = bgGeo.attributes.position.array;
+  for (let i = 0; i < bgParticleCount; i++) {
+    pos[i*3] += bgVel[i].x;
+    pos[i*3+1] += bgVel[i].y;
+    pos[i*3+2] += bgVel[i].z;
+    
+    // Bounds wrapping
+    if (pos[i*3] > 150) pos[i*3] = -150; if (pos[i*3] < -150) pos[i*3] = 150;
+    if (pos[i*3+1] > 150) pos[i*3+1] = -150; if (pos[i*3+1] < -150) pos[i*3+1] = 150;
+    if (pos[i*3+2] > 150) pos[i*3+2] = -150; if (pos[i*3+2] < -150) pos[i*3+2] = 150;
+  }
+  bgGeo.attributes.position.needsUpdate = true;
+  
+  let lineIdx = 0;
+  const lPos = bgLineGeo.attributes.position.array;
+  
+  // Fast distance check to connect nearby background particles
+  for (let i = 0; i < bgParticleCount; i++) {
+    for (let j = i + 1; j < bgParticleCount; j++) {
+      const dx = pos[i*3] - pos[j*3];
+      const dy = pos[i*3+1] - pos[j*3+1];
+      const dz = pos[i*3+2] - pos[j*3+2];
+      if (dx*dx + dy*dy + dz*dz < 800) {
+        lPos[lineIdx++] = pos[i*3]; lPos[lineIdx++] = pos[i*3+1]; lPos[lineIdx++] = pos[i*3+2];
+        lPos[lineIdx++] = pos[j*3]; lPos[lineIdx++] = pos[j*3+1]; lPos[lineIdx++] = pos[j*3+2];
+        if (lineIdx >= maxBgLines * 6) break;
+      }
+    }
+    if (lineIdx >= maxBgLines * 6) break;
+  }
+  bgLineGeo.setDrawRange(0, lineIdx / 3);
+  bgLineGeo.attributes.position.needsUpdate = true;
+}
+
+// ===================== PLEXUS BRAIN MESH =====================
+const brainGroup = new THREE.Group();
+scene.add(brainGroup);
+
+// Detailed anatomical brain vertex math
+function createBrainHemisphere() {
+  // Lower segment count for distinct plexus look, avoiding pure solid fill
+  const geo = new THREE.SphereGeometry(14, 48, 48, 0, Math.PI);
+  const pos = geo.attributes.position;
+  
+  for (let i = 0; i < pos.count; i++) {
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    
+    // Anatomy
+    let fbScale = (z > 0) ? (0.85 - (z/14)*0.2) : (1.0 + (-z/14)*0.25);
+    x *= fbScale;
+    y *= 0.75;
+    z *= 1.35;
+    
+    // Temporal lobe & Cerebellum
+    if (y < 2 && z > -4 && z < 8) x *= 1.25;
+    if (y < -4 && z < -7) { y -= 2.5; x *= 0.85; }
+    
+    // Cortical Folds via 3D noise
+    if (Math.abs(x) > 1.5) { 
+      const fold = Math.sin(x*0.5)*Math.cos(y*0.5) + Math.sin(y*0.5)*Math.cos(z*0.5) + Math.sin(z*0.5)*Math.cos(x*0.5);
+      const r = Math.sqrt(x*x + y*y + z*z);
+      const intensity = fold * 0.7;
+      x += (x/r) * intensity; y += (y/r) * intensity; z += (z/r) * intensity;
+    }
+    pos.setXYZ(i, x, y, z);
+  }
+  return geo;
+}
+
+// Generate the plexus wireframe and points
+const leftGeo = createBrainHemisphere();
+const rightGeo = createBrainHemisphere();
+
+// Points Material (dots)
+const brainDotMat = new THREE.PointsMaterial({ color: 0x00ccff, size: 0.15, transparent: true, opacity: 0.8 });
+// Wireframe Material (lines)
+const brainWireMat = new THREE.MeshBasicMaterial({ color: 0x0088cc, wireframe: true, transparent: true, opacity: 0.12 });
+
+const leftDots = new THREE.Points(leftGeo, brainDotMat);
+const leftWire = new THREE.Mesh(leftGeo, brainWireMat);
+leftDots.rotation.y = leftWire.rotation.y = Math.PI / 2;
+leftDots.position.x = leftWire.position.x = -1.0;
+brainGroup.add(leftDots); brainGroup.add(leftWire);
+
+const rightDots = new THREE.Points(rightGeo, brainDotMat);
+const rightWire = new THREE.Mesh(rightGeo, brainWireMat);
+rightDots.rotation.y = rightWire.rotation.y = -Math.PI / 2;
+rightDots.position.x = rightWire.position.x = 1.0;
+brainGroup.add(rightDots); brainGroup.add(rightWire);
+
+// ===================== NEURON NODES & COLORS =====================
+const neurons = {};
+let neuronArray = [];
+let selectedNeuron = null;
+
+// Vibrant Sci-Fi Palette for Agents
+const PALETTE = [
+  0x00ffff, // Cyan
+  0xff00ff, // Magenta
+  0x00ff88, // Neon Green
+  0xffaa00, // Amber
+  0xff4444, // Laser Red
+  0xaa00ff, // Deep Purple
+  0x00aaff  // Azure
+];
+
+// Pre-compute neuron positions on the brain surface
+function distributeOnBrain(count) {
+  const positions = [];
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < count; i++) {
+    const y = 1 - (i / (count - 1)) * 2;
+    const radius = Math.sqrt(1 - y * y);
+    const theta = golden * i;
+    
+    let px = radius * Math.cos(theta) * 14;
+    let py = y * 14;
+    let pz = radius * Math.sin(theta) * 14;
+    
+    let fbScale = (pz > 0) ? (0.85 - (pz/14)*0.2) : (1.0 + (-pz/14)*0.25);
+    px *= fbScale; py *= 0.75; pz *= 1.35;
+    
+    if (py < 2 && pz > -4 && pz < 8) px *= 1.25;
+    if (py < -4 && pz < -7) { py -= 2.5; px *= 0.85; }
+    
+    px += (px >= 0) ? 1.0 : -1.0;
+    // Push exactly onto the outermost plexus points
+    positions.push(new THREE.Vector3(px * 1.05, py * 1.05, pz * 1.05));
+  }
+  return positions;
+}
+
+function createNeuron(name, position, index) {
+  const colorHex = PALETTE[index % PALETTE.length];
+  
+  const group = new THREE.Group();
+  group.position.copy(position);
+  
+  // Core glowing dot for the agent
+  const coreGeo = new THREE.SphereGeometry(0.5, 12, 12);
+  const coreMat = new THREE.MeshBasicMaterial({ color: colorHex });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  group.add(core);
+  
+  // Outer faint glow
+  const glowGeo = new THREE.SphereGeometry(1.2, 16, 16);
+  const glowMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending });
+  const glow = new THREE.Mesh(glowGeo, glowMat);
+  group.add(glow);
+  
+  brainGroup.add(group);
+  
+  return {
+    name, group, core, coreMat, glow, glowMat,
+    baseColor: colorHex,
+    fireCount: 0,
+    connections: [],
+    state: 'dormant',
+    coolTimer: 0,
+    taskText: ''
+  };
+}
+
+// ===================== SYNAPTIC PATHWAYS =====================
+const synapseLines = [];
+const synapsePulses = []; 
+
+function createConnections() {
+  for (let i = 0; i < neuronArray.length; i++) {
+    const n = neuronArray[i];
+    const distances = [];
+    for (let j = 0; j < neuronArray.length; j++) {
+      if (i === j) continue;
+      distances.push({ idx: j, dist: n.group.position.distanceTo(neuronArray[j].group.position) });
+    }
+    distances.sort((a, b) => a.dist - b.dist);
+    
+    // Connect to 3 nearest
+    for (let k = 0; k < Math.min(3, distances.length); k++) {
+      const target = neuronArray[distances[k].idx];
+      if (n.connections.includes(target.name) || target.connections.includes(n.name)) continue;
+      
+      n.connections.push(target.name);
+      target.connections.push(n.name);
+      
+      const start = n.group.position;
+      const end = target.group.position;
+      const mid = start.clone().add(end).multiplyScalar(0.5).multiplyScalar(1.1); // slight curve outward
+      
+      const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+      const points = curve.getPoints(20);
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x003355, transparent: true, opacity: 0.1 });
+      const line = new THREE.Line(lineGeo, lineMat);
+      brainGroup.add(line);
+      synapseLines.push({ line, from: n.name, to: target.name, curve, mat: lineMat });
+    }
+  }
+}
+
+// ===================== ELECTRIC SIGNAL FLOW =====================
+function firePulse(fromName, toName, color) {
+  const synapse = synapseLines.find(s =>
+    (s.from === fromName && s.to === toName) || (s.from === toName && s.to === fromName)
+  );
+  if (!synapse) return;
+  
+  // Make the entire path line light up with the agent's color
+  synapse.mat.color.setHex(color);
+  synapse.mat.opacity = 0.8;
+  
+  // The moving signal particle
+  const pulseGeo = new THREE.SphereGeometry(0.3, 8, 8);
+  const pulseMat = new THREE.MeshBasicMaterial({ color: color });
+  const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+  brainGroup.add(pulse);
+  
+  // Trail behind the signal
+  const trailGeo = new THREE.SphereGeometry(0.6, 8, 8);
+  const trailMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+  const trail = new THREE.Mesh(trailGeo, trailMat);
+  brainGroup.add(trail);
+  
+  // Reverse curve if traveling backwards
+  const isReversed = synapse.to === fromName;
+  
+  synapsePulses.push({
+    pulse, trail, curve: synapse.curve, synapse, isReversed,
+    progress: 0, speed: 0.01 + Math.random() * 0.015,
+    color: color
+  });
+}
+
+// ===================== EVENT HANDLING =====================
+function fireNeuron(name, taskText) {
+  const n = neurons[name];
+  if (!n) return;
+  
+  n.state = 'firing';
+  n.fireCount++;
+  n.taskText = taskText;
+  n.coolTimer = 100; 
+  
+  // Intense brightness in the agent's specific color
+  n.coreMat.color.setHex(0xffffff); // Core turns pure white
+  n.core.scale.setScalar(2.0);
+  n.glowMat.opacity = 0.9;
+  n.glow.scale.setScalar(2.0);
+  
+  const dot = n.listEl.querySelector('.node-dot');
+  dot.classList.add('lit');
+  dot.style.backgroundColor = '#' + n.baseColor.toString(16).padStart(6, '0');
+  
+  // Dispatch electrical signals using the agent's base color
+  n.connections.forEach(cName => {
+    setTimeout(() => firePulse(name, cName, n.baseColor), Math.random() * 400);
+  });
+  
+  if (selectedNeuron === n) updateHUD(n);
+}
+
+function coolNeuron(n) {
+  n.state = 'dormant';
+  n.coreMat.color.setHex(n.baseColor);
+  n.core.scale.setScalar(1.0);
+  n.glowMat.opacity = 0.15;
+  n.glow.scale.setScalar(1.0);
+  
+  const dot = n.listEl.querySelector('.node-dot');
+  dot.classList.remove('lit');
+  dot.style.backgroundColor = '#223';
+  
+  if (selectedNeuron === n) updateHUD(n);
+}
+
+// ===================== UI & LOGIC =====================
+function buildNodeList(agentList) {
+  const container = document.getElementById('node-list');
+  agentList.forEach((a, i) => {
+    const el = document.createElement('div');
+    el.className = 'node-item';
+    const cHex = '#' + neurons[a.name].baseColor.toString(16).padStart(6, '0');
+    el.innerHTML = `<span style="color:${cHex}">${a.name}</span><div class="node-dot"></div>`;
+    el.addEventListener('click', () => selectNeuron(a.name));
+    container.appendChild(el);
+    neurons[a.name].listEl = el;
+  });
+}
+
+function selectNeuron(name) {
+  const n = neurons[name];
+  if (!n) return;
+  document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active'));
+  n.listEl.classList.add('active');
+  selectedNeuron = n;
+  
+  document.getElementById('hud').style.display = 'block';
+  updateHUD(n);
+  
+  const worldPos = new THREE.Vector3();
+  n.group.getWorldPosition(worldPos);
+  
+  const dir = worldPos.clone().normalize();
+  const targetCam = worldPos.clone().add(dir.multiplyScalar(30)).add(new THREE.Vector3(0, 5, 0));
+  
+  controls.autoRotate = false;
+  const startPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  let t = 0;
+  
+  function tweenCam() {
+    t += 0.03;
+    if (t > 1) { controls.autoRotate = true; controls.autoRotateSpeed = 0.1; return; }
+    camera.position.lerpVectors(startPos, targetCam, t);
+    controls.target.lerpVectors(startTarget, worldPos, t);
+    requestAnimationFrame(tweenCam);
+  }
+  tweenCam();
+}
+
+function updateHUD(n) {
+  const cHex = '#' + n.baseColor.toString(16).padStart(6, '0');
+  const h = document.getElementById('hud-name');
+  h.textContent = n.name.toUpperCase();
+  h.style.color = cHex;
+  
+  document.getElementById('hud-state').textContent = n.state === 'firing' ? 'ACTIVE' : 'Dormant';
+  document.getElementById('hud-state').style.color = n.state === 'firing' ? cHex : '#468';
+  document.getElementById('hud-conn').textContent = n.connections.length;
+  document.getElementById('hud-fires').textContent = n.fireCount;
+  document.getElementById('hud-feed').textContent = n.taskText || 'Idle...';
+}
+
+function addLog(msg, colorHex) {
+  const box = document.getElementById('log');
+  const el = document.createElement('div');
+  el.className = 'log-l';
+  el.style.color = colorHex || '#579';
+  el.textContent = msg;
+  box.appendChild(el);
+  if (box.children.length > 50) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ===================== INIT =====================
+const FALLBACK_AGENTS = [
+  "planner","researcher","coder","debugger","reasoning","critic","refiner",
+  "summarizer","narrator","expander","extractor","classifier","router",
+  "translator","ensemble","merger","judge","memory","tool",
+  "Internal Swarm Tool Engineer","validator","syntax_audit","type_safety",
+  "logic_flaw","consistency_guard","hallucination_hunter","edge_case_hunter",
+  "performance_profiler","output_verifier","patch_applier","self_reflection",
+  "test_generator","regression_guard","security_audit","injection_scanner",
+  "auth_audit","crypto_audit","data_leak_scan","network_security",
+  "dependency_audit","compliance_check","accessibility_audit",
+  "bias_detector","prompt_injection_guard","api_fuzzer","load_tester",
+  "error_recovery","documentation","changelog","code_reviewer",
+  "ux_writer","tool_maker"
+];
+
+function spawnWorld(names) {
+  const positions = distributeOnBrain(names.length);
+  names.forEach((name, i) => {
+    neurons[name] = createNeuron(name, positions[i], i);
+    neuronArray.push(neurons[name]);
+  });
+  createConnections();
+  buildNodeList(names.map(n => ({ name: n })));
+  
+  document.getElementById('status-text').textContent = `${names.length} neurons connected`;
+  document.getElementById('loader').style.opacity = '0';
+  setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+  connectSSE();
+}
+
+function init() {
+  document.getElementById('load-bar').style.width = '50%';
+  const fetchPromise = fetch('/v1/swarm/agents');
+  const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+  
+  Promise.race([fetchPromise, timeoutPromise])
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('load-bar').style.width = '100%';
+      const list = (data.agents || []).map(a => a.name);
+      spawnWorld(list.length > 0 ? list : FALLBACK_AGENTS);
+    })
+    .catch(() => {
+      document.getElementById('load-bar').style.width = '100%';
+      addLog('[CORTEX] API unavailable, using offline map.', '#f80');
+      spawnWorld(FALLBACK_AGENTS);
+    });
+}
+
+// ===================== SSE =====================
+function connectSSE() {
+  const src = new EventSource('/world/events');
+  src.onmessage = (ev) => {
+    const d = JSON.parse(ev.data);
+    const name = d.data.agent || d.data.name || null;
+    if (name && neurons[name]) {
+      const cHex = '#' + neurons[name].baseColor.toString(16).padStart(6, '0');
+      const task = `${d.event_type}: ${JSON.stringify(d.data).slice(0, 50)}`;
+      addLog(`[SIGNAL] ${name} <- ${d.event_type}`, cHex);
+      fireNeuron(name, task);
+    }
+  };
+}
+
+// ===================== ANIMATION LOOP =====================
+let time = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.016;
+  controls.update();
+  
+  updateBackgroundPlexus();
+  brainGroup.rotation.y += 0.001;
+  
+  for (const n of neuronArray) {
+    if (n.state === 'dormant') {
+      const pulse = 1 + Math.sin(time * 3 + n.group.position.x) * 0.1;
+      n.core.scale.setScalar(pulse);
+      n.glowMat.opacity = 0.15 + Math.sin(time * 2 + n.group.position.y) * 0.05;
+    }
+    
+    if (n.state === 'firing') {
+      n.coolTimer--;
+      if (n.coolTimer <= 0) coolNeuron(n);
+    }
+  }
+  
+  for (let i = synapsePulses.length - 1; i >= 0; i--) {
+    const p = synapsePulses[i];
+    p.progress += p.speed;
+    
+    if (p.progress >= 1) {
+      brainGroup.remove(p.pulse);
+      brainGroup.remove(p.trail);
+      p.synapse.mat.color.setHex(0x003355);
+      p.synapse.mat.opacity = 0.1;
+      synapsePulses.splice(i, 1);
+      continue;
+    }
+    
+    // Evaluate curve based on direction
+    const t = p.isReversed ? (1 - p.progress) : p.progress;
+    const pt = p.curve.getPoint(t);
+    p.pulse.position.copy(pt);
+    
+    const trailT = p.isReversed ? Math.min(1, 1 - p.progress + 0.08) : Math.max(0, p.progress - 0.08);
+    const trailPt = p.curve.getPoint(trailT);
+    p.trail.position.copy(trailPt);
+    
+    p.synapse.mat.opacity = 0.5;
+  }
+  
+  composer.render();
+}
+
+animate();
+init();
+
+// ===================== RESIZE =====================
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+});
+</script>
+</body>
+</html>
