@@ -11,7 +11,8 @@ import ast
 import math
 import operator
 import statistics
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # Safe operators for AST evaluation
 SAFE_OPS: dict[type[ast.AST], Callable] = {

@@ -1,9 +1,11 @@
+import asyncio
+import json
+import os
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
-import asyncio
+
 from pravaha.engine.event_bus import get_event_bus
-import os
-import json
 
 router = APIRouter()
 
@@ -11,7 +13,7 @@ WORLD_HTML_PATH = os.path.join(os.path.dirname(__file__), "..", "world.html")
 
 @router.get("/world", response_class=HTMLResponse)
 async def get_world():
-    with open(WORLD_HTML_PATH, "r", encoding="utf-8") as f:
+    with open(WORLD_HTML_PATH, encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 async def event_generator(request: Request):
@@ -30,7 +32,7 @@ async def event_generator(request: Request):
         while True:
             if await request.is_disconnected():
                 break
-            
+
             # Use asyncio.wait_for to periodically check for disconnects
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=1.0)
@@ -40,7 +42,7 @@ async def event_generator(request: Request):
                     "data": event.data
                 }, default=str)
                 yield f"data: {data}\n\n"
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
     finally:
         bus.unsubscribe_all(_event_listener)

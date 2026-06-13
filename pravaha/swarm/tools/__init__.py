@@ -97,8 +97,9 @@ class ToolRegistry:
         # v4.0: Dynamic Custom Tools Auto-Discovery
         try:
             import importlib
-            import pkgutil
             import inspect
+            import pkgutil
+
             from pravaha.swarm.tools import custom
 
             for _, module_name, _ in pkgutil.iter_modules(custom.__path__):
@@ -106,8 +107,8 @@ class ToolRegistry:
                     module = importlib.import_module(f"pravaha.swarm.tools.custom.{module_name}")
                     for obj_name, obj in inspect.getmembers(module, inspect.isclass):
                         if (
-                            hasattr(obj, "execute") 
-                            and hasattr(obj, "name") 
+                            hasattr(obj, "execute")
+                            and hasattr(obj, "name")
                             and not obj.__name__.startswith("Base")
                             and obj.__module__ == module.__name__
                         ):

@@ -1,5 +1,7 @@
 from typing import Any
+
 from pravaha.swarm.agents.base_agent import BaseAgent
+
 
 class ToolMakerAgent(BaseAgent):
     """An agent that writes, tests, and persists custom tools for the swarm."""
@@ -35,7 +37,7 @@ class MyCustomTool:
     name = "my_custom_tool"
     description = "Does something awesome"
     arg_schema = {"query": "string to query"}
-    
+
     def execute(self, query: str):
         return {"result": f"Executed with {query}"}
 ```
