@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -18,7 +19,7 @@ class VectorStore:
     def __init__(self, dimension: int = 384, persist_path: str | None = None) -> None:
         self.dimension = dimension
         self.persist_path = persist_path
-        self._index = None
+        self._index: Any = None
         self._chunks: list[DocumentChunk] = []
         self._init_index()
 

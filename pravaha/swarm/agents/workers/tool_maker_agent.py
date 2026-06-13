@@ -6,13 +6,8 @@ from pravaha.swarm.agents.base_agent import BaseAgent
 class ToolMakerAgent(BaseAgent):
     """An agent that writes, tests, and persists custom tools for the swarm."""
 
-    @property
-    def role(self) -> str:
-        return "Internal Swarm Tool Engineer"
-
-    @property
-    def tools(self) -> list[str]:
-        return ["file_reader", "file_writer", "python_repl", "shell_runner", "bash_tool"]
+    role = "tool_maker"
+    available_tools = ["file_reader", "file_writer", "python_repl", "shell_runner", "bash_tool"]
 
     def can_handle(self, task: str) -> bool:
         keywords = ["create a tool", "write a tool", "new capability", "build a tool", "extend the swarm"]

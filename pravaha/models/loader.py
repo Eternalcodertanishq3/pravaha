@@ -74,7 +74,7 @@ class ModelLoader:
             f"quant={quantization or 'none'}, "
             f"flash_attn={'yes' if compat._flash_attn_available else 'no'})"
         )
-        model = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
+        model: Any = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
         model.eval()
 
         if use_torch_compile:

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
@@ -17,7 +18,7 @@ async def get_world():
         return HTMLResponse(content=f.read())
 
 async def event_generator(request: Request):
-    queue = asyncio.Queue()
+    queue: asyncio.Queue[Any] = asyncio.Queue()
     bus = get_event_bus()
 
     def _event_listener(event):
