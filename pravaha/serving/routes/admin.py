@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
@@ -81,3 +82,45 @@ async def merge_models(request: MergeRequest):
 async def configure_ab(split: float = 0.5):
     """Configure A/B traffic split."""
     return {"split": split, "status": "configured"}
+
+
+class UserDataRequest(BaseModel):
+    user_id: str
+
+
+@router.post("/admin/export_user_data")
+async def export_user_data(request: UserDataRequest, raw_request: Request):
+    """GDPR Data Portability: Export all persistent session and memory data for a user."""
+    engine = raw_request.app.state.engine
+    sessions = []
+    if engine and hasattr(engine, "session_cache"):
+        sessions = [
+            s for s in engine.session_cache.list_sessions()
+            if s.get("session_id", "").startswith(request.user_id)
+        ]
+
+    return {
+        "user_id": request.user_id,
+        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "sessions": sessions,
+        "status": "success",
+    }
+
+
+@router.post("/admin/delete_user")
+async def delete_user(request: UserDataRequest, raw_request: Request):
+    """GDPR Right to be Forgotten: Purge all session and memory data for a user."""
+    engine = raw_request.app.state.engine
+    purged_count = 0
+    if engine and hasattr(engine, "session_cache"):
+        for s in engine.session_cache.list_sessions():
+            sid = s.get("session_id", "")
+            if sid.startswith(request.user_id):
+                engine.session_cache.remove(sid)
+                purged_count += 1
+
+    return {
+        "user_id": request.user_id,
+        "purged_sessions": purged_count,
+        "status": "purged",
+    }

@@ -57,19 +57,22 @@ class SessionKVCache:
         self,
         max_sessions: int = 1000,
         ttl_seconds: int = 3600,
+        max_context_len: int = 32768,
     ) -> None:
         """Initialize the session cache.
 
         Args:
             max_sessions: Maximum concurrent sessions before LRU eviction.
             ttl_seconds: Time-to-live for sessions in seconds.
+            max_context_len: Maximum context length stored per session.
         """
         self.max_sessions = max_sessions
         self.ttl_seconds = ttl_seconds
+        self.max_context_len = max_context_len
         self._sessions: OrderedDict[str, SessionState] = OrderedDict()
         self._lock = threading.Lock()
 
-        logger.info(f"SessionKVCache initialized: max_sessions={max_sessions}, ttl={ttl_seconds}s")
+        logger.info(f"SessionKVCache initialized: max_sessions={max_sessions}, ttl={ttl_seconds}s, max_context_len={max_context_len}")
 
     def save(
         self,
@@ -90,6 +93,17 @@ class SessionKVCache:
         """
         with self._lock:
             now = time.time()
+
+            # Bound context growth per session
+            if context_len > self.max_context_len:
+                logger.warning(
+                    f"Session {session_id} context length ({context_len}) exceeded max_context_len ({self.max_context_len}). "
+                    f"Truncating session context."
+                )
+                context_len = self.max_context_len
+                max_blocks = max(1, (self.max_context_len + 15) // 16)
+                if len(block_table) > max_blocks:
+                    block_table = block_table[-max_blocks:]
 
             if session_id in self._sessions:
                 session = self._sessions[session_id]

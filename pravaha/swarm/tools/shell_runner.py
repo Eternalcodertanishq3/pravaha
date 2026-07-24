@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import logging
 import platform
+import shlex
 import subprocess
 
 logger = logging.getLogger(__name__)
 
+METACHARACTERS = {"|", ";", "&&", "||", "$", "`", ">>", ">", "<"}
+
+# Windows shell builtins that need cmd /c to execute
+_WINDOWS_BUILTINS = {"echo", "dir", "date", "type", "set", "cls", "copy", "del", "ren", "mkdir", "rmdir"}
 
 class ShellRunner:
     """Run whitelisted shell commands safely."""
@@ -30,8 +35,16 @@ class ShellRunner:
         """Execute a whitelisted shell command."""
         timeout_s = min(timeout_s, 10)
 
-        # Parse the base command
-        parts = command.strip().split()
+        # Reject shell metacharacters
+        for meta in METACHARACTERS:
+            if meta in command:
+                return {"error": f"Shell metacharacter '{meta}' is not allowed", "success": False}
+
+        try:
+            parts = shlex.split(command)
+        except ValueError as e:
+            return {"error": f"Command parsing error: {e}", "success": False}
+
         if not parts:
             return {"error": "Empty command", "success": False}
 
@@ -49,10 +62,13 @@ class ShellRunner:
             return {"error": "Dangerous flags detected", "success": False}
 
         try:
-            shell = platform.system() == "Windows"
+            # On Windows, shell builtins (echo, dir, etc.) require cmd /c
+            run_parts = parts
+            if platform.system() == "Windows" and base_cmd in _WINDOWS_BUILTINS:
+                run_parts = ["cmd", "/c"] + parts
+
             result = subprocess.run(
-                command if shell else parts,
-                shell=shell,
+                run_parts,
                 capture_output=True,
                 text=True,
                 timeout=timeout_s,

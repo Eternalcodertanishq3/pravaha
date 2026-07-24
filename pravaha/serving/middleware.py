@@ -15,15 +15,22 @@ from starlette.responses import JSONResponse, Response
 logger = logging.getLogger(__name__)
 
 
+from pravaha.observability.structured_logger import request_id_ctx
+
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     """Inject a unique X-Request-ID header into every request/response."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         request.state.request_id = request_id
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-        return response
+        token = request_id_ctx.set(request_id)
+        try:
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            request_id_ctx.reset(token)
 
 
 class TimingMiddleware(BaseHTTPMiddleware):
@@ -70,4 +77,32 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429, content={"error": {"message": "Rate limit exceeded"}}
             )
         self._counts[client_ip].append(now)
+        return await call_next(request)
+
+
+class BearerAuthMiddleware(BaseHTTPMiddleware):
+    """API Key authentication middleware."""
+
+    def __init__(self, app: Any) -> None:
+        super().__init__(app)
+        import os
+        self.api_key = os.environ.get("PRAVAHA_API_KEY")
+        if not self.api_key:
+            logger.warning("PRAVAHA_API_KEY is not set. API authentication is DISABLED.")
+        self.excluded_paths = {"/health", "/health/ready", "/docs", "/openapi.json", "/redoc"}
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.url.path in self.excluded_paths:
+            return await call_next(request)
+
+        if not self.api_key:
+            return await call_next(request)
+
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer ") or auth_header.split(" ")[1] != self.api_key:
+            return JSONResponse(
+                status_code=401,
+                content={"error": {"message": "Missing or invalid API key", "type": "authentication_error"}},
+            )
+
         return await call_next(request)

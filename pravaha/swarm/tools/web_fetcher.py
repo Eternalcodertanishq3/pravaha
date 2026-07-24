@@ -40,8 +40,46 @@ class WebFetcher:
 
     MAX_OUTPUT_BYTES = 4096
 
+    def _validate_url(self, url: str) -> None:
+        import urllib.parse
+        import socket
+        import ipaddress
+
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError(f"Invalid URL scheme: {parsed.scheme}")
+
+        if not parsed.hostname:
+            raise ValueError("Missing hostname in URL")
+
+        try:
+            addr_info = socket.getaddrinfo(parsed.hostname, None)
+        except socket.gaierror:
+            raise ValueError(f"Could not resolve hostname: {parsed.hostname}")
+
+        for addr in addr_info:
+            ip_str = addr[4][0]
+            ip = ipaddress.ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                raise ValueError(f"URL resolves to private/reserved IP: {ip_str}")
+            if ip in ipaddress.ip_network("10.0.0.0/8") or \
+               ip in ipaddress.ip_network("127.0.0.0/8") or \
+               ip in ipaddress.ip_network("172.16.0.0/12") or \
+               ip in ipaddress.ip_network("192.168.0.0/16") or \
+               ip in ipaddress.ip_network("169.254.0.0/16") or \
+               ip in ipaddress.ip_network("0.0.0.0/8") or \
+               ip == ipaddress.ip_address("::1") or \
+               ip in ipaddress.ip_network("fc00::/7") or \
+               ip in ipaddress.ip_network("fe80::/10"):
+                raise ValueError(f"URL resolves to blocked IP range: {ip_str}")
+
     def execute(self, url: str, timeout_s: int = 10) -> dict:
         """Fetch URL and return extracted text."""
+        try:
+            self._validate_url(url)
+        except ValueError as e:
+            return {"error": str(e), "url": url, "success": False}
+
         timeout_s = min(timeout_s, 15)
         try:
             import httpx
@@ -50,6 +88,7 @@ class WebFetcher:
                 url,
                 timeout=timeout_s,
                 follow_redirects=True,
+                max_redirects=3,
                 headers={"User-Agent": "Pravaha/3.1 (Research Agent)"},
             )
             resp.raise_for_status()

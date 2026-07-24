@@ -23,22 +23,46 @@ class ContinuousScheduler:
     """
 
     def __init__(
-        self, num_blocks: int, block_size: int, max_batch_size: int, max_seq_len: int
+        self,
+        num_blocks: int,
+        block_size: int,
+        max_batch_size: int,
+        max_seq_len: int,
+        max_waiting_requests: int = 1000,
+        max_swapped_requests: int = 500,
+        max_finished_history: int = 1000,
     ) -> None:
         self.num_blocks = num_blocks
         self.block_size = block_size
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
+        self.max_waiting_requests = max_waiting_requests
+        self.max_swapped_requests = max_swapped_requests
+        self.max_finished_history = max_finished_history
 
-        self.waiting: collections.deque[InferenceRequest] = collections.deque()
+        self.waiting: collections.deque[InferenceRequest] = collections.deque(maxlen=max_waiting_requests)
         self.running: list[InferenceRequest] = []
-        self.swapped: collections.deque[InferenceRequest] = collections.deque()
-        self.finished: list[InferenceRequest] = []
+        self.swapped: collections.deque[InferenceRequest] = collections.deque(maxlen=max_swapped_requests)
+        self.finished: collections.deque[InferenceRequest] = collections.deque(maxlen=max_finished_history)
         self.block_manager = BlockManager(num_blocks, block_size)
         self.hash_to_block: dict[str, int] = {}
 
-    def add_request(self, request: InferenceRequest) -> None:
+    def add_request(self, request: InferenceRequest) -> bool:
+        """Add request to waiting queue if space is available."""
+        if len(self.waiting) >= self.max_waiting_requests:
+            logger.warning(
+                f"Scheduler waiting queue full ({len(self.waiting)}/{self.max_waiting_requests}). "
+                f"Rejecting request {request.request_id}."
+            )
+            return False
         self.waiting.append(request)
+        return True
+
+    def is_overloaded(self, threshold_pct: float = 0.9) -> bool:
+        """Check if scheduler queue or block capacity is near overload threshold."""
+        queue_ratio = len(self.waiting) / max(1, self.max_waiting_requests)
+        block_ratio = self.get_usage_pct()
+        return queue_ratio >= threshold_pct or block_ratio >= threshold_pct
 
     def has_unfinished_requests(self) -> bool:
         return len(self.waiting) > 0 or len(self.running) > 0 or len(self.swapped) > 0

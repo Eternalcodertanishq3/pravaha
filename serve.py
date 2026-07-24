@@ -38,15 +38,19 @@ Once running, visit:
     parser.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     parser.add_argument("--tui", action="store_true", help="Launch the TUI Dashboard")
+    parser.add_argument("--ssl-keyfile", default=None, help="SSL key file")
+    parser.add_argument("--ssl-certfile", default=None, help="SSL certificate file")
     
     args = parser.parse_args()
     
+    scheme = "https" if args.ssl_keyfile and args.ssl_certfile else "http"
+    
     print("=" * 60)
     print("  🌊 Pravāha Inference Server")
-    print(f"  🔗 http://localhost:{args.port}")
-    print(f"  📄 http://localhost:{args.port}/docs")
-    print(f"  📊 http://localhost:{args.port}/metrics")
-    print(f"  🌐 http://localhost:{args.port}/world  (3D Swarm Visualizer)")
+    print(f"  🔗 {scheme}://localhost:{args.port}")
+    print(f"  📄 {scheme}://localhost:{args.port}/docs")
+    print(f"  📊 {scheme}://localhost:{args.port}/metrics")
+    print(f"  🌐 {scheme}://localhost:{args.port}/world  (3D Swarm Visualizer)")
     print("=" * 60)
     
     if args.tui:
@@ -57,7 +61,14 @@ Once running, visit:
         
         print("\n[+] Launching TUI Dashboard alongside backend...\n")
         app = create_app()
-        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="error")
+        config = uvicorn.Config(
+            app, 
+            host=args.host, 
+            port=args.port, 
+            log_level="error",
+            ssl_keyfile=args.ssl_keyfile,
+            ssl_certfile=args.ssl_certfile,
+        )
         server = uvicorn.Server(config)
         
         tui = PravahaTUI()
@@ -91,6 +102,8 @@ Once running, visit:
             port=args.port,
             reload=args.reload,
             log_level="info",
+            ssl_keyfile=args.ssl_keyfile,
+            ssl_certfile=args.ssl_certfile,
         )
 
 

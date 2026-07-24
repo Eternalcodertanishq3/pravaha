@@ -43,9 +43,12 @@ def create_app() -> FastAPI:
     )
 
     # Middleware
+    import os
+    cors_origins = os.environ.get("PRAVAHA_CORS_ORIGINS", "*").split(",")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
         allow_credentials=True,
@@ -54,8 +57,12 @@ def create_app() -> FastAPI:
         ErrorHandlerMiddleware,
         RequestIDMiddleware,
         TimingMiddleware,
+        RateLimitMiddleware,
+        BearerAuthMiddleware,
     )
 
+    app.add_middleware(BearerAuthMiddleware)
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(TimingMiddleware)
     app.add_middleware(ErrorHandlerMiddleware)

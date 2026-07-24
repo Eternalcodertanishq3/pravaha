@@ -1,0 +1,56 @@
+groups:
+  - name: pravaha_slo_alerts
+    rules:
+      - alert: HighTTFTLatency
+        expr: histogram_quantile(0.95, sum(rate(pravaha_ttft_seconds_bucket[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Time-To-First-Token (TTFT) latency detected"
+          description: "P95 TTFT latency is {{ $value }}s, exceeding the 2.0s SLO target."
+
+      - alert: HighRequestErrorRate
+        expr: sum(rate(pravaha_requests_total{status="error"}[5m])) / sum(rate(pravaha_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate"
+          description: "Error rate is {{ $value | humanizePercentage }}, exceeding the 5% threshold."
+
+      - alert: SchedulerQueueOverflow
+        expr: pravaha_queue_waiting > 200
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Scheduler waiting queue overflow"
+          description: "Waiting queue depth is {{ $value }}, approaching maximum capacity."
+
+      - alert: GPUKVCacheSaturation
+        expr: (pravaha_gpu_blocks_total - pravaha_gpu_blocks_free) / pravaha_gpu_blocks_total > 0.90
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPU KV-Cache near capacity"
+          description: "KV-cache utilization is {{ $value | humanizePercentage }}, risking request preemption."
+
+      - alert: RateLimitExceededSpike
+        expr: rate(pravaha_requests_total{status="429"}[1m]) * 60 > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Spike in rate limit rejections"
+          description: "Rate limit rejections exceeded 50 requests/min."
+
+      - alert: ServiceUnhealthy
+        expr: pravaha_engine_ready == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pravaha engine instance not ready"
+          description: "Engine readiness probe is failing."

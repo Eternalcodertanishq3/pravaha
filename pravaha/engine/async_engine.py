@@ -143,65 +143,22 @@ class AsyncPravahaEngine:
         logger.info("AsyncPravahaEngine initialized and ready.")
 
     def _initialize_subsystems(self) -> None:
-        """Load model and initialize all engine subsystems."""
+        """Load model and initialize all engine subsystems via EngineFactory."""
         t0 = time.time()
+        from pravaha.engine.factory import EngineFactory
 
-        # 1. Load tokenizer
-        logger.info(f"Loading tokenizer: {self.config.model.model_path}")
-        self.tokenizer = PravahaTokenizer(self.config.model.model_path)
+        subs = EngineFactory.build_subsystems(self.config, self._device)
+        self.tokenizer = subs["tokenizer"]
+        self.model = subs["model"]
+        self.arch_config = subs["arch_config"]
+        self.block_manager = subs["block_manager"]
+        self.kv_cache = subs["kv_cache"]
+        self._decoder = subs["decoder"]
+        self._scheduler = subs["scheduler"]
+        self.session_cache = subs["session_cache"]
 
-        # 2. Load model
-        logger.info(f"Loading model: {self.config.model.model_path}")
-        loader = ModelLoader()
-        self.model, self.arch_config = loader.load(
-            model_path=self.config.model.model_path,
-            device=self._device,
-            dtype=self.config.model.torch_dtype,
-            quantization=self.config.model.quantization,
-            trust_remote_code=self.config.model.trust_remote_code,
-            use_torch_compile=self.config.model.use_torch_compile,
-        )
-
-        # 3. Block manager
-        num_blocks = self.config.cache.num_gpu_blocks or 256
-        self.block_manager = BlockManager(
-            num_blocks=num_blocks,
-            block_size=self.config.cache.block_size,
-        )
-
-        # 4. Paged KV cache
-        self.kv_cache = PagedKVCache(
-            num_layers=self.arch_config.num_layers,
-            num_kv_heads=self.arch_config.num_kv_heads,
-            head_dim=self.arch_config.head_dim,
-            block_size=self.config.cache.block_size,
-            num_blocks=num_blocks,
-            dtype=self.config.model.torch_dtype,
-            device=self._device,
-        )
-
-        # 5. Decoder engine
-        self._decoder = DecoderEngine(
-            model=self.model,
-            tokenizer=self.tokenizer,
-            sampler=Sampler(),
-            device=self._device,
-            kv_cache=self.kv_cache,
-        )
-
-        # 6. Scheduler
-        self._scheduler = ContinuousScheduler(
-            num_blocks=num_blocks,
-            block_size=self.config.cache.block_size,
-            max_batch_size=self.config.scheduler.max_batch_size,
-            max_seq_len=self.config.model.max_seq_len,
-        )
-
-        # 7. Session cache (for multi-turn conversations)
-        self.session_cache = SessionKVCache(
-            max_sessions=self.config.cache.max_sessions,
-            ttl_seconds=self.config.cache.session_ttl_seconds,
-        )
+        # GPU Warmup
+        self._warmup_gpu()
 
         # Metrics
         self._total_requests = 0
@@ -220,6 +177,24 @@ class AsyncPravahaEngine:
             "device": self._device,
         })
         logger.info(f"All subsystems initialized in {elapsed:.1f}s")
+
+    def _warmup_gpu(self) -> None:
+        """Execute dummy forward passes to warm up CUDA kernels and memory pools."""
+        try:
+            logger.info("Executing GPU warmup passes...")
+            dummy_prompt = "Pravaha GPU warmup test sequence."
+            dummy_ids = self.tokenizer.encode(dummy_prompt)
+            if not dummy_ids:
+                dummy_ids = [1, 2, 3]
+
+            block_tables = [[0]]
+            # Warmup prefill step
+            self._decoder.step_prefill([dummy_ids], ["warmup_req"], block_tables)
+            # Warmup decode step
+            self._decoder.step_decode([dummy_ids[-1]], ["warmup_req"], block_tables, [len(dummy_ids)])
+            logger.info("GPU warmup completed successfully.")
+        except Exception as e:
+            logger.warning(f"GPU warmup skipped or non-fatal: {e}")
 
     async def generate(
         self,
@@ -260,6 +235,10 @@ class AsyncPravahaEngine:
             )
         )
 
+        # Check backpressure / overload
+        if self._scheduler.is_overloaded(threshold_pct=0.95):
+            raise RuntimeError("Server overloaded: queue/memory backpressure threshold reached.")
+
         # Tokenize prompt
         input_ids = self.tokenizer.encode(prompt)
 
@@ -270,16 +249,19 @@ class AsyncPravahaEngine:
             sampling_params=params,
         )
 
-        # Set up token streaming queue
-        token_queue: asyncio.Queue[str] = asyncio.Queue()
+        # Set up token streaming queue (bounded to prevent OOM)
+        token_queue: asyncio.Queue[str] = asyncio.Queue(maxsize=200)
         self._request_queues[request_id] = token_queue
         self._active_requests[request_id] = request
 
         # Capture the current event loop for cross-thread communication
         self._loop = asyncio.get_running_loop()
 
-        # Submit to scheduler
-        self._scheduler.add_request(request)
+        # Submit to scheduler with capacity check
+        if not self._scheduler.add_request(request):
+            self._request_queues.pop(request_id, None)
+            self._active_requests.pop(request_id, None)
+            raise RuntimeError("Scheduler waiting queue is full. Request rejected.")
 
         # Yield tokens as they arrive
         t_start = time.time()
@@ -311,7 +293,8 @@ class AsyncPravahaEngine:
                 yield token_text
 
         finally:
-            # Cleanup
+            # Cleanup & abort request if client disconnected or generator exited early
+            self.abort_request(request_id)
             self._request_queues.pop(request_id, None)
             self._active_requests.pop(request_id, None)
 
@@ -428,7 +411,12 @@ class AsyncPravahaEngine:
         """Thread-safe: push a token to the request's async queue."""
         queue = self._request_queues.get(request_id)
         if queue is not None and self._loop is not None:
-            self._loop.call_soon_threadsafe(queue.put_nowait, text)
+            def _safe_put():
+                try:
+                    queue.put_nowait(text)
+                except asyncio.QueueFull:
+                    logger.warning(f"Token queue full for request {request_id}. Dropping token.")
+            self._loop.call_soon_threadsafe(_safe_put)
 
     def abort_request(self, request_id: str) -> bool:
         """Abort a running or pending request.

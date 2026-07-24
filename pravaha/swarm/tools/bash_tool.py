@@ -7,6 +7,8 @@ environment variable injection, working directory setting.
 from __future__ import annotations
 
 import os
+import platform
+import shlex
 import subprocess
 from typing import Any
 
@@ -18,12 +20,16 @@ ALLOWED_COMMANDS = {
     "tree", "file", "which", "type", "diff", "md5sum", "sha256sum",
 }
 
+METACHARACTERS = {"|", ";", "&&", "||", "$", "`", ">>", ">", "<"}
+
+# Windows shell builtins that need cmd /c to execute
+_WINDOWS_BUILTINS = {"echo", "dir", "date", "type", "set", "cls", "copy", "del", "ren", "mkdir", "rmdir"}
 
 class BashTool:
-    """Execute whitelisted bash commands with pipeline support."""
+    """Execute whitelisted bash commands."""
 
     name = "bash"
-    description = "Execute shell commands (whitelisted, with pipe support)"
+    description = "Execute shell commands (whitelisted, no pipe support)"
     arg_schema = '{"command": "string", "cwd": "optional_path", "env": {}}'
 
     def execute(
@@ -35,14 +41,21 @@ class BashTool:
     ) -> dict[str, Any]:
         """Execute a shell command string.
 
-        Supports pipe operators (cmd1 | cmd2).
+        Supports environment variables and working directory.
         """
-        # Validate command against whitelist
-        parts = command.strip().split()
+        # Reject shell metacharacters
+        for meta in METACHARACTERS:
+            if meta in command:
+                return {"error": f"Shell metacharacter '{meta}' is not allowed", "success": False}
+
+        try:
+            parts = shlex.split(command)
+        except ValueError as e:
+            return {"error": f"Command parsing error: {e}", "success": False}
+
         if not parts:
             return {"error": "Empty command", "success": False}
 
-        # Check first command in pipe chain
         base_cmd = parts[0].split("/")[-1]  # Handle absolute paths
         if base_cmd not in ALLOWED_COMMANDS:
             return {
@@ -62,9 +75,13 @@ class BashTool:
             return {"error": f"Working directory not found: {work_dir}", "success": False}
 
         try:
-            result = subprocess.run(  # noqa: S602
-                command,
-                shell=True,
+            # On Windows, shell builtins (echo, dir, etc.) require cmd /c
+            run_parts = parts
+            if platform.system() == "Windows" and base_cmd in _WINDOWS_BUILTINS:
+                run_parts = ["cmd", "/c"] + parts
+
+            result = subprocess.run(
+                run_parts,
                 capture_output=True,
                 text=True,
                 timeout=timeout_s,
