@@ -699,6 +699,15 @@ python -m ruff check pravaha/
 
 ---
 
+## 📅 Upcoming Hardware Benchmarking Roadmap (Next Steps)
+
+1. **Integrated Hardware Stress Test:** Running `scripts/run_production_soak_test.py` with all 4 low-level acceleration modules active on real LLM weights (Llama-3 8B FP8, Qwen-2.5 7B FP8) on physical NVIDIA RTX 4050 6GB hardware.
+2. **48-Hour Continuous Multi-Tenant Saturation:** Conducting 48-hour continuous soak tests under $C=50$ and $C=100$ concurrent user streams to track VRAM thermal stability, L2 cache hit ratios, and CUDA Graph memory pool fragmentation.
+3. **AWQ Perplexity Drift Calibration:** Measuring top 1% salient channel FP8 vs FP16 perplexity delta ($\Delta\text{PPL} < 0.05$) across WikiText-2 and C4 datasets.
+4. **Publishing Raw Telemetry Dossiers:** Publishing signed CSV/JSON raw telemetry benchmark logs under `docs/benchmarks/` for transparent public verification.
+
+---
+
 ## Summary
 
 By combining **N-Gram Lookahead**, **AWQ FP8 Quantization**, **Adaptive Acceptance Rate Tracking**, **3-Bucket CUDA Graph Management**, and **Hybrid PyO3 Rust Extensions**, Pravāha establishes a realistic engineering path to **10–15 ms streaming latency** on an NVIDIA RTX 4050 6GB GPU without overclaiming, sacrificing model accuracy, or starving VRAM capacity. All **128 unit and integration tests** pass cleanly.

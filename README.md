@@ -1436,6 +1436,33 @@ groups:
 
 ---
 
+## 📅 Upcoming Hardware Benchmarking & Validation Roadmap (Next Steps)
+
+To transition from module-level unit verification (128 tests passing) to continuous live physical hardware telemetry, the following benchmarking and stress-testing milestones are scheduled for the coming days:
+
+### 1. End-to-End Low-Level Acceleration Benchmark Runs
+- **Objective:** Execute `scripts/run_production_soak_test.py` with all 4 compiled hardware subsystems active simultaneously (`CUDAGraphDecoderWrapper` + `FP8Linear` AWQ + `_flash_decode_kernel` Triton + `Axum` Rust Server).
+- **Target Metrics:** Measure physical TTFT, ITL, and system throughput on real model weights (Llama-3 8B FP8, Qwen-2.5 7B FP8) on physical NVIDIA RTX 4050 6GB hardware.
+- **Validation Criteria:** Verify sub-15ms streaming latency on physical hardware under real multi-tenant loads.
+
+### 2. 48-Hour High-Concurrency Soak & Thermal Telemetry Testing
+- **Objective:** Run a 48-hour continuous saturation drill under $C=50$ and $C=100$ concurrent user streams.
+- **Telemetry Monitored:** Track CUDA Graph memory pool fragmentation, GPU thermal throttling boundaries, L2 cache hit rates, process RSS memory drift, and PyO3 lock-free channel queue depth over 100,000+ generated tokens.
+
+### 3. AWQ Calibration & Perplexity Evaluation
+- **Objective:** Perform offline AWQ calibration across standard validation datasets (WikiText-2, C4) to determine top 1% salient channel thresholds.
+- **Validation Criteria:** Confirm that FP8 quantization with salient channel protection yields zero noticeable perplexity degradation ($\Delta\text{PPL} < 0.05$) compared to FP16 baseline weights.
+
+### 4. Multi-GPU Tensor Parallelism (TP) Benchmarking
+- **Objective:** Validate multi-GPU Tensor Parallelism (TP=2) scaling across dual-GPU rigs.
+- **Telemetry Monitored:** Benchmark cross-device NVLink / PCIe KV-cache block transfer latency and evaluate distributed prefill vs decode splitting performance.
+
+### 5. Automated Telemetry Dossier & Raw Log Publishing
+- **Objective:** Generate signed CSV/JSON raw telemetry logs and interactive P50/P95/P99 latency distribution histograms.
+- **Deliverable:** Publish raw empirical benchmark logs under `docs/benchmarks/` for transparent public verification.
+
+---
+
 ## Contributing & Testing
 
 We welcome contributions to Pravāha! Please follow our submission guidelines:
