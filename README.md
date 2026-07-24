@@ -176,7 +176,7 @@ This section presents full, un-truncated architectural flowcharts and sequence d
 
 ```mermaid
 graph TB
-    subgraph Client & Network Boundary
+    subgraph SUB_CLIENT ["Client & Network Boundary"]
         CLIENT["Client / Web UI / SDK"]
         HTTPS["HTTPS TLS Listener (port 8443 / 8000)"]
         BEARER["BearerAuthMiddleware (PRAVAHA_API_KEY)"]
@@ -185,7 +185,7 @@ graph TB
         REQ_ID["RequestIDMiddleware (UUID X-Request-ID)"]
     end
 
-    subgraph API Route Dispatcher
+    subgraph SUB_DISPATCH ["API Route Dispatcher"]
         COMPLETIONS["/v1/completions"]
         CHAT["/v1/chat/completions"]
         MODELS["/v1/models"]
@@ -197,21 +197,21 @@ graph TB
         ADMIN_ROUTE["/admin/delete_user"]
     end
 
-    subgraph Safety Guardrails & Validation Layer
+    subgraph SUB_GUARD ["Safety Guardrails & Validation Layer"]
         CONTENT_FILTER["ContentFilter (Max 100k, Null Bytes)"]
         INJECTION_SCANNER["InjectionScanner (Role Overrides, Jailbreaks)"]
         SECRETS_REDACTION["SecretsRedactionFilter (AWS, JWT, API Keys)"]
         PII_REDACTION["PIIRedactionFilter (Email, SSN, Credit Cards)"]
     end
 
-    subgraph Core Async Engine & Load Balancer
+    subgraph SUB_ENGINE ["Core Async Engine & Load Balancer"]
         ASYNC_ENGINE["AsyncPravahaEngine"]
         LOAD_BALANCER["AdaptiveLoadBalancer (CPU, RAM, GPU Mon)"]
         EVENT_BUS["EventBus (Telemetry & TUI Streams)"]
         CIRCUIT_BREAKER["CircuitBreaker (CLOSED / OPEN / HALF_OPEN)"]
     end
 
-    subgraph Continuous Scheduling & Queue Management
+    subgraph SUB_SCHED ["Continuous Scheduling & Queue Management"]
         SCHEDULER["ContinuousScheduler"]
         WAITING_Q["Waiting Queue (Max 1000)"]
         RUNNING_Q["Running Queue (Max 256)"]
@@ -219,7 +219,7 @@ graph TB
         FINISHED_Q["Finished Queue (Max 1000)"]
     end
 
-    subgraph Memory & Cache Acceleration Subsystem
+    subgraph SUB_MEM ["Memory & Cache Acceleration Subsystem"]
         BLOCK_MGR["BlockManager"]
         RUST_ALLOCATOR["Rust BlockAllocator (Maturin C-Ext)"]
         PAGED_CACHE["PagedKVCache (Block Size = 16)"]
@@ -227,7 +227,7 @@ graph TB
         SESSION_CACHE["SessionKVCache (Multi-Turn Chat Reuse)"]
     end
 
-    subgraph Low-Level Latency Optimization Subsystem
+    subgraph SUB_LATENCY ["Low-Level Latency Optimization Subsystem"]
         CUDA_GRAPH["CUDAGraphDecoderWrapper (Buckets 1, 4, 16)"]
         FP8_QUANT["FP8Quantizer & FP8Linear (float8_e4m3fn)"]
         AWQ_SALIENT["AWQ Salient Channel Protection (Top 1% FP16)"]
@@ -236,13 +236,13 @@ graph TB
         ADAPTIVE_TRACKER["AdaptiveAcceptanceTracker (Window n=20)"]
     end
 
-    subgraph PyO3 Rust HTTP Engine & SSE Streaming
+    subgraph SUB_RUST ["PyO3 Rust HTTP Engine & SSE Streaming"]
         TOKEN_BRIDGE["TokenBridge PyO3 (Arc<DashMap<String, Sender>>)"]
         RUST_AXUM["Rust Axum SSE Engine (tokio mpsc)"]
         RUST_TOKENIZER["RustTokenizer (tokenizers-rs)"]
     end
 
-    subgraph Swarm Multi-Agent DAG & Self-Healing Loop
+    subgraph SUB_SWARM ["Swarm Multi-Agent DAG & Self-Healing Loop"]
         SWARM_ORCHESTRATOR["SwarmOrchestrator (DAG Topology)"]
         SHARED_CONTEXT["SharedContext (Thread-Safe Key Locking)"]
         PYTHON_REPL["PythonREPL (AST Import & Call Scanner)"]
@@ -252,7 +252,7 @@ graph TB
         SELF_HEALING["Self-Healing Repair Loop (AST Error Patch)"]
     end
 
-    subgraph Compliance & Audit Ledger Layer
+    subgraph SUB_AUDIT ["Compliance & Audit Ledger Layer"]
         AUDIT_TRAIL["AuditTrail Ledger (SHA-256 Hash Chain)"]
         JSON_LOGGER["Structured JSON Logger (Correlation IDs)"]
         GDPR_ENGINE["GDPR Data Export & Permanent Erasure"]
@@ -347,12 +347,12 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph Logical Sequence Space
+    subgraph SUB_LOGICAL ["Logical Sequence Space"]
         S1["Request A: 'System: You are an AI assistant. Summarize...' (Prompt 48 tokens)"]
         S2["Request B: 'System: You are an AI assistant. Translate...' (Prompt 48 tokens)"]
     end
 
-    subgraph Rust PrefixTrie KV Cache Sharing
+    subgraph SUB_TRIE ["Rust PrefixTrie KV Cache Sharing"]
         ROOT["Root Trie Node"]
         SHARED_PREFIX["Shared Prefix Node: 'System: You are an AI assistant.' (Tokens 0..31)"]
         REQ_A_BRANCH["Branch A: 'Summarize...' (Tokens 32..47)"]
@@ -362,7 +362,7 @@ graph TD
         SHARED_PREFIX --> REQ_B_BRANCH
     end
 
-    subgraph Physical Paged KV Cache Memory Pools (Block Size = 16)
+    subgraph SUB_PHYSICAL ["Physical Paged KV Cache Memory Pools (Block Size = 16)"]
         B0["Physical Block 0: Shared KV Data (Ref Count = 2)"]
         B1["Physical Block 1: Shared KV Data (Ref Count = 2)"]
         B2["Physical Block 2: Request A Specific KV Data (Ref Count = 1)"]
@@ -386,14 +386,14 @@ graph TD
     START["Swarm Trigger: POST /v1/swarm/run"] --> DAG["Load DAG Specification (configs/swarm_default.yaml)"]
     DAG --> INIT_CTX["Initialize Thread-Safe SharedContext"]
     
-    subgraph Agent Execution Node 1: Researcher
+    subgraph SUB_NODE1 ["Agent Execution Node 1: Researcher"]
         INIT_CTX --> R1["Researcher Agent Activated"]
         R1 --> R2["Generate Web Search Query"]
         R2 --> R3["Call WebFetcher Tool (SSRF IP Validation)"]
         R3 --> R4["Store Research Summary in SharedContext['research_notes']"]
     end
 
-    subgraph Agent Execution Node 2: Coder
+    subgraph SUB_NODE2 ["Agent Execution Node 2: Coder"]
         R4 --> C1["Coder Agent Activated (Reads SharedContext['research_notes'])"]
         C1 --> C2["Generate Python Solution Script"]
         C2 --> C3["Pass Script to PythonREPL Tool"]
@@ -775,19 +775,19 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph Calibration Phase
+    subgraph SUB_CALIB ["Calibration Phase"]
         A["Input Calibration Prompts"] --> B["Forward Pass Hooks"]
         B --> C["Compute Activation Scales μ_j"]
         C --> D["Quantile Thresholding (>99th percentile)"]
         D --> E["Salient Channel Mask (Top 1%)"]
     end
-    subgraph Quantization Phase
+    subgraph SUB_QUANT ["Quantization Phase"]
         F["Original FP16 Weight (W)"] --> G{"Channel in Salient Mask?"}
         G -- Yes --> H["Store in FP16 (weight_salient)"]
         G -- No --> I["Scale: S = 448.0 / max(|W_non_salient|)"]
         I --> J["Quantize to float8_e4m3fn (weight_fp8)"]
     end
-    subgraph Runtime Decode Phase
+    subgraph SUB_DECODE ["Runtime Decode Phase"]
         K["FP8Linear.forward(X)"] --> L["Dequantize FP8: W_non_salient / S"]
         H --> M["Combine FP16 Salient + Dequantized FP8"]
         L --> M
@@ -810,7 +810,7 @@ graph LR
 
 ```mermaid
 graph TD
-    subgraph CUDA Threadblock Grid: (Batch, Num_Heads)
+    subgraph SUB_GRID ["CUDA Threadblock Grid: (Batch, Num_Heads)"]
         A["Query Token Q (Shape: [1, Head_Dim])"] --> B["Load Q into GPU SRAM Registers"]
         B --> C["Loop over KV Blocks in L2 Cache (Tile Size: BLOCK_SEQ)"]
         C --> D["Compute Q @ K_block^T / sqrt(head_dim)"]
