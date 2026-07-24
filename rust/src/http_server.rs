@@ -5,11 +5,9 @@ use axum::{
     Router,
 };
 use futures::stream::Stream;
-use pyo3::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
-use std::sync::Arc;
-use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
@@ -82,7 +80,7 @@ pub async fn completions_handler(
                 finish_reason: None,
             }],
         };
-        Event::default().json_data(chunk).unwrap_or(Event::default())
+        Ok::<Event, Infallible>(Event::default().json_data(chunk).unwrap_or_else(|_| Event::default()))
     });
 
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
