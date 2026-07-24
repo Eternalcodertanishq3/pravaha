@@ -84,13 +84,13 @@ class WebFetcher:
         try:
             import httpx
 
-            resp = httpx.get(
-                url,
+            with httpx.Client(
                 timeout=timeout_s,
                 follow_redirects=True,
                 max_redirects=3,
                 headers={"User-Agent": "Pravaha/3.1 (Research Agent)"},
-            )
+            ) as client:
+                resp = client.get(url)
             resp.raise_for_status()
 
             parser = _TextExtractor()
