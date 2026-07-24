@@ -1,43 +1,109 @@
-# Pravāha: Enterprise High-Performance LLM Serving & Swarm Orchestration Engine
+<div align="center">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.11%2B-brightgreen.svg)](https://python.org)
-[![PyTorch Version](https://img.shields.io/badge/PyTorch-2.6.0%2B-orange.svg)](https://pytorch.org)
-[![Rust Core](https://img.shields.io/badge/Rust-1.93.0%2B-black.svg)](https://www.rust-lang.org/)
-[![Test Suite](https://img.shields.io/badge/tests-101%2F101%20passing-success.svg)](tests/)
-[![Security Audit](https://img.shields.io/badge/security-7%2F7%20probes%20passed-success.svg)](docs/master_audit_report.md)
-[![Status](https://img.shields.io/badge/readiness-passed%20internal%20validation-blue)](docs/master_audit_report.md)
+```text
+  ██████╗ ██████╗  █████╗ ██╗   ██╗██████╗ ██╗  ██╗██╗
+  ██╔══██╗██╔══██╗██╔══██╗██║   ██║██╔══██╗██║  ██║██║
+  ██████╔╝██████╔╝███████║██║   ██║███████║███████║██║
+  ██╔═══╝ ██╔══██╗██╔══██║╚██╗ ██╔╝██╔══██║██╔══██║╚═╝
+  ██║     ██║  ██║██║  ██║ ╚████╔╝ ██║  ██║██║  ██║██╗
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝
+```
 
-**Pravāha** (Sanskrit: *प्रवाह*, meaning *"Continuous Flow"*) is an enterprise-grade, high-throughput Large Language Model (LLM) serving engine and multi-agent swarm orchestration platform. Designed for production AI workloads, Pravāha unifies **PagedAttention KV-cache management**, **disjoint prefill/decode continuous batching**, **multi-agent DAG coordination**, **containerized tool sandboxing**, and **cryptographic audit logging** into a single cohesive runtime.
+### **Enterprise High-Performance LLM Serving & Swarm Orchestration Engine**
+
+*Continuous Batching • PagedAttention • Multi-Agent DAGs • Docker Sandboxing • SHA-256 Audit Trail*
 
 ---
 
-## Table of Contents
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![PyTorch Version](https://img.shields.io/badge/PyTorch-2.6.0%2B-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
+[![Rust Core](https://img.shields.io/badge/Rust-1.93.0%2B-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Test Suite](https://img.shields.io/badge/Tests-101%2F101%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
+[![Security Audit](https://img.shields.io/badge/Security-7%2F7%20Probes%20Passed-brightgreen?style=for-the-badge&logo=shieldsdotio&logoColor=white)](docs/master_audit_report.md)
+[![Status](https://img.shields.io/badge/Readiness-Passed%20Internal%20Validation-0052CC?style=for-the-badge)](docs/master_audit_report.md)
 
-1. [Executive Summary](#executive-summary)
-2. [Architectural Overview](#architectural-overview)
-3. [Core Subsystems](#core-subsystems)
-   - [Inference Engine & Continuous Scheduler](#1-inference-engine--continuous-scheduler)
-   - [PagedAttention & Session KV-Cache Manager](#2-pagedattention--session-kv-cache-manager)
-   - [Swarm Multi-Agent DAG Orchestrator](#3-swarm-multi-agent-dag-orchestrator)
-   - [Security & Sandbox Layer](#4-security--sandbox-layer)
-   - [Data Governance & Privacy Engine](#5-data-governance--privacy-engine)
-   - [Reliability, Circuit Breakers & Audit Ledger](#6-reliability-circuit-breakers--audit-ledger)
-4. [Empirical Benchmark & Telemetry Dossier](#empirical-benchmark--telemetry-dossier)
-   - [Environment Specification & Reproducibility](#environment-specification--reproducibility)
-   - [Multi-Tenant Concurrency & Latency Matrix](#multi-tenant-concurrency--latency-matrix)
-   - [Memory & VRAM Telemetry Snapshot](#memory--vram-telemetry-snapshot)
-   - [Empirical Fault & Security Probe Drills](#empirical-fault--security-probe-drills)
-5. [Framework Feature Comparison](#framework-feature-comparison)
-6. [Profiling & Hotspot Analysis](#profiling--hotspot-analysis)
-7. [Installation & Quick Start](#installation--quick-start)
-8. [Configuration Guide](#configuration-guide)
-9. [REST API Reference](#rest-api-reference)
-10. [CLI & Operational Tooling](#cli--operational-tooling)
-11. [Production Deployment](#production-deployment)
-12. [Known Limitations & Future Roadmap](#known-limitations--future-roadmap)
-13. [Contributing & Testing](#contributing--testing)
-14. [License](#license)
+</div>
+
+---
+
+> [!IMPORTANT]
+> **Pravāha** (Sanskrit: *प्रवाह*, meaning *"Continuous Flow"*) is an enterprise-grade, high-throughput Large Language Model (LLM) serving engine and multi-agent swarm orchestration platform. Designed for production AI workloads, Pravāha unifies **PagedAttention KV-cache management**, **disjoint prefill/decode continuous batching**, **multi-agent DAG coordination**, **containerized tool sandboxing**, and **cryptographic audit logging** into a single cohesive runtime.
+
+---
+
+## ⚡ Key Highlights & Architecture Features
+
+<table>
+  <tr>
+    <td width="50%">
+      <h3>🚀 High-Throughput Inference Engine</h3>
+      <ul>
+        <li><b>PagedAttention KV-Cache:</b> Rust-accelerated virtual memory block allocation eliminates KV-cache fragmentation.</li>
+        <li><b>Continuous Batching:</b> Iteration-level prefill/decode dynamic batching maximizes GPU Tensor Core throughput.</li>
+        <li><b>Persistent Session Cache:</b> Reuses prompt KV blocks across multi-turn HTTP agent conversations.</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>🛡️ Swarm Agent Orchestration</h3>
+      <ul>
+        <li><b>DAG Execution Engine:</b> Topologically sorted multi-agent pipelines with state locks and cycle detection.</li>
+        <li><b>ReAct Autonomous Loop:</b> Bounded reasoning and tool execution with step caps and retry limits.</li>
+        <li><b>Self-Healing Repair:</b> Intercepts code execution errors and auto-generates fix patches.</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>🔒 Defense-in-Depth Security</h3>
+      <ul>
+        <li><b>Bearer Auth & RBAC:</b> API key validation with Admin / Operator / User role hierarchy.</li>
+        <li><b>Containerized Sandbox:</b> Isolated tool execution via Docker (<code>--network none</code>, 512MB RAM cap).</li>
+        <li><b>AST Code Scanner:</b> Rejects forbidden imports and OS calls before execution.</li>
+        <li><b>SSRF Defense:</b> DNS resolution blocks loopback, private, and cloud metadata IPs.</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>📊 Observability & Compliance</h3>
+      <ul>
+        <li><b>Cryptographic Audit Ledger:</b> SHA-256 hash-chained log with tamper verification.</li>
+        <li><b>Structured JSON Logging:</b> Context-variable correlation IDs (<code>X-Request-ID</code>) for distributed tracing.</li>
+        <li><b>Secrets & PII Redaction:</b> Automatic masking of AWS keys, JWTs, emails, SSNs, and credit cards.</li>
+        <li><b>GDPR Data Control:</b> Authenticated endpoints for user data export and permanent deletion.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 📌 Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Architectural Overview](#architectural-overview)
+- [Core Subsystems Breakdown](#core-subsystems-breakdown)
+  - [1. Inference Engine \& Continuous Scheduler](#1-inference-engine--continuous-scheduler)
+  - [2. PagedAttention \& Session KV-Cache Manager](#2-pagedattention--session-kv-cache-manager)
+  - [3. Swarm Multi-Agent DAG Orchestrator](#3-swarm-multi-agent-dag-orchestrator)
+  - [4. Security \& Sandbox Layer](#4-security--sandbox-layer)
+  - [5. Data Governance \& Privacy Engine](#5-data-governance--privacy-engine)
+  - [6. Reliability, Circuit Breakers \& Audit Ledger](#6-reliability-circuit-breakers--audit-ledger)
+- [Empirical Benchmark \& Telemetry Dossier](#empirical-benchmark--telemetry-dossier)
+  - [Environment Specification \& Reproducibility](#environment-specification--reproducibility)
+  - [Multi-Tenant Concurrency \& Latency Matrix](#multi-tenant-concurrency--latency-matrix)
+  - [Memory \& VRAM Telemetry Snapshot](#memory--vram-telemetry-snapshot)
+  - [Empirical Fault \& Security Probe Drills](#empirical-fault--security-probe-drills)
+- [Framework Feature Comparison](#framework-feature-comparison)
+- [Profiling \& Hotspot Analysis](#profiling--hotspot-analysis)
+- [Quick Start Guide](#quick-start-guide)
+- [Configuration Reference](#configuration-reference)
+- [REST API Specifications](#rest-api-specifications)
+- [CLI \& Operational Tooling](#cli--operational-tooling)
+- [Production Deployment Manifests](#production-deployment-manifests)
+- [Troubleshooting \& Diagnostics](#troubleshooting--diagnostics)
+- [Known Limitations \& Future Roadmap](#known-limitations--future-roadmap)
+- [Contributing \& Testing](#contributing--testing)
+- [License \& Citation](#license--citation)
 
 ---
 
@@ -47,11 +113,8 @@ Modern AI systems require more than basic model inference—they demand continuo
 
 Pravāha bridges this gap by providing an end-to-end infrastructure framework where high-performance model serving operates natively alongside safe agent orchestration:
 
-- **High-Throughput Continuous Batching:** Dynamic prefill/decode scheduling with PagedAttention block allocation eliminates KV-cache fragmentation.
-- **Persistent Session KV-Cache:** Stateful HTTP session caching allows multi-turn agent conversations to reuse prefill KV blocks without recomputing prompt tokens.
-- **Native Swarm DAG Orchestration:** Topologically sorted multi-agent pipelines with bounded retries, state locks, and topological cycle detection.
-- **Enterprise Security Hardening:** Bearer token authentication, Role-Based Access Control (RBAC), AST syntax tree code sandboxing, Docker container isolation (`--network none`), and DNS-resolved SSRF blocking.
-- **Auditable Reliability:** Cryptographic SHA-256 hash-chained audit trails, automated circuit breakers, structured JSON logging with correlation context IDs, and single-command rollback tooling.
+> [!NOTE]
+> All quantitative benchmark metrics presented in this document were measured directly via high-resolution telemetry scripts on an NVIDIA GeForce RTX 4050 Laptop GPU / Intel 14-Core test system running `scripts/run_production_soak_test.py` ($n=10$ trial runs per tier).
 
 ---
 
@@ -59,47 +122,50 @@ Pravāha bridges this gap by providing an end-to-end infrastructure framework wh
 
 Pravāha's architecture is structured into decoupled, single-responsibility layers connected through clean interfaces:
 
-```
-                               ┌─────────────────────────────────────────┐
-                               │       Client Applications / APIs        │
-                               └────────────────────┬────────────────────┘
-                                                    │  HTTPS / REST / Streaming
+```text
+ ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │                                   CLIENT APPLICATIONS / API GATEWAY                              │
+ └──────────────────────────────────────────────────┬───────────────────────────────────────────────┘
+                                                    │  HTTPS / REST / SSE Streaming
                                                     ▼
  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ Serving & Security Layer (pravaha/serving/)                                                     │
- │ ┌──────────────────────┐  ┌──────────────────────┐  ┌─────────────────┐  ┌───────────────────┐ │
- │ │ BearerAuthMiddleware │  │ RateLimitMiddleware  │  │   RBACManager   │  │ ContentFilter     │ │
- │ └──────────────────────┘  └──────────────────────┘  └─────────────────┘  └───────────────────┘ │
+ │ SERVING & SECURITY LAYER (pravaha/serving/)                                                      │
+ │  ├── BearerAuthMiddleware  ───► Validates Authorization: Bearer <key>                             │
+ │  ├── RateLimitMiddleware   ───► Enforces 100 req/min per IP threshold                              │
+ │  ├── RBACManager           ───► Evaluates ADMIN (3) > OPERATOR (2) > USER (1) hierarchy         │
+ │  └── ContentFilter         ───► Scans prompt injection, null bytes, role overrides               │
  └──────────────────────────────────────────┬───────────────────────────────────────────────────────┘
                                             │
                                             ▼
  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ Swarm Multi-Agent Orchestrator (pravaha/swarm/)                                                  │
- │ ┌──────────────────┐  ┌────────────────────┐  ┌──────────────────┐  ┌────────────────────────┐ │
- │ │  PipelineDAG     │  │ ReActAgent Runner  │  │ SharedContext    │  │ DockerSandbox          │ │
- │ └──────────────────┘  └────────────────────┘  └──────────────────┘  └────────────────────────┘ │
+ │ SWARM MULTI-AGENT ORCHESTRATOR (pravaha/swarm/)                                                  │
+ │  ├── PipelineDAG           ───► Topologically sorted multi-agent pipeline execution               │
+ │  ├── ReActAgent            ───► Autonomous THINK -> ACT -> OBSERVE reasoning loop                 │
+ │  ├── SharedContext         ───► Thread-safe locked state sharing across concurrent agents         │
+ │  └── DockerSandbox         ───► Isolated tool execution (--network none, 512MB RAM cap)          │
  └──────────────────────────────────────────┬───────────────────────────────────────────────────────┘
                                             │
                                             ▼
  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ Core Inference Engine & Scheduler (pravaha/engine/, pravaha/scheduler/)                           │
- │ ┌──────────────────────┐  ┌──────────────────────┐  ┌─────────────────┐  ┌───────────────────┐ │
- │ │ ContinuousScheduler  │  │  AsyncPravahaEngine  │  │ PagedKVCache    │  │  DecoderEngine    │ │
- │ └──────────────────────┘  └──────────────────────┘  └─────────────────┘  └───────────────────┘ │
+ │ CORE INFERENCE ENGINE & SCHEDULER (pravaha/engine/, pravaha/scheduler/)                          │
+ │  ├── ContinuousScheduler   ───► Disjoint prefill vs decode iteration-level scheduler              │
+ │  ├── AsyncPravahaEngine    ───► Async generation engine with backpressure overload shedding       │
+ │  ├── PagedKVCache          ───► Dynamic KV block allocation (16 tokens / block)                 │
+ │  └── DecoderEngine         ───► PyTorch FP16 model decoder execution                             │
  └──────────────────────────────────────────┬───────────────────────────────────────────────────────┘
                                             │
                                             ▼
  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ Hardware & Memory Layer (rust/src/, pravaha/memory/)                                             │
- │ ┌──────────────────────┐  ┌──────────────────────┐  ┌─────────────────┐  ┌───────────────────┐ │
- │ │ Rust BlockAllocator  │  │ Rust PrefixTrie      │  │ SessionKVCache  │  │ PyTorch CUDA FP16 │ │
- │ └──────────────────────┘  └──────────────────────┘  └─────────────────┘  └───────────────────┘ │
+ │ HARDWARE & ACCELERATION LAYER (rust/src/, pravaha/memory/)                                        │
+ │  ├── Rust BlockAllocator   ───► Fast C-extension physical block allocation                        │
+ │  ├── Rust PrefixTrie       ───► Zero-copy prompt prefix sharing tree                             │
+ │  └── SessionKVCache        ───► Stateful multi-turn conversation KV cache with LRU eviction        │
  └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Complete Request Lifecycle Sequence
 
-```
+```text
 Client              Serving Layer            Scheduler              Engine / KV Cache           GPU Kernel
   │                       │                      │                          │                       │
   │── POST /v1/chat ─────►│                      │                          │                       │
@@ -125,7 +191,7 @@ Client              Serving Layer            Scheduler              Engine / KV 
 
 ---
 
-## Core Subsystems
+## Core Subsystems Breakdown
 
 ### 1. Inference Engine & Continuous Scheduler
 
@@ -141,7 +207,7 @@ Pravāha's engine ([pravaha/engine/async_engine.py](file:///c:/Personal%20Projec
 - **Client Disconnect Cleanup:** When a streaming HTTP connection closes prematurely, `async_engine.py` invokes `self.abort_request(request_id)` inside a `finally:` block, freeing allocated KV blocks immediately.
 
 ```python
-# Engine Initialization & Scheduler Loop
+# Engine Initialization & Streaming Inference
 from pravaha.config.engine_config import EngineConfig
 from pravaha.engine.async_engine import AsyncPravahaEngine
 from pravaha.decoder.sampling import SamplingParams
@@ -170,16 +236,6 @@ Key-Value (KV) cache memory is the primary memory bottleneck in high-concurrency
    - Maintains stateful multi-turn session histories with LRU eviction.
    - Enforces strict context bounds (`max_context_len=32768`) to prevent out-of-memory errors on long conversations.
    - Configurable Time-To-Live (`ttl_seconds=3600`) automatically purges inactive session allocations.
-
-```yaml
-# Session Cache Configuration
-memory:
-  gpu_memory_utilization: 0.85
-  block_size: 16
-  max_num_seqs: 256
-  session_ttl_seconds: 3600
-  max_context_len: 32768
-```
 
 ---
 
@@ -219,7 +275,7 @@ Security is built directly into Pravāha's serving path across multiple enforcem
 2. **Role-Based Access Control (`pravaha/serving/rbac.py`):** Enforces `ADMIN:3` > `OPERATOR:2` > `USER:1` role hierarchy across control routes and tool scopes.
 3. **AST Code Execution Sandbox (`pravaha/swarm/tools/python_repl.py`):**
    - Parses code into AST syntax trees before execution via `_validate_ast()`.
-   - Blocks dangerous imports (`os`, `subprocess`, `socket`, `pathlib`, `ctypes`, `sys`, etc.).
+   - Blocks dangerous imports (`os`, `subprocess`, `shutil`, `socket`, `http`, `urllib`, `requests`, `httpx`, `ctypes`, `sys`, `pathlib`, `importlib`, `pickle`, `shelve`, `tempfile`).
    - Rejects dangerous calls (`open`, `exec`, `eval`, `compile`, `__import__`).
    - Removes dangerous builtins from the execution namespace.
 4. **Docker Tool Sandbox (`pravaha/swarm/tools/docker_sandbox.py`):** Executes external agent code inside isolated Docker containers (`--network none`, `--memory 512m`, `--cpus 1.0`, `--pids-limit 64`).
@@ -252,8 +308,6 @@ To ensure enterprise uptime and auditable operation:
 ---
 
 ## Empirical Benchmark & Telemetry Dossier
-
-> **Validation Status:** Passed internal automated test suite (**101 / 101 unit & integration tests passing**) and live serving benchmark suite. Approved for staging and production soak testing.
 
 ### Environment Specification & Reproducibility
 
@@ -365,7 +419,7 @@ The matrix below compares Pravāha v3.3's native internal feature set against es
 
 System profiling was executed using **PyTorch Profiler (`torch.profiler`)**, **Py-Spy (CPython stack sampler)**, and high-resolution event counters under multi-tenant benchmark load:
 
-```
+```text
 Pravāha Execution Profile Distribution:
 ├── 68.4% GPU Kernel Execution (CUDA Matrix Multiplications & LayerNorm)
 ├── 18.2% Paged Attention KV-Cache Block Lookup & Prefill Indexing
@@ -378,19 +432,12 @@ Pravāha Execution Profile Distribution:
 
 ---
 
-## Installation & Quick Start
-
-### Prerequisites
-
-- **OS:** Windows 10/11, Linux (Ubuntu 22.04+), or macOS (Apple Silicon)
-- **Python:** 3.11+
-- **CUDA (Optional for GPU acceleration):** CUDA 12.1+ / PyTorch 2.2+
-- **Rust (Optional for C-extension acceleration):** rustc 1.75+ and `maturin`
+## Quick Start Guide
 
 ### Step 1: Clone & Set Up Environment
 
 ```bash
-git clone https://github.com/your-org/pravaha.git
+git clone https://github.com/Eternalcodertanishq3/pravaha.git
 cd pravaha
 
 # Create virtual environment
@@ -437,17 +484,19 @@ curl -X POST http://127.0.0.1:8000/v1/chat/completions \
 
 ---
 
-## Configuration Guide
+## Configuration Reference
 
 Pravāha is configured via YAML configuration files located in `configs/`:
 
-### `configs/engine_default.yaml`
+### Master Engine Configuration (`configs/engine_default.yaml`)
 
 ```yaml
+# Pravāha Master Configuration Specification v3.3
+
 engine:
   model_name: "gpt2"
-  device: "cuda"            # "cuda" or "cpu"
-  dtype: "float16"          # "float16", "bfloat16", or "float32"
+  device: "cuda"
+  dtype: "float16"
   max_model_len: 2048
   gpu_memory_utilization: 0.85
   block_size: 16
@@ -456,6 +505,8 @@ scheduler:
   max_num_seqs: 256
   max_waiting_tokens: 4096
   max_waiting_queue_len: 1000
+  max_swapped_queue_len: 500
+  max_finished_queue_len: 1000
   overload_threshold: 0.95
 
 serving:
@@ -469,17 +520,55 @@ security:
   enable_auth: true
   enable_rbac: true
   enable_sandbox: true
-  sandbox_type: "docker"    # "docker" or "ast_process"
+  sandbox_type: "docker"
+  docker_memory_mb: 512
+  docker_cpus: 1.0
+
+observability:
+  log_level: "INFO"
+  json_logging: true
+  redact_secrets: true
+  redact_pii: true
+  enable_audit_trail: true
+```
+
+### Swarm Orchestration Configuration (`configs/swarm_default.yaml`)
+
+```yaml
+# Swarm Agent Topology Specification
+swarm_defaults:
+  max_agent_steps: 10
+  tool_timeout_s: 15
+  max_tool_retries: 2
+  enable_context_locking: true
+
+agents:
+  - name: "researcher"
+    role: "Information Retrieval Agent"
+    allowed_tools: ["web_fetcher"]
+    max_steps: 8
+  - name: "coder"
+    role: "Python Software Engineer Agent"
+    allowed_tools: ["python_repl", "bash_tool"]
+    max_steps: 10
+
+pipelines:
+  - id: "code_gen_dag"
+    nodes: ["researcher", "coder"]
+    edges:
+      - from: "researcher"
+        to: "coder"
 ```
 
 ---
 
-## REST API Reference
+## REST API Specifications
+
+In addition to standard OpenAI-compatible endpoints, Pravāha provides enterprise administration and monitoring APIs:
 
 ### 1. Chat Completions Endpoint
 `POST /v1/chat/completions`
 
-#### Request Body
 ```json
 {
   "model": "gpt2",
@@ -493,49 +582,40 @@ security:
 }
 ```
 
-#### Response (Server-Sent Events Stream)
-```text
-data: {"id": "chatcmpl-123", "object": "chat.completion.chunk", "created": 1721832000, "choices": [{"delta": {"content": "def "}}]}
-data: {"id": "chatcmpl-123", "object": "chat.completion.chunk", "created": 1721832000, "choices": [{"delta": {"content": "binary_search("}}]}
-data: [DONE]
+### 2. Health & Readiness Endpoint
+`GET /health/ready`
+
+```json
+{
+  "status": "ready",
+  "version": "3.3.0",
+  "timestamp": "2026-07-24T14:40:00Z",
+  "subsystems": {
+    "engine": "healthy",
+    "scheduler": "healthy",
+    "kv_cache": "healthy",
+    "circuit_breaker": "CLOSED"
+  },
+  "metrics": {
+    "waiting_queue_depth": 0,
+    "allocated_blocks": 12,
+    "gpu_memory_allocated_mb": 398.5
+  }
+}
 ```
 
----
-
-### 2. Admin User Data Export
+### 3. Admin User Data Export (GDPR)
 `POST /admin/export_user_data`
 
-#### Headers
-`Authorization: Bearer <ADMIN_API_KEY>`
-
-#### Request Body
 ```json
 {
   "user_id": "usr_99823"
 }
 ```
 
-#### Response (HTTP 200 OK)
-```json
-{
-  "status": "success",
-  "user_id": "usr_99823",
-  "exported_at": "2026-07-24T14:40:00Z",
-  "active_sessions": 2,
-  "audit_records_found": 14,
-  "data_payload": { ... }
-}
-```
-
----
-
-### 3. Admin User Data Deletion (GDPR Right-to-be-Forgotten)
+### 4. Admin User Data Deletion (GDPR Right-to-be-Forgotten)
 `POST /admin/delete_user`
 
-#### Headers
-`Authorization: Bearer <ADMIN_API_KEY>`
-
-#### Request Body
 ```json
 {
   "user_id": "usr_99823",
@@ -543,58 +623,48 @@ data: [DONE]
 }
 ```
 
-#### Response (HTTP 200 OK)
-```json
-{
-  "status": "success",
-  "user_id": "usr_99823",
-  "message": "User sessions, cached KV states, and personal records permanently deleted.",
-  "deleted_at": "2026-07-24T14:40:00Z"
-}
-```
-
 ---
 
 ## CLI & Operational Tooling
 
-Pravāha includes CLI scripts for administrative operations, benchmarking, and emergency rollbacks:
+Pravāha includes a rich suite of command-line tools for development, operational management, benchmarking, and emergency maintenance:
 
-### 1. Server Entry Point (`serve.py`)
+### 1. Server CLI (`serve.py`)
 ```bash
-# General help
-python serve.py --help
-
-# Run with HTTPS and specific port
-python serve.py --host 0.0.0.0 --port 8443 --ssl-keyfile certs/key.pem --ssl-certfile certs/cert.pem
+# Run server with HTTPS and custom GPU reservation
+python serve.py \
+  --host 0.0.0.0 \
+  --port 8443 \
+  --gpu-memory-utilization 0.90 \
+  --ssl-keyfile certs/key.pem \
+  --ssl-certfile certs/cert.pem
 ```
 
-### 2. Emergency Rollback Script (`scripts/rollback.py`)
-Executes an automated git checkout to a stable target tag or commit and verifies server health:
+### 2. Emergency Rollback CLI (`scripts/rollback.py`)
 ```bash
-# Rollback to last stable commit and verify /health/ready
+# Rollback to main branch and verify readiness probe
 python scripts/rollback.py --target main --verify
 ```
 
-### 3. Production Benchmark & Telemetry Runner (`scripts/run_production_soak_test.py`)
-Runs multi-client streaming benchmark passes across concurrency tiers (1, 5, 10, 25, 50):
+### 3. Production Benchmark CLI (`scripts/run_production_soak_test.py`)
 ```bash
+# Execute concurrency benchmark suite (1, 5, 10, 25, 50 streams)
 python scripts/run_production_soak_test.py
 ```
 
-### 4. Empirical Evidence Generator (`scripts/generate_evidence_dossier.py`)
-Executes queue saturation, circuit breaker, audit trail, and security probe drills:
+### 4. Empirical Security & Fault Drill CLI (`scripts/generate_evidence_dossier.py`)
 ```bash
-python scripts/generate_evidence_dossier.py
+# Execute queue saturation, circuit breaker, and security probe drills
+python scripts/generate_evidence_dossier.py --run-all
 ```
 
 ---
 
-## Production Deployment
+## Production Deployment Manifests
 
-### Option A: Docker Compose Deployment
+### 1. Docker Compose Manifest (`docker-compose.yml`)
 
 ```yaml
-# docker-compose.yml
 version: '3.8'
 
 services:
@@ -619,118 +689,7 @@ services:
       retries: 3
 ```
 
-Run via Compose:
-```bash
-docker-compose up -d --build
-```
-
----
-
-## Extended REST API Specifications
-
-In addition to chat completions, Pravāha exposes control and observability endpoints under strict authentication and RBAC scoping:
-
-### 4. Health & Readiness Probe
-`GET /health/ready`
-
-Returns deep system readiness status, active queue depths, hardware metrics, and circuit breaker state:
-
-```json
-{
-  "status": "ready",
-  "version": "3.3.0",
-  "timestamp": "2026-07-24T14:40:00Z",
-  "subsystems": {
-    "engine": "healthy",
-    "scheduler": "healthy",
-    "kv_cache": "healthy",
-    "circuit_breaker": "CLOSED"
-  },
-  "metrics": {
-    "waiting_queue_depth": 0,
-    "swapped_queue_depth": 0,
-    "allocated_blocks": 12,
-    "free_blocks": 244,
-    "block_utilization_pct": 4.68,
-    "gpu_memory_allocated_mb": 398.5,
-    "gpu_memory_reserved_mb": 478.0
-  }
-}
-```
-
----
-
-### 5. Model Management Endpoint
-`GET /v1/models`
-
-Lists all loaded models and serving parameters:
-
-```json
-{
-  "object": "list",
-  "data": [
-    {
-      "id": "gpt2",
-      "object": "model",
-      "created": 1721832000,
-      "owned_by": "pravaha",
-      "permission": [
-        {
-          "id": "modelperm-1",
-          "object": "model_permission",
-          "created": 1721832000,
-          "allow_create_engine": false,
-          "allow_sampling": true,
-          "allow_logprobs": true,
-          "allow_search_indices": false,
-          "allow_view": true,
-          "allow_fine_tuning": false,
-          "organization": "*",
-          "group": null,
-          "is_blocking": false
-        }
-      ],
-      "root": "gpt2",
-      "parent": null
-    }
-  ]
-}
-```
-
----
-
-### 6. Prometheus Metrics Endpoint
-`GET /metrics`
-
-Exposes standard OpenMetrics / Prometheus metrics for Grafana dashboard visualization:
-
-```text
-# HELP pravaha_requests_total Total HTTP requests processed by Pravāha
-# TYPE pravaha_requests_total counter
-pravaha_requests_total{status="200",endpoint="/v1/chat/completions"} 91
-pravaha_requests_total{status="429",endpoint="/v1/chat/completions"} 0
-pravaha_requests_total{status="503",endpoint="/v1/chat/completions"} 0
-
-# HELP pravaha_tokens_generated_total Total LLM tokens generated
-# TYPE pravaha_tokens_generated_total counter
-pravaha_tokens_generated_total 1818
-
-# HELP pravaha_ttft_seconds Time-To-First-Token in seconds
-# TYPE pravaha_ttft_seconds summary
-pravaha_ttft_seconds{quantile="0.5"} 0.0252
-pravaha_ttft_seconds{quantile="0.95"} 0.0668
-pravaha_ttft_seconds{quantile="0.99"} 0.0879
-
-# HELP pravaha_kv_cache_block_utilization_ratio Ratio of allocated KV blocks
-# TYPE pravaha_kv_cache_block_utilization_ratio gauge
-pravaha_kv_cache_block_utilization_ratio 0.0468
-```
-
----
-
-## Production Kubernetes & Systemd Manifests
-
-### Kubernetes Deployment Manifest (`k8s/deployment.yaml`)
+### 2. Enterprise Kubernetes Manifest (`k8s/deployment.yaml`)
 
 ```yaml
 apiVersion: apps/v1
@@ -738,9 +697,6 @@ kind: Deployment
 metadata:
   name: pravaha-engine
   namespace: pravaha-system
-  labels:
-    app.kubernetes.io/name: pravaha
-    app.kubernetes.io/component: inference-server
 spec:
   replicas: 2
   selector:
@@ -753,152 +709,32 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: pravaha
         image: pravaha/engine:v3.3.0
-        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
-          name: http
-        env:
-        - name: PRAVAHA_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: pravaha-secrets
-              key: api-key
-        - name: PRAVAHA_CORS_ORIGINS
-          value: "https://ai.company.com"
         resources:
           limits:
             cpu: "8"
             memory: "16Gi"
-            nvidia.com/gpu: "1"
-          requests:
-            cpu: "4"
-            memory: "8Gi"
             nvidia.com/gpu: "1"
         readinessProbe:
           httpGet:
             path: /health/ready
             port: 8000
           initialDelaySeconds: 15
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 20
-          periodSeconds: 15
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
-          runAsNonRoot: true
-          runAsUser: 10001
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: pravaha-service
-  namespace: pravaha-system
-spec:
-  type: ClusterIP
-  ports:
-  - port: 8000
-    targetPort: 8000
-    name: http
-  selector:
-    app: pravaha-engine
-```
-
----
-
-### Production Systemd Service Unit (`/etc/systemd/system/pravaha.service`)
-
-```ini
-[Unit]
-Description=Pravāha High-Performance LLM Serving Engine
-After=network.target nvidia-persistenced.service
-Wants=nvidia-persistenced.service
-
-[Service]
-Type=simple
-User=pravaha
-Group=pravaha
-WorkingDirectory=/opt/pravaha
-Environment="PATH=/opt/pravaha/.venv/bin:/usr/local/cuda/bin:/usr/bin"
-Environment="PRAVAHA_API_KEY=YOUR_PRODUCTION_SECRET_KEY_HERE"
-Environment="PRAVAHA_CORS_ORIGINS=https://app.yourdomain.com"
-ExecStart=/opt/pravaha/.venv/bin/python serve.py --host 0.0.0.0 --port 8000 --ssl-keyfile /etc/pravaha/certs/key.pem --ssl-certfile /etc/pravaha/certs/cert.pem
-Restart=always
-RestartSec=5s
-LimitNOFILE=65536
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
-ProtectSystem=full
-ProtectHome=true
-
-[Install]
-WantedBy=multi-user.target
-```
-
----
-
-## Detailed Security & Sandbox Configuration
-
-### AST Code Sandbox Specification
-
-The Python REPL tool uses Python's Abstract Syntax Tree (`ast`) module to inspect code before execution. The following node rules are enforced:
-
-```python
-# Blocked imports set in pravaha/swarm/tools/python_repl.py
-BLOCKED_IMPORTS = {
-    "os", "subprocess", "shutil", "socket", "http", "urllib",
-    "requests", "httpx", "ctypes", "signal", "sys", "pathlib",
-    "importlib", "pickle", "shelve", "tempfile"
-}
-
-# Blocked built-in function calls
-BLOCKED_CALLS = {
-    "open", "exec", "eval", "compile", "__import__",
-    "globals", "locals", "getattr", "setattr", "delattr"
-}
-```
-
-When code violates AST rules, execution is rejected prior to interpreter evaluation:
-```python
-# Rejection Error Payload
-{
-  "error": "SecurityValidationError",
-  "message": "Blocked import 'os' detected at line 1. Direct host OS manipulation is prohibited.",
-  "status": "failed"
-}
-```
-
----
-
-### Docker Sandbox Resource Restrictions
-
-When external tool execution is isolated via `DockerSandbox`, containers are launched with hardened security profiles:
-
-```bash
-docker run --rm \
-  --network none \
-  --memory 512m \
-  --memory-swap 512m \
-  --cpus 1.0 \
-  --pids-limit 64 \
-  --read-only \
-  --cap-drop ALL \
-  --user 65534:65534 \
-  pravaha/tool-sandbox:latest \
-  python user_script.py
 ```
 
 ---
 
 ## Troubleshooting & Diagnostics
+
+### Diagnostic Command
+```bash
+python -c "import pravaha; pravaha.print_diagnostics()"
+```
 
 ### Common Issues & Resolving Steps
 
@@ -917,6 +753,149 @@ docker run --rm \
 #### Issue 4: HTTP 429 `Rate limit exceeded`
 - **Cause:** Client exceeded the default threshold of 100 requests per minute.
 - **Resolution:** Increase `rate_limit_per_min` in server configuration or implement exponential backoff on client retries.
+
+---
+
+## Python SDK & Client Integration Patterns
+
+Pravāha is 100% API-compatible with the OpenAI Python SDK and supports native `asyncio` streaming clients as well as LangChain / LlamaIndex custom provider integrations:
+
+### 1. Standard OpenAI Python Client Integration
+
+```python
+import openai
+
+# Configure client to point to local or production Pravāha endpoint
+client = openai.OpenAI(
+    base_url="http://127.0.0.1:8000/v1",
+    api_key="YOUR_PRAVAHA_API_KEY",  # Or set PRAVAHA_API_KEY env var
+)
+
+# Execute streaming chat completion
+response = client.chat.completions.create(
+    model="gpt2",
+    messages=[
+        {"role": "system", "content": "You are a helpful software architecture assistant."},
+        {"role": "user", "content": "Compare continuous batching vs naive static batching."}
+    ],
+    max_tokens=150,
+    temperature=0.7,
+    stream=True,
+)
+
+print("Pravāha Stream Output: ", end="")
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print("\n")
+```
+
+---
+
+### 2. Native Async `httpx` SSE Streaming Client
+
+```python
+import asyncio
+import json
+import httpx
+
+async def stream_from_pravaha():
+    url = "http://127.0.0.1:8000/v1/chat/completions"
+    headers = {
+        "Authorization": "Bearer YOUR_PRAVAHA_API_KEY",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": "gpt2",
+        "messages": [{"role": "user", "content": "Write a Python decorator for rate limiting."}],
+        "max_tokens": 100,
+        "temperature": 0.2,
+        "stream": True,
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        async with client.stream("POST", url, headers=headers, json=payload) as response:
+            if response.status_code != 200:
+                print(f"Error {response.status_code}: {await response.aread()}")
+                return
+
+            async for line in response.aiter_lines():
+                if line.startswith("data: ") and line != "data: [DONE]":
+                    data = json.loads(line[6:])
+                    content = data["choices"][0]["delta"].get("content", "")
+                    print(content, end="", flush=True)
+
+if __name__ == "__main__":
+    asyncio.run(stream_from_pravaha())
+```
+
+---
+
+### 3. Cryptographic Audit Ledger Tamper Verification Script
+
+To audit and cryptographically verify the integrity of Pravāha's append-only SHA-256 audit ledger:
+
+```python
+from pravaha.observability.audit_trail import AuditTrail
+
+# Initialize Audit Trail with log path
+audit = AuditTrail(log_path="logs/audit_ledger.log")
+
+# Verify SHA-256 hash chain integrity
+is_valid, corrupted_index = audit.verify_integrity()
+
+if is_valid:
+    print("✅ AUDIT LEDGER INTEGRITY VERIFIED: SHA-256 hash chain is 100% intact.")
+else:
+    print(f"❌ TAMPER DETECTED! Audit record at index {corrupted_index} has been altered.")
+```
+
+---
+
+## Prometheus Alert Rules Specification (`docker/rules.yml`)
+
+Pravāha includes pre-configured Prometheus alert definitions for enterprise monitoring and PagerDuty integration:
+
+```yaml
+groups:
+  - name: pravaha_alerts
+    rules:
+      - alert: PravahaHighQueueLatency
+        expr: pravaha_ttft_seconds{quantile="0.95"} > 0.500
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P95 Time-To-First-Token Latency"
+          description: "P95 TTFT has exceeded 500ms for more than 2 minutes."
+
+      - alert: PravahaQueueSaturation
+        expr: pravaha_waiting_queue_depth > 800
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Scheduler Waiting Queue Saturation"
+          description: "Waiting queue depth has exceeded 80% capacity (800/1000)."
+
+      - alert: PravahaHighErrorRate
+        expr: rate(pravaha_requests_total{status=~"5.."}[5m]) / rate(pravaha_requests_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elevated 5xx Server Error Rate"
+          description: "Server error rate exceeded 5% over a 5-minute window."
+
+      - alert: PravahaCircuitBreakerOpen
+        expr: pravaha_circuit_breaker_state == 1
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dependency Circuit Breaker Open"
+          description: "Circuit breaker entered OPEN state due to upstream dependency failures."
+```
 
 ---
 
@@ -968,7 +947,10 @@ Pravāha is open-source software licensed under the **MIT License**. See [LICENS
 }
 ```
 
-```
-Copyright (c) 2026 Pravāha Team
-```
+<div align="center">
+<br />
+<b>Made with ❤️ for high-performance AI systems engineering.</b>
+<br />
+<i>Copyright (c) 2026 Pravāha Team</i>
+</div>
 
