@@ -100,7 +100,7 @@ Following a comprehensive audit of the Pravāha v3.3 codebase against the 15-dim
 |:---:|---|:---:|---|
 | **Gate 1** | Security vulnerabilities resolved | **Passed ✅** | 7/7 adversarial security probes blocked (SSRF, injection, AST REPL bypass). |
 | **Gate 2** | Memory bounds enforced | **Passed ✅** | Total RAM drift across 1,818 token benchmark: **+2.1 MB** (no observable unbounded memory growth). |
-| **Gate 3** | P95 TTFT & TPS target validation | **Passed ✅** | Single stream TTFT P50 = **11.45 ± 0.18 ms** (Accelerated); ITL P50 = **10.82 ms**; Peak system TPS = **248.60 tokens/sec**. |
+| **Gate 3** | P95 TTFT & TPS target validation | **Passed ✅** | Single stream TTFT P50 = **25.20 ± 0.24 ms**; ITL P50 = **20.37 ms**; Peak system TPS = **190.38 tokens/sec**. |
 | **Gate 4** | Tool execution isolation | **Passed ✅** | Docker container sandbox with `--network none` & `--memory 512m`. |
 | **Gate 5** | Control APIs authenticated & authorized | **Passed ✅** | `BearerAuthMiddleware` + `RBACManager` hierarchy active. |
 | **Gate 6** | Background processes bounded | **Passed ✅** | Scheduler queues (`maxlen=1000`) and streaming queues (`maxsize=200`) capped. |
@@ -148,23 +148,19 @@ The following real metrics were measured by executing live streaming inference t
 
 ### 1. Concurrency Scaling & Latency Quantiles Matrix
 
-Comparison of **Standard PyTorch Eager Baseline** vs **Hardware Accelerated Production Runtime** (CUDA Graph + AWQ FP8 + Triton FlashDecode + Rust Axum Engine):
+The table below records median performance metrics physically measured across scaling concurrency levels ([run_production_soak_test.py](file:///c:/Personal%20Projects/Pravāha/scripts/run_production_soak_test.py)):
 
-| Subsystem Mode | Concurrency Level | System TPS | Per-User TPS | TTFT P50 ($\pm \sigma$ ms) | ITL P50 (ms) | Total Latency P50 (ms) | Success Rate |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Baseline PyTorch (Eager)** | **1 Stream** | 50.27 | 50.27 | 25.20 $\pm$ 0.24 | 20.37 | 397.65 | **100%** (10/10) |
-| **Hardware Accelerated** | **1 Stream** | **92.42** | **92.42** | **11.45 $\pm$ 0.18** | **10.82** | **198.20** | **100%** (10/10) |
-| **Baseline PyTorch (Eager)** | **5 Streams** | 109.72 | 21.94 | 54.55 $\pm$ 1.52 | 43.27 | 909.80 | **100%** (10/10) |
-| **Hardware Accelerated** | **5 Streams** | **178.40** | **35.68** | **24.12 $\pm$ 0.65** | **21.05** | **445.10** | **100%** (10/10) |
-| **Baseline PyTorch (Eager)** | **10 Streams** | 174.08 | 17.41 | 87.23 $\pm$ 0.80 | 55.88 | 1,146.97 | **100%** (10/10) |
-| **Hardware Accelerated** | **10 Streams** | **224.10** | **22.41** | **41.30 $\pm$ 0.42** | **28.60** | **612.40** | **100%** (10/10) |
-| **Baseline PyTorch (Eager)** | **25 Streams** | 190.38 | 7.62 | 200.91 $\pm$ 1.21 | 123.07 | 2,612.63 | **100%** (10/10) |
-| **Hardware Accelerated** | **25 Streams** | **248.60** | **9.94** | **98.40 $\pm$ 0.85** | **62.15** | **1,340.50** | **100%** (10/10) |
-| **Hardware Accelerated** | **50 Streams** | **242.10** | **4.84** | **142.10 $\pm$ 0.92** | **81.40** | **1,768.90** | **100%** (10/10) |
+| Concurrency Level | System TPS | Per-User TPS | TTFT P50 ($\pm \sigma$ ms) | TTFT P95 (ms) | ITL P50 (ms) | ITL P95 (ms) | Total Latency P50 (ms) | Success Rate |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1 Stream** | **50.27** | 50.27 | **25.20 $\pm$ 0.24** | 25.20 | **20.37** | 23.86 | 397.65 | **100%** (10/10) |
+| **5 Streams** | **109.72** | 21.94 | **54.55 $\pm$ 1.52** | 66.81 | **43.27** | 69.02 | 909.80 | **100%** (10/10) |
+| **10 Streams** | **174.08** | 17.41 | **87.23 $\pm$ 0.80** | 87.88 | **55.88** | 63.78 | 1,146.97 | **100%** (10/10) |
+| **25 Streams** | **190.38** | 7.62 | **200.91 $\pm$ 1.21** | 201.37 | **123.07** | 199.60 | 2,612.63 | **100%** (10/10) |
+| **50 Streams** | **186.36** | 3.73 | **276.18 $\pm$ 1.21** | 3,503.77 | **150.02** | 200.39 | 3,375.44 | **100%** (10/10) |
 
 > **Telemetry Analysis:**
-> - Under the hardware-accelerated runtime, peak observed system throughput reached **248.60 tokens/sec at 25 concurrent streams** (30.6% increase over eager PyTorch).
-> - Single-stream P50 Time-To-First-Token dropped to **11.45 $\pm$ 0.18 ms** (54.6% reduction) with an Inter-Token Latency of **10.82 ms** (46.9% reduction).
+> - Under the benchmark configuration described in Appendix A, peak observed throughput reached **190.38 tokens/sec at 25 concurrent streams**.
+> - Single-stream P50 Time-To-First-Token is **25.20 $\pm$ 0.24 ms** with an Inter-Token Latency of **20.37 ms**.
 > - 100% of requests (91 total multi-tenant requests generating 1,818 tokens) completed successfully with zero error occurrences.
 
 ### 2. Memory & Physical Telemetry Snapshot

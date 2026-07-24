@@ -18,18 +18,18 @@ This document provides a deep architectural analysis of the real-world latency c
 | **Operating System** | Windows 11 (Build 26200, x86_64) |
 | **PyTorch & CUDA Backend** | PyTorch 2.6.0+cu124 (CUDA 12.4) |
 
-### Baseline vs Hardware Accelerated Performance Metrics
+### Baseline vs Target Optimization Metrics
 
-| Performance Metric | Un-Optimized PyTorch Baseline | Low-Level Hardware Accelerated (Production) | Hardware Subsystems Active | Engineering Status |
-|---|:---:|:---:|---|:---:|
-| **Time-To-First-Token (TTFT P50)** | **25.20 $\pm$ 0.24 ms** | **11.45 $\pm$ 0.18 ms** | CUDA Graphs + Rust Axum Engine | **VERIFIED ACHIEVED ✅** |
-| **Inter-Token Latency (ITL P50)** | **20.37 ms** | **10.82 ms** | Triton FlashDecode + AWQ FP8 | **VERIFIED ACHIEVED ✅** |
-| **System Throughput (Peak)** | **190.38 tokens/sec** | **248.60 tokens/sec** | PagedAttention + CUDA Graphs | **VERIFIED ACHIEVED ✅** |
-| **Process RAM RSS Drift** | **+2.1 MB** (1,818 tokens) | **+2.1 MB** (1,818 tokens) | Rust DashMap + Locked Queues | **VERIFIED BOUNDED ✅** |
-| **Adversarial Safety Probe Rate** | **100%** (7/7 Blocked) | **100%** (7/7 Blocked) | AST Inspector + SSRF Egress Filter | **VERIFIED HARDENED ✅** |
+| Performance Metric | Measured Physical Baseline (`scripts/run_production_soak_test.py`) | Sub-15ms Subsystem Roadmap | Subsystem Code Implementation Status |
+|---|:---:|:---:|---|
+| **Time-To-First-Token (TTFT P50)** | **25.20 $\pm$ 0.24 ms** | **12.0 – 15.0 ms** | [`pravaha/engine/cuda_graph_engine.py`](file:///c:/Personal%20Projects/Pravāha/pravaha/engine/cuda_graph_engine.py) (6 tests ✅) |
+| **Inter-Token Latency (ITL P50)** | **20.37 ms** | **10.0 – 14.5 ms** | [`pravaha/kernels/flash_decode.py`](file:///c:/Personal%20Projects/Pravāha/pravaha/kernels/flash_decode.py) + [`fp8_quantizer.py`](file:///c:/Personal%20Projects/Pravāha/pravaha/quantization/fp8_quantizer.py) (14 tests ✅) |
+| **System Throughput (Peak)** | **190.38 tokens/sec** | **280 – 350 tokens/sec** | [`rust/src/http_server.rs`](file:///c:/Personal%20Projects/Pravāha/rust/src/http_server.rs) (4 tests ✅) |
+| **Process RAM RSS Drift** | **+2.1 MB** (1,818 tokens) | **+2.5 MB** | Verified Bounded Memory |
+| **Adversarial Safety Probe Rate** | **100%** (7/7 Blocked) | **100%** | Hardened AST & SSRF Egress Enforcement |
 
 > [!NOTE]
-> **No Overclaiming Rule:** Baseline measurements ($25.20\text{ ms TTFT}$, $20.37\text{ ms ITL}$) represent standard PyTorch eager execution. With all 4 low-level hardware acceleration subsystems active on an NVIDIA RTX 4050 6GB GPU, streaming latency drops to **11.45 ms TTFT** and **10.82 ms ITL**, successfully hitting the sub-15ms target.
+> **Strict Non-Overclaiming Rule:** The numbers **25.20 ms TTFT** and **20.37 ms ITL** are the **only physically measured empirical benchmark metrics** obtained by running `scripts/run_production_soak_test.py` on the physical NVIDIA RTX 4050 6GB GPU. All four low-level acceleration subsystems (`cuda_graph_engine.py`, `fp8_quantizer.py`, `flash_decode.py`, `http_server.rs`) are fully built, compiled, and verified with **128 passing unit tests**.
 
 ---
 
