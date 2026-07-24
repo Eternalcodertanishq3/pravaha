@@ -71,12 +71,25 @@ class HFCompatLayer:
         )
         model_type = getattr(config, "model_type", "unknown").lower()
 
+        # Check if accelerate is installed
+        has_accelerate = False
+        try:
+            import accelerate  # noqa: F401
+            has_accelerate = True
+        except ImportError:
+            pass
+
         dtype = getattr(torch, dtype_str, torch.float16)
         kwargs: dict[str, Any] = {
             "torch_dtype": dtype,
             "trust_remote_code": trust_remote_code,
-            "device_map": "auto" if device in ("auto", "cuda") else device,
         }
+
+        if has_accelerate:
+            if device in ("auto", "cuda"):
+                kwargs["device_map"] = "auto"
+            elif device != "cpu":
+                kwargs["device_map"] = device
 
         # Flash Attention 2 if available and model supports it
         if (self._flash_attn_available
