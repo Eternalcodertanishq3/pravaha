@@ -454,7 +454,43 @@ Process memory (RSS) and PyTorch CUDA VRAM allocations were monitored before, du
 | **GPU VRAM Reserved** | 404.0 MB | 478.0 MB | 478.0 MB | **+74.0 MB** |
 | **CPU Utilization** | 13.7 % | 20.9 % | 1.2 % | Idle Return ✅ |
 
-> **Memory Analysis:** The benchmark results are consistent with bounded scheduler deques and effective request cleanup, with no observable unbounded memory growth during this workload (+2.1 MB total RSS drift across 1,818 generated tokens).
+---
+
+### Low-Level Latency Optimization Subsystems Implemented
+
+To transition from architectural design to compiled low-level execution, four production hardware optimization subsystems and four unit test suites were implemented, tested, and integrated:
+
+#### 1. CUDA Graph Execution Engine
+* **File:** [`pravaha/engine/cuda_graph_engine.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/engine/cuda_graph_engine.py) (242 lines)
+* **Test Suite:** [`tests/test_cuda_graph_engine.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_cuda_graph_engine.py) (6 tests, **PASSED ✅**)
+* **Technical Functionality:**
+  - Wraps `DecoderEngine` using native `torch.cuda.CUDAGraph()` to capture decode forward passes.
+  - Pre-allocates pinned static memory buffers for bucket batch sizes `[1, 4, 16]` to guarantee fixed CUDA memory addresses.
+  - Automatically pads input batches, executes a 3-step eager warmup before capturing, tracks exact VRAM allocation deltas, and gracefully falls back to eager PyTorch when batch size exceeds 16 or CUDA is unavailable.
+
+#### 2. FP8 Weight Quantizer with AWQ Salient Protection
+* **File:** [`pravaha/quantization/fp8_quantizer.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/quantization/fp8_quantizer.py) (358 lines)
+* **Test Suite:** [`tests/test_fp8_quantizer.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_fp8_quantizer.py) (8 tests, **PASSED ✅**)
+* **Technical Functionality:**
+  - Computes scale factors using native `torch.float8_e4m3fn` (with fallback protection).
+  - Identifies top 1% salient channels from calibration activation tensors to maintain FP16 precision on critical weights while quantizing non-salient channels to FP8.
+  - Implements `FP8Linear` `nn.Module` layer replacement, computes VRAM memory savings ratios, and measures MSE/SQNR (Signal-to-Quantization-Noise Ratio) weight metrics.
+
+#### 3. Triton FlashDecoding Attention Kernel
+* **File:** [`pravaha/kernels/flash_decode.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/kernels/flash_decode.py) (206 lines)
+* **Test Suite:** [`tests/test_flash_decode.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_flash_decode.py) (6 tests, **PASSED ✅**)
+* **Technical Functionality:**
+  - Uses `@triton.jit` and `@triton.autotune` to implement single-query attention for decoding.
+  - Implements numerically stable **online softmax** (Milakov-Gimelshein algorithm) directly in SRAM/L2 cache.
+  - Includes pure PyTorch fallback (`flash_decode_fallback`) and GPU benchmarking harness (`benchmark_flash_decode`).
+
+#### 4. Rust Axum HTTP Server & PyO3 Token Bridge
+* **Files:** [`rust/src/http_server.rs`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/src/http_server.rs) (164 lines), [`rust/src/token_bridge.rs`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/src/token_bridge.rs) (77 lines), [`rust/src/lib.rs`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/src/lib.rs), [`rust/Cargo.toml`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/Cargo.toml)
+* **Test Suite:** [`tests/test_rust_server.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_rust_server.py) (4 tests, **PASSED ✅**)
+* **Technical Functionality:**
+  - `TokenBridge` PyO3 extension class uses `tokio::sync::mpsc` channels and `DashMap` to stream tokens directly from Python down to Rust without GIL contention.
+  - `axum` HTTP server handles `/v1/completions` SSE streaming and `/health` endpoints with UUID `X-Request-ID` middleware and graceful shutdown.
+  - `RustTokenizer` wraps the HuggingFace `tokenizers` Rust crate for zero-copy encoding/decoding.
 
 ---
 
