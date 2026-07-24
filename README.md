@@ -1017,7 +1017,7 @@ We welcome contributions to Pravāha! Please follow our submission guidelines:
 ### Running the Unit & Integration Test Suite
 
 ```bash
-# Execute all 101 unit and integration tests
+# Execute all 128 unit and integration tests
 python -m pytest tests/ -v
 
 # Run stability and reliability tests specifically

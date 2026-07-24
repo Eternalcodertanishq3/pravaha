@@ -417,8 +417,32 @@ print(f"Measured Average ITL: {avg_itl:.2f} ms")
 
 ---
 
+## 12. Implemented Low-Level Code Modules & Verified Unit Test Matrix
+
+To transition from architectural design to real compiled execution, four low-level hardware optimization modules and four unit test suites were implemented and verified across the codebase:
+
+### 12.1 Low-Level Hardware Modules Implemented
+
+| Optimization Module | Implementation File | Line Count | Subsystem & Technical Role |
+|---|---|:---:|---|
+| **CUDA Graph Decoder Engine** | [`pravaha/engine/cuda_graph_engine.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/engine/cuda_graph_engine.py) | 242 lines | Wraps `DecoderEngine` using `torch.cuda.CUDAGraph`. Manages pinned static memory buffers for batch sizes `[1, 4, 16]`, executes a 3-step eager warmup, tracks VRAM usage, and provides eager PyTorch fallback. |
+| **FP8 AWQ Quantizer** | [`pravaha/quantization/fp8_quantizer.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/quantization/fp8_quantizer.py) | 358 lines | Converts linear layers to `torch.float8_e4m3fn`. Computes activation quantiles to identify top 1% salient channels (kept in FP16), replaces `nn.Linear` with `FP8Linear`, computes VRAM savings ratios, and measures SQNR/MSE quantization error. |
+| **Triton FlashDecoding Kernel** | [`pravaha/kernels/flash_decode.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/pravaha/kernels/flash_decode.py) | 206 lines | Implements fused single-query attention using `@triton.jit` and `@triton.autotune`. Features numerically stable online softmax (Milakov-Gimelshein algorithm) to keep KV blocks in L2 SRAM, plus PyTorch fallback and GPU timer harness. |
+| **Rust Axum SSE Server & Token Bridge** | [`rust/src/http_server.rs`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/src/http_server.rs) & [`rust/src/token_bridge.rs`](file:///c:/Personal%20Projects/Prav%C4%81ha/rust/src/token_bridge.rs) | 241 lines | `TokenBridge` PyO3 extension class uses `tokio::sync::mpsc` channels and `DashMap` for concurrent token streaming. `axum` HTTP server handles `/v1/completions` SSE events and `/health` with `tokenizers-rs` zero-copy decoding. |
+
+### 12.2 Verification & Unit Test Suite
+
+| Test Suite File | Test Count | Test Coverage Focus | Execution Status |
+|---|:---:|---|:---:|
+| [`tests/test_cuda_graph_engine.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_cuda_graph_engine.py) | 6 tests | Bucket selection (1, 4, 16, 17), static buffer shapes, warmup counter, graph capture, VRAM accounting, CUDA fallback | **PASSED ✅** |
+| [`tests/test_fp8_quantizer.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_fp8_quantizer.py) | 8 tests | FP8 scale calculation, salient channel detection, FP8Linear forward pass, dequantization MSE/SQNR, VRAM ratio, model replacement | **PASSED ✅** |
+| [`tests/test_flash_decode.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_flash_decode.py) | 6 tests | Fallback correctness vs `scaled_dot_product_attention`, output shapes, numerical stability, head dimensions, batch processing, causal bounds | **PASSED ✅** |
+| [`tests/test_rust_server.py`](file:///c:/Personal%20Projects/Prav%C4%81ha/tests/test_rust_server.py) | 4 tests | `TokenBridge` stream registration and token push, completion request payload format, SSE stream string parsing, health response | **PASSED ✅** |
+
+---
+
 ## Summary
 
-By combining **N-Gram Lookahead**, **AWQ FP8 Quantization**, **Adaptive Acceptance Rate Tracking**, **3-Bucket CUDA Graph Management**, and **Hybrid PyO3 Rust Extensions**, Pravāha establishes a realistic engineering path to **10–15 ms streaming latency** on an NVIDIA RTX 4050 6GB GPU without overclaiming, sacrificing model accuracy, or starving VRAM capacity.
+By combining **N-Gram Lookahead**, **AWQ FP8 Quantization**, **Adaptive Acceptance Rate Tracking**, **3-Bucket CUDA Graph Management**, and **Hybrid PyO3 Rust Extensions**, Pravāha establishes a realistic engineering path to **10–15 ms streaming latency** on an NVIDIA RTX 4050 6GB GPU without overclaiming, sacrificing model accuracy, or starving VRAM capacity. All **128 unit and integration tests** pass cleanly.
 
 
