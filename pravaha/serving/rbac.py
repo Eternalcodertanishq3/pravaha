@@ -7,15 +7,15 @@ Provides FastAPI dependencies for endpoint authorization and tool permission val
 from __future__ import annotations
 
 import logging
-from enum import Enum
-from typing import Callable
+from collections.abc import Callable
+from enum import Enum, StrEnum
 
 from fastapi import HTTPException, Request
 
 logger = logging.getLogger(__name__)
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     ADMIN = "admin"
     OPERATOR = "operator"
     USER = "user"

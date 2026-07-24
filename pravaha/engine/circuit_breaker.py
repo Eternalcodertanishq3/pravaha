@@ -13,15 +13,16 @@ import asyncio
 import logging
 import threading
 import time
-from enum import Enum
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from enum import Enum, StrEnum
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 
-class CircuitState(str, Enum):
+class CircuitState(StrEnum):
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"

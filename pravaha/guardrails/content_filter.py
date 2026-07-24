@@ -55,7 +55,7 @@ class ContentFilter:
             return FilterResult(allowed=False, reason="null_bytes_detected")
         if len(prompt) > MAX_PROMPT_LENGTH:
             return FilterResult(allowed=False, reason="prompt_too_long")
-            
+
         injection_check = self.check_for_injection(prompt)
         if not injection_check.allowed:
             return injection_check

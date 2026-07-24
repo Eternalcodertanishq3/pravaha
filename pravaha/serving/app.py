@@ -54,11 +54,11 @@ def create_app() -> FastAPI:
         allow_credentials=True,
     )
     from pravaha.serving.middleware import (
+        BearerAuthMiddleware,
         ErrorHandlerMiddleware,
+        RateLimitMiddleware,
         RequestIDMiddleware,
         TimingMiddleware,
-        RateLimitMiddleware,
-        BearerAuthMiddleware,
     )
 
     app.add_middleware(BearerAuthMiddleware)

@@ -67,7 +67,7 @@ class AuditTrail:
             return
 
         try:
-            with open(self.storage_path, "r", encoding="utf-8") as f:
+            with open(self.storage_path, encoding="utf-8") as f:
                 lines = f.readlines()
                 if lines:
                     last_line = lines[-1].strip()
@@ -133,7 +133,7 @@ class AuditTrail:
             expected_index = 0
 
             try:
-                with open(self.storage_path, "r", encoding="utf-8") as f:
+                with open(self.storage_path, encoding="utf-8") as f:
                     for line_num, line in enumerate(f, 1):
                         line = line.strip()
                         if not line:

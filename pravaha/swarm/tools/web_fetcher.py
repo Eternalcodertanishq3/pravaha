@@ -41,9 +41,9 @@ class WebFetcher:
     MAX_OUTPUT_BYTES = 4096
 
     def _validate_url(self, url: str) -> None:
-        import urllib.parse
-        import socket
         import ipaddress
+        import socket
+        import urllib.parse
 
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme not in {"http", "https"}:
