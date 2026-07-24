@@ -64,7 +64,7 @@ async fn request_id_middleware(mut req: Request<axum::body::Body>, next: Next) -
 
 pub async fn completions_handler(
     State(state): State<AppState>,
-    Json(payload): Json<CompletionRequest>,
+    Json(_payload): Json<CompletionRequest>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let request_id = Uuid::new_v4().to_string();
     let rx = state.bridge.register_stream(request_id.clone());

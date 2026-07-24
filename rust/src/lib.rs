@@ -1,8 +1,12 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(non_local_definitions)]
+
 mod allocator;
 mod prefix_trie;
 mod stats;
 mod token_bridge;
-mod http_server;
+pub mod http_server;
 
 use allocator::BlockAllocator;
 use prefix_trie::PrefixTrie;
