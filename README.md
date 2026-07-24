@@ -19,7 +19,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![PyTorch Version](https://img.shields.io/badge/PyTorch-2.6.0%2B-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Rust Core](https://img.shields.io/badge/Rust-1.93.0%2B-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Test Suite](https://img.shields.io/badge/Tests-101%2F101%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-128%2F128%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
 [![Security Audit](https://img.shields.io/badge/Security-7%2F7%20Probes%20Passed-brightgreen?style=for-the-badge&logo=shieldsdotio&logoColor=white)](docs/master_audit_report.md)
 [![Status](https://img.shields.io/badge/Readiness-Passed%20Internal%20Validation-0052CC?style=for-the-badge)](docs/master_audit_report.md)
 
