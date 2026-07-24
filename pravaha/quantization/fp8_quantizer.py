@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import torch
 import torch.nn as nn
@@ -55,6 +55,13 @@ class FP8Linear(nn.Module):
     A Linear layer that stores weights in FP8 but dequantizes to FP16 for the matmul.
     Maintains salient channels in FP16.
     """
+
+    weight_fp8: torch.Tensor
+    weight_scale: torch.Tensor
+    salient_mask: torch.Tensor
+    weight_salient: torch.Tensor
+    bias: torch.Tensor | None
+
     def __init__(self, in_features: int, out_features: int, bias: bool = True):
         super().__init__()
         self.in_features = in_features
@@ -88,63 +95,47 @@ class FP8Linear(nn.Module):
         Convert an existing nn.Linear to FP8Linear.
         """
         device = linear.weight.device
-        dtype = linear.weight.dtype
-        in_features = linear.in_features
-        out_features = linear.out_features
 
-        fp8_linear = cls(in_features, out_features, bias=linear.bias is not None)
-        fp8_linear = fp8_linear.to(device)
+        fp8_linear = cls(
+            in_features=linear.in_features,
+            out_features=linear.out_features,
+            bias=linear.bias is not None
+        ).to(device)
 
         weight = linear.weight.data
 
         if salient_mask is None:
-            salient_mask = torch.zeros(in_features, dtype=torch.bool, device=device)
+            salient_mask = torch.zeros(linear.in_features, dtype=torch.bool, device=device)
+        else:
+            salient_mask = salient_mask.to(device)
 
         fp8_linear.salient_mask = salient_mask
 
-        # Separate salient and non-salient weights
-        # weight shape: (out_features, in_features)
-        # salient_mask shape: (in_features,)
-        num_salient = salient_mask.sum().item()
-
-        if num_salient > 0:
-            salient_weights = weight[:, salient_mask]
-            fp8_linear.weight_salient = salient_weights.clone()
-        else:
-            fp8_linear.weight_salient = torch.empty((out_features, 0), dtype=dtype, device=device)
-
-        # Quantize non-salient weights
+        # Non-salient weights
         non_salient_mask = ~salient_mask
         if non_salient_mask.sum().item() > 0:
             non_salient_weights = weight[:, non_salient_mask]
+            scale = compute_scale_factor(non_salient_weights)
+            fp8_linear.weight_scale = scale.unsqueeze(0)
 
-            # Target fp8 type
-            fp8_dtype = getattr(torch, "float8_e4m3fn", None)
-            if fp8_dtype is not None:
-                scale = compute_scale_factor(non_salient_weights, dtype=fp8_dtype)
-                scaled_weights = non_salient_weights * scale
-                fp8_weights = scaled_weights.to(fp8_dtype)
-
-                # Store scale
-                fp8_linear.weight_scale = scale.to(torch.float32)
-                # Store as uint8 for compatibility if needed, or directly as fp8
-                # Since we use fp8_dtype directly in pytorch >= 2.1, we can store it as such
-                fp8_linear.weight_fp8 = fp8_weights
-            else:
-                # Fallback for older pytorch: simulate fp8
-                logger.warning("torch.float8_e4m3fn not found. Simulating FP8 with uint8.")
-                scale = compute_scale_factor(non_salient_weights)
-                scaled_weights = non_salient_weights * scale
-                # Fake quantization
-                fp8_weights = scaled_weights.round().clamp(-128, 127).to(torch.int8)
-                fp8_linear.weight_scale = scale.to(torch.float32)
-                fp8_linear.weight_fp8 = fp8_weights
-        else:
-            fp8_linear.weight_scale = torch.tensor([1.0], dtype=torch.float32, device=device)
+            # Convert to FP8
             if hasattr(torch, "float8_e4m3fn"):
-                fp8_linear.weight_fp8 = torch.empty((out_features, 0), dtype=torch.float8_e4m3fn, device=device)
+                fp8_dtype = getattr(torch, "float8_e4m3fn")
+                amax = non_salient_weights.abs().amax()
+                if amax > 0:
+                    scaled_weights = (non_salient_weights * scale).clamp(-448.0, 448.0)
+                    fp8_weights = scaled_weights.to(fp8_dtype)
+                else:
+                    fp8_weights = torch.zeros_like(non_salient_weights, dtype=fp8_dtype)
+                fp8_linear.weight_fp8[:, non_salient_mask] = fp8_weights.view(torch.uint8)
             else:
-                fp8_linear.weight_fp8 = torch.empty((out_features, 0), dtype=torch.int8, device=device)
+                # Int8 fallback
+                scaled_weights = (non_salient_weights * scale).clamp(-128.0, 127.0)
+                fp8_linear.weight_fp8[:, non_salient_mask] = scaled_weights.to(torch.int8).view(torch.uint8)
+
+        # Salient weights
+        if salient_mask.sum().item() > 0:
+            fp8_linear.weight_salient = weight[:, salient_mask].clone()
 
         if linear.bias is not None:
             fp8_linear.bias = linear.bias.data.clone()
@@ -155,8 +146,6 @@ class FP8Linear(nn.Module):
         """
         Forward pass with dequantization.
         """
-        # x shape: [..., in_features]
-        # Reconstruct the weight matrix in FP16/FP32
         compute_dtype = x.dtype
         device = x.device
 
@@ -166,22 +155,28 @@ class FP8Linear(nn.Module):
             device=device
         )
 
-        # Dequantize non-salient weights
-        non_salient_mask = ~self.salient_mask
-        if non_salient_mask.sum().item() > 0:
-            if self.weight_fp8.dtype in [getattr(torch, "float8_e4m3fn", None), getattr(torch, "float8_e5m2", None)]:
-                dequantized = self.weight_fp8.to(compute_dtype) / self.weight_scale
-            else:
-                # Int8 fallback
-                dequantized = self.weight_fp8.to(compute_dtype) / self.weight_scale
+        salient_mask = cast(torch.Tensor, self.salient_mask)
+        weight_fp8 = cast(torch.Tensor, self.weight_fp8)
+        weight_scale = cast(torch.Tensor, self.weight_scale)
+        weight_salient = cast(torch.Tensor, self.weight_salient)
+        bias = cast("torch.Tensor | None", self.bias)
 
+        # Dequantize non-salient weights
+        non_salient_mask = ~salient_mask
+        if non_salient_mask.sum().item() > 0:
+            weight_non_salient = weight_fp8[:, non_salient_mask]
+            if hasattr(torch, "float8_e4m3fn"):
+                fp8_dtype = getattr(torch, "float8_e4m3fn")
+                dequantized = weight_non_salient.view(fp8_dtype).to(compute_dtype) / weight_scale
+            else:
+                dequantized = weight_non_salient.view(torch.int8).to(compute_dtype) / weight_scale
             reconstructed_weight[:, non_salient_mask] = dequantized
 
         # Place salient weights
-        if self.salient_mask.sum().item() > 0:
-            reconstructed_weight[:, self.salient_mask] = self.weight_salient.to(compute_dtype)
+        if salient_mask.sum().item() > 0:
+            reconstructed_weight[:, salient_mask] = weight_salient.to(compute_dtype)
 
-        return F.linear(x, reconstructed_weight, self.bias)
+        return F.linear(x, reconstructed_weight, bias)
 
 
 def calculate_vram_savings(
@@ -237,13 +232,23 @@ def compute_quantization_metrics(
 
     reconstructed = torch.zeros_like(original_weight)
 
-    non_salient_mask = ~quantized_linear.salient_mask
+    salient_mask = cast(torch.Tensor, quantized_linear.salient_mask)
+    weight_fp8 = cast(torch.Tensor, quantized_linear.weight_fp8)
+    weight_scale = cast(torch.Tensor, quantized_linear.weight_scale)
+    weight_salient = cast(torch.Tensor, quantized_linear.weight_salient)
+
+    non_salient_mask = ~salient_mask
     if non_salient_mask.sum().item() > 0:
-        dequantized = quantized_linear.weight_fp8.to(compute_dtype) / quantized_linear.weight_scale
+        weight_non_salient = weight_fp8[:, non_salient_mask]
+        if hasattr(torch, "float8_e4m3fn"):
+            fp8_dtype = getattr(torch, "float8_e4m3fn")
+            dequantized = weight_non_salient.view(fp8_dtype).to(compute_dtype) / weight_scale
+        else:
+            dequantized = weight_non_salient.view(torch.int8).to(compute_dtype) / weight_scale
         reconstructed[:, non_salient_mask] = dequantized
 
-    if quantized_linear.salient_mask.sum().item() > 0:
-        reconstructed[:, quantized_linear.salient_mask] = quantized_linear.weight_salient.to(compute_dtype)
+    if salient_mask.sum().item() > 0:
+        reconstructed[:, salient_mask] = weight_salient.to(compute_dtype)
 
     diff = original_weight - reconstructed
 

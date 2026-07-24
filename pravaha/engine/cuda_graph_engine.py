@@ -136,9 +136,9 @@ class CUDAGraphDecoderWrapper:
             mem_before = torch.cuda.memory_allocated(self.device)
 
             # We must use torch.cuda.graph context manager
-            pool = self._mempool if isinstance(self._mempool, tuple) else None
+            pool: Any = self._mempool if isinstance(self._mempool, tuple) else None
 
-            with torch.cuda.graph(graph, pool=pool):
+            with torch.cuda.graph(graph, pool=pool):  # type: ignore[arg-type]
                 # Pass static inputs to the model
                 # Assuming decoder_engine has a model attribute that executes the forward pass
                 model = getattr(self.decoder_engine, "model", self.decoder_engine)
