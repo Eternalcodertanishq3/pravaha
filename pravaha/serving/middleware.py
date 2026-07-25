@@ -64,10 +64,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.max_requests = max_requests
         self.window = window_seconds
         self._counts: dict[str, list[float]] = {}
+        self._last_cleanup = time.time()
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        client_ip = request.client.host if request.client else "unknown"
         now = time.time()
+
+        if now - self._last_cleanup > self.window:
+            self._counts = {
+                ip: timestamps
+                for ip, timestamps in self._counts.items()
+                if timestamps and now - timestamps[-1] < self.window
+            }
+            self._last_cleanup = now
+
+        client_ip = request.client.host if request.client else "unknown"
         if client_ip not in self._counts:
             self._counts[client_ip] = []
         self._counts[client_ip] = [t for t in self._counts[client_ip] if now - t < self.window]
@@ -105,3 +115,15 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
             )
 
         return await call_next(request)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add standard security headers to responses."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response

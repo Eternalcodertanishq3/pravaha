@@ -58,12 +58,14 @@ def create_app() -> FastAPI:
         ErrorHandlerMiddleware,
         RateLimitMiddleware,
         RequestIDMiddleware,
+        SecurityHeadersMiddleware,
         TimingMiddleware,
     )
 
     app.add_middleware(BearerAuthMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(TimingMiddleware)
     app.add_middleware(ErrorHandlerMiddleware)
 

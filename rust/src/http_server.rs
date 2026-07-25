@@ -69,11 +69,14 @@ pub async fn completions_handler(
     Extension(request_id): Extension<RequestId>,
     Json(payload): Json<CompletionRequest>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    // We now process the payload (e.g. log or send to Python engine queue)
+    // We now process the payload and send to Python engine queue
     println!("Received prompt (ReqID: {}): {}", request_id.0, payload.prompt);
     
-    // Register the stream with the exact request ID from the middleware
-    let rx = state.bridge.register_stream(request_id.0.clone());
+    // Notify Python of the new request
+    state.bridge.push_request(request_id.0.clone(), payload.prompt.clone());
+    
+    // Register the stream with the exact request ID from the middleware and a larger, configurable buffer size (1024)
+    let rx = state.bridge.register_stream(request_id.0.clone(), 1024);
 
     let stream = ReceiverStream::new(rx).map(move |token| {
         let chunk = CompletionChunk {

@@ -295,7 +295,21 @@ class EngineConfig(BaseModel):
                             f"Applying anyway, but this may not take effect."
                         )
 
-                    setattr(section, field_name, value)
+                # Validate new values using Pydantic
+                current_data = section.model_dump()
+                current_data.update(section_updates)
+                try:
+                    new_section = type(section).model_validate(current_data)
+                except Exception as e:
+                    from pydantic import ValidationError
+                    if isinstance(e, ValidationError):
+                        raise ConfigurationError(f"Validation failed for section '{section_name}': {e}")
+                    raise
+
+                setattr(self, section_name, new_section)
+
+                for field_name, value in section_updates.items():
+                    field_path = f"{section_name}.{field_name}"
                     updated.append(field_path)
                     logger.info(f"Hot-reload: {field_path} = {value}")
 
