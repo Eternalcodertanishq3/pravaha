@@ -546,3 +546,52 @@ When updating model weights or configuration definitions:
 
 - **SQLite Swarm Memory**: Execute `VACUUM INTO '/backup/swarm_memory.db'` periodically to capture atomic snapshots of `MemoryStore`.
 - **FAISS Vector Indexes**: Copy `.faiss` index files alongside metadata JSON blocks during scheduled low-traffic maintenance windows.
+
+---
+
+## 10. Multi-Node Distributed Cluster Deployment
+
+Pravāha v3.3 supports launching across multi-GPU and multi-node compute clusters using `torchrun` or PyTorch Distributed launcher script with NCCL inter-node communications.
+
+### 2-Node 8-GPU Deployment Example (TP=4, PP=2)
+
+#### Node 0 (Master Node: 10.0.0.1)
+```bash
+torchrun \
+  --nproc_per_node=4 \
+  --nnodes=2 \
+  --node_rank=0 \
+  --master_addr="10.0.0.1" \
+  --master_port=29500 \
+  serve.py \
+  --config configs/distributed_cluster.yaml
+```
+
+#### Node 1 (Worker Node: 10.0.0.2)
+```bash
+torchrun \
+  --nproc_per_node=4 \
+  --nnodes=2 \
+  --node_rank=1 \
+  --master_addr="10.0.0.1" \
+  --master_port=29500 \
+  serve.py \
+  --config configs/distributed_cluster.yaml
+```
+
+#### Cluster Configuration (`configs/distributed_cluster.yaml`)
+```yaml
+model:
+  model_path: "meta-llama/Llama-3-70B-Instruct"
+  dtype: "float16"
+
+distributed:
+  enabled: true
+  tp_size: 4
+  pp_size: 2
+  backend: "nccl"
+  master_addr: "10.0.0.1"
+  master_port: 29500
+  heartbeat_interval: 5.0
+```
+

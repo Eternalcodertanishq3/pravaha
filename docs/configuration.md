@@ -100,7 +100,8 @@ PravahaConfig
  ├── rag: RAGConfig
  ├── security: SecurityConfig
  ├── observability: ObservabilityConfig
- └── circuit_breaker: CircuitBreakerConfig
+ ├── circuit_breaker: CircuitBreakerConfig
+ └── distributed: DistributedConfig
 ```
 
 ---
@@ -468,7 +469,40 @@ scheduler -> max_batch_size
 ```
 
 ```
+```
 pydantic.ValidationError: 1 validation error for PravahaConfig
 model -> torch_dtype
   unexpected value 'float64', expected one of ['float16', 'bfloat16', 'float32']
 ```
+
+---
+
+## 9. Multi-Node Distributed Configuration
+
+Pravāha supports multi-node and multi-GPU distributed LLM serving via PyTorch Distributed (`torch.distributed`) with NCCL / Gloo backends.
+
+```yaml
+distributed:
+  enabled: true
+  tp_size: 2             # Tensor Parallelism degree (split layers across GPUs)
+  pp_size: 2             # Pipeline Parallelism stages (split depth across GPUs)
+  backend: "nccl"        # Communication backend: "nccl" (GPU) or "gloo" (CPU)
+  master_addr: "10.0.0.1"# Multi-node rendezvous host IP
+  master_port: 29500     # Multi-node rendezvous port
+  timeout_seconds: 300   # Process group initialization timeout
+  heartbeat_interval: 5.0# Seconds between node health checks
+```
+
+### Distributed Config Fields Reference
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `distributed.enabled` | `bool` | `false` | Enables multi-GPU / multi-node distributed inference |
+| `distributed.tp_size` | `int` | `1` | Tensor Parallelism degree (`ColumnParallelLinear`, `RowParallelLinear`) |
+| `distributed.pp_size` | `int` | `1` | Pipeline Parallelism degree (`1F1B` micro-batch pipeline schedule) |
+| `distributed.backend` | `str` | `"nccl"` | Distributed communication backend (`"nccl"` or `"gloo"`) |
+| `distributed.master_addr`| `str` | `"127.0.0.1"`| Rendezvous master node IP address |
+| `distributed.master_port`| `int` | `29500` | Rendezvous master node port |
+| `distributed.timeout_seconds`| `int` | `300` | Process group connection & barrier timeout |
+| `distributed.heartbeat_interval`| `float` | `5.0` | Node heartbeat monitoring check frequency |
+
