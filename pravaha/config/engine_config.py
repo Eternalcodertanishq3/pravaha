@@ -154,6 +154,27 @@ class GuardrailsConfig(BaseModel):
     blocked_patterns: list[str] = Field(default_factory=list)
 
 
+class DistributedConfig(BaseModel):
+    """Multi-node distributed inference configuration.
+
+    Controls Tensor Parallelism (TP), Pipeline Parallelism (PP),
+    and inter-node communication settings for scaling inference
+    across multiple GPUs and nodes.
+
+    NOT hot-reloadable — changing these settings requires a full restart.
+    """
+
+    enabled: bool = False
+    tp_size: int = 1  # Tensor Parallelism degree (splits model weights across GPUs)
+    pp_size: int = 1  # Pipeline Parallelism stages (splits model layers across GPUs)
+    backend: Literal["nccl", "gloo"] = "nccl"  # "nccl" for GPU, "gloo" for CPU/cross-node
+    master_addr: str = "127.0.0.1"
+    master_port: int = 29500
+    init_method: str | None = None  # Custom init method (e.g., "tcp://host:port")
+    timeout_seconds: int = 300
+    heartbeat_interval: float = 5.0  # Seconds between node health checks
+
+
 # ─────────────────────────────────────────────
 # Hot-Reloadable Config Mixin
 # ─────────────────────────────────────────────
@@ -192,6 +213,12 @@ COLD_FIELDS: set[str] = {
     "model.device",
     "cache.num_gpu_blocks",
     "cache.block_size",
+    "distributed.enabled",
+    "distributed.tp_size",
+    "distributed.pp_size",
+    "distributed.backend",
+    "distributed.master_addr",
+    "distributed.master_port",
 }
 
 
@@ -220,6 +247,7 @@ class EngineConfig(BaseModel):
     rag: RAGInlineConfig = Field(default_factory=RAGInlineConfig)
     server: ServerInlineConfig = Field(default_factory=ServerInlineConfig)
     guardrails: GuardrailsConfig = Field(default_factory=GuardrailsConfig)
+    distributed: DistributedConfig = Field(default_factory=DistributedConfig)
 
     # Internal state (not serialized)
     _watchers: list[Callable[[EngineConfig], None]] = PrivateAttr(default_factory=list)

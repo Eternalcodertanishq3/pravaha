@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import torch
 
 if TYPE_CHECKING:
-    pass
+    from pravaha.engine.distributed import DistributedTopologyManager
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,8 @@ class CUDAGraphDecoderWrapper:
     """
     Wraps a DecoderEngine to capture and replay its decode phase using torch.cuda.CUDAGraph.
     This implementation handles automatic bucketing of batch sizes, padding, static buffer
-    management, and VRAM accounting.
+    management, VRAM accounting, and distributed-aware graph capture with cross-rank
+    synchronization barriers for multi-node inference.
     """
 
     def __init__(
@@ -24,11 +25,13 @@ class CUDAGraphDecoderWrapper:
         buckets: list[int] | None = None,
         warmup_steps: int = 3,
         device: torch.device | None = None,
+        topology: DistributedTopologyManager | None = None,
     ) -> None:
         self.decoder_engine = decoder_engine
         self.buckets = sorted(buckets) if buckets else [1, 2, 4, 8, 16, 32, 64]
         self.warmup_steps = warmup_steps
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.topology = topology
 
         # State for graph capture
         self._graphs: dict[int, torch.cuda.CUDAGraph] = {}
@@ -126,6 +129,16 @@ class CUDAGraphDecoderWrapper:
         if not torch.cuda.is_available():
             logger.warning("CUDA not available. Cannot capture graph.")
             return
+
+        # ── Distributed: synchronize all TP ranks before capture ──
+        # CUDA graph capture with NCCL operations requires that all ranks
+        # in the TP group enter capture simultaneously to avoid deadlocks.
+        if self.topology is not None and self.topology.is_distributed:
+            logger.info(
+                f"Synchronizing TP group (rank={self.topology.tp_rank}, "
+                f"tp_size={self.topology.tp_size}) before CUDA graph capture."
+            )
+            self.topology.barrier(group=self.topology.tp_group)
 
         graph = torch.cuda.CUDAGraph()
         self._is_capturing = True

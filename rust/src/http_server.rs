@@ -11,13 +11,13 @@ use std::convert::Infallible;
 use tokio_stream::wrappers::ReceiverStream;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
-use axum::http::{Request, HeaderMap};
+use axum::http::Request;
 use axum::middleware::Next;
 use axum::response::Response;
 use tokio::signal;
 use std::time::{SystemTime, UNIX_EPOCH, Instant};
 use pyo3::prelude::*;
-use std::sync::Arc;
+
 
 use crate::token_bridge::TokenBridge;
 
