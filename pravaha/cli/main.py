@@ -17,6 +17,7 @@ def _register_commands() -> None:
     from pravaha.cli.commands.bench import bench
     from pravaha.cli.commands.chat import chat
     from pravaha.cli.commands.debug import debug_app
+    from pravaha.cli.commands.doctor import doctor_app
     from pravaha.cli.commands.models import models_app
     from pravaha.cli.commands.plugins import plugin_app
     from pravaha.cli.commands.rag import rag_app
@@ -26,6 +27,7 @@ def _register_commands() -> None:
     app.command()(serve)
     app.command()(chat)
     app.command()(bench)
+    app.add_typer(doctor_app, name="doctor", help="Diagnose environment, GPU, FFI, and setup.")
     app.add_typer(models_app, name="models", help="Model management commands.")
     app.add_typer(swarm_app, name="swarm", help="Swarm agent pipeline commands.")
     app.add_typer(rag_app, name="rag", help="RAG document management.")

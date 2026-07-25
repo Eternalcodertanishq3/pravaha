@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  pravaha-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pravaha_serving_engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PRAVAHA_API_KEY=dev-secret-key-123
+      - PRAVAHA_CORS_ORIGINS=*
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

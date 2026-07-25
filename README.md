@@ -147,21 +147,26 @@ Empirical benchmark testing verified significant performance, reliability, and s
 
 ## Quick Start Guide
 
+### Option A: Zero-Friction Docker Startup (Recommended)
 
+```bash
+# Start the full engine + GPU acceleration with 1 command
+docker compose up -d
+```
 
-
-### Step 1: Clone & Set Up Environment
+### Option B: Local Setup & Diagnostic
 
 ```bash
 git clone https://github.com/Eternalcodertanishq3/pravaha.git
 cd pravaha
 
-# Create virtual environment
+# Create virtual environment & install dependencies
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
 pip install -e .
+
+# Run automated environment diagnostics
+pravaha doctor
 ```
 
 ### Step 2: Build Rust Acceleration Module (Optional)
