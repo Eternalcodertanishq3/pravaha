@@ -26,7 +26,7 @@ class CUDAGraphDecoderWrapper:
         device: torch.device | None = None,
     ) -> None:
         self.decoder_engine = decoder_engine
-        self.buckets = sorted(buckets) if buckets else [1, 4, 16]
+        self.buckets = sorted(buckets) if buckets else [1, 2, 4, 8, 16, 32, 64]
         self.warmup_steps = warmup_steps
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

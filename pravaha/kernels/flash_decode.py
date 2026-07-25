@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 if HAS_TRITON:
     @triton.autotune(
         configs=[
+            triton.Config({"BLOCK_SEQ": 32}, num_stages=2, num_warps=2),
             triton.Config({"BLOCK_SEQ": 64}, num_stages=2, num_warps=2),
             triton.Config({"BLOCK_SEQ": 128}, num_stages=2, num_warps=4),
             triton.Config({"BLOCK_SEQ": 256}, num_stages=3, num_warps=8),
+            triton.Config({"BLOCK_SEQ": 512}, num_stages=4, num_warps=8),
         ],
         key=["seq_len", "head_dim"],
     )
