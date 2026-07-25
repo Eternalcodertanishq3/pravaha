@@ -105,7 +105,9 @@ Empirical benchmark testing verified significant performance, reliability, and s
       <ul>
         <li><b>PagedAttention KV-Cache:</b> Rust-accelerated virtual memory block allocation eliminates KV-cache fragmentation.</li>
         <li><b>Continuous Batching:</b> Iteration-level prefill/decode dynamic batching maximizes GPU Tensor Core throughput.</li>
-        <li><b>Persistent Session Cache:</b> Reuses prompt KV blocks across multi-turn HTTP agent conversations.</li>
+        <li><b>Dynamic CUDA Graphs [1..64]:</b> Dynamic batch bucketing reduces CPU kernel launch overhead to &lt;0.05 ms.</li>
+        <li><b>Triton FlashDecoding [32..512]:</b> Fused online softmax kernels with automated tile & warp autotuning.</li>
+        <li><b>Multi-GPU Topology Manager:</b> Auto-detects device ranks, P2P interconnects, and Tensor Parallelism mapping.</li>
       </ul>
     </td>
     <td width="50%">
@@ -114,6 +116,8 @@ Empirical benchmark testing verified significant performance, reliability, and s
         <li><b>DAG Execution Engine:</b> Topologically sorted multi-agent pipelines with state locks and cycle detection.</li>
         <li><b>ReAct Autonomous Loop:</b> Bounded reasoning and tool execution with step caps and retry limits.</li>
         <li><b>Self-Healing Repair:</b> Intercepts code execution errors and auto-generates fix patches.</li>
+        <li><b>Environment Doctor CLI:</b> Automated diagnostic tool (<code>pravaha doctor</code>) for zero-friction setup checks.</li>
+        <li><b>Zero-Friction Container:</b> 1-command Docker Compose deployment (<code>docker compose up</code>).</li>
       </ul>
     </td>
   </tr>
