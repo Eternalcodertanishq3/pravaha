@@ -64,6 +64,15 @@ impl TokenBridge {
             Err(PyKeyError::new_err(format!("No stream found for request_id {}", request_id)))
         }
     }
+
+    /// Return all active request IDs currently streaming.
+    pub fn get_active_streams(&self) -> Vec<String> {
+        let mut keys = Vec::new();
+        for item in self.senders.iter() {
+            keys.push(item.key().clone());
+        }
+        keys
+    }
 }
 
 impl TokenBridge {

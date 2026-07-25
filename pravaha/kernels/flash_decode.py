@@ -84,13 +84,15 @@ if HAS_TRITON:
 
             # Update acc
             acc_scale = alpha
-            acc = acc * acc_scale + tl.sum(beta[:, None] * v, axis=0)
+            # cast beta to v dtype to avoid mixed precision upcasting explosion
+            acc = acc * acc_scale + tl.sum(beta[:, None].to(v.dtype) * v, axis=0)
 
             l_i = l_i * alpha + tl.sum(beta, axis=0)
             m_i = m_i_new
 
-        # Write output
+        # Write output (cast back to original Q dtype)
         out = acc / l_i
+        out = out.to(q.dtype)
         out_ptrs = Out_ptr + o_offset + tl.arange(0, head_dim)
         tl.store(out_ptrs, out)
 else:
