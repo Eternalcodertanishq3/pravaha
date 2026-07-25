@@ -32,60 +32,10 @@
 
 ---
 
-
-
-## 💡 Real-World Problem, Original Solution & Success Dossier
-
-### 1. The Real-World Production Problem Identified
-
-Deploying Large Language Models (LLMs) and autonomous agents in real-world enterprise environments faces severe infrastructure fragmentation:
-
-- **Problem 1: Memory Waste & KV-Cache Loss Across Agent Turns.** Standard inference servers treat every HTTP request as stateless. When a multi-agent workflow (e.g., ReAct reasoning) makes 5-10 sequential API calls, the server discards the KV-cache after each turn. The system is forced to recompute massive system prompts and context histories over and over, wasting up to **60-80% of GPU Tensor Core compute**.
-- **Problem 2: Unsafe Agent Tool Execution & Host Compromise.** Autonomous agents that execute Python scripts or Bash commands on host OS processes create severe security vulnerabilities (command injection via ; or |, SSRF attacks against internal AWS metadata endpoints 169.254.169.254, and host filesystem leaks).
-- **Problem 3: Absence of Cryptographic Auditability in Regulated Sectors.** Enterprise applications in finance, healthcare, and law require immutable, non-repudiable logs of agent tool executions and decisions for GDPR and EU AI Act compliance. Standard application loggers can be altered, truncated, or lose correlation context across async tasks.
-- **Problem 4: Unbounded Queue Saturation & Memory Leaks.** Under high multi-tenant traffic spikes, unmanaged request queues cause PyTorch CUDA Out-Of-Memory (OOM) crashes and system deadlocks.
-
----
-
-### 2. The Original Architectural Solution We Designed (Pravāha)
-
-To solve these production bottlenecks, we engineered **Pravāha** as an integrated AI Serving & Swarm Operating System that unifies model serving, agent orchestration, sandboxing, and security into a single runtime:
-
-- **Solution 1: Persistent Session KV-Cache Reuse.** Pravāha introduces a stateful session memory layer backed by a Rust-accelerated PrefixTrie. Physical KV blocks are preserved across multi-turn HTTP agent conversations, eliminating prompt recomputation.
-- **Solution 2: Native Swarm Multi-Agent DAG Engine.** Rather than running agents in separate Python processes, Pravāha integrates a multi-agent DAG engine directly into the serving layer, featuring thread-safe SharedContext state locking, cycle detection, and automatic self-healing code repair.
-- **Solution 3: Dual-Tier AST + Docker Container Sandboxing.** Agent tool execution is protected by a dual-tier boundary: pre-parsing code via Python AST syntax validation to block forbidden imports (os, subprocess, socket), followed by isolated Docker container execution (--network none, --memory 512m, --cpus 1.0).
-- **Solution 4: SHA-256 Hash-Chained Cryptographic Audit Ledger.** Every agent tool invocation, security alert, and administrative action is appended to a tamper-verifiable SHA-256 cryptographic ledger (hash = SHA256(index:timestamp:event:actor:details:prev_hash)).
-
----
-
-### 3. Originality & Engineering Innovation Assessment
-
-| Architectural Dimension | Naive Enterprise Stack (Glued Component Model) | Pravāha Unified Architecture | Is it Original & Innovative? |
-|---|---|---|:---:|
-| **Component Topology** | vLLM + LangChain + Docker Sidecar + Nginx + PostgreSQL Logger | **Unified Single Engine Runtime** | **Yes** — Eliminates IPC overhead |
-| **Multi-Turn KV Reuse** | Discarded after every HTTP request | **Persistent Session Cache with Rust Trie** | **Yes** — Zero-copy KV reuse |
-| **Tool Execution Safety** | Host OS subprocess.run(shell=True) | **AST Validation + Docker (--network none)** | **Yes** — Hard kernel boundary |
-| **Egress Network Control** | Open outbound HTTP requests | **DNS-Resolved SSRF Egress Filter** | **Yes** — Blocks internal IP ranges |
-| **Audit Ledger Integrity** | Plaintext log files or database rows | **Cryptographic SHA-256 Hash Chain** | **Yes** — Instant tamper detection |
-
----
-
-### 4. Quantitative Success & Performance Dossier
-
-Empirical benchmark testing verified significant performance, reliability, and security gains:
-
-- **Ultra-Low Latency Baseline:** Achieved single-stream P50 Time-To-First-Token (TTFT) of **25.20 ± 0.24 ms** and Inter-Token Latency (ITL) of **20.37 ms** on laptop GPU hardware (NVIDIA GeForce RTX 4050 6GB).
-- **Throughput & Scaling Success:** Reached a peak system throughput of **190.38 tokens/sec** at 25 concurrent streams.
-- **Low-Level Hardware Acceleration Modules:** 4 low-level acceleration subsystems (cuda_graph_engine.py, p8_quantizer.py, lash_decode.py, http_server.rs) fully implemented, compiled, and verified with **128 passing unit tests**.
-- **Memory Boundedness Success:** Process RAM RSS drift remained locked at **+2.1 MB** across 1,818 generated tokens, confirming zero memory leaks under load.
-- **Adversarial Security Success:** Achieved **100% block rate (7/7 security probes passed)** against prompt injection, role override, null byte obfuscation, SSRF, and AST import bypasses.
-- **Audit Integrity Success:** Achieved **100% tamper detection accuracy** across 500 hash-chained audit ledger records in 25.58 ms.
-
----
-
 ---
 
 ## ⚡ Key Highlights & Architecture Features
+
 
 
 <table>
@@ -131,9 +81,10 @@ Empirical benchmark testing verified significant performance, reliability, and s
 
 ---
 
-
+---
 
 ## Quick Start Guide
+
 
 
 ### Step 1: Clone & Set Up Environment
@@ -186,73 +137,10 @@ curl -X POST http://127.0.0.1:8000/v1/chat/completions \
 
 ---
 
-
-
-## Known Limitations & Future Roadmap
-
-
-### Known Limitations
-
-1. **Model Scope:** Empirical benchmarks were evaluated on GPT-2 Base (117M parameters) in FP16 precision. High-parameter models (70B+ FP8/INT4) require multi-GPU scaling validation.
-2. **Single-Node Serving:** Current benchmark measurements reflect a single-node GPU configuration (NVIDIA GeForce RTX 4050 Laptop GPU). Multi-node distributed RPC serving is not yet evaluated.
-3. **Soak Duration:** Verification includes synthetic saturation and load-shedding drills up to 50 concurrent streams. A 24–48 hour production soak test on live Kubernetes cluster infrastructure remains recommended before full production traffic cutover.
-4. **Host OS Parity:** Micro-benchmark data was collected on a Windows x86_64 host environment. Production Linux container performance may exhibit slightly reduced syscall overhead.
-
-### Future Architectural Roadmap
-
-- **Distributed Parallelism:** Multi-GPU Tensor Parallelism (TP) and Pipeline Parallelism (PP) via PyTorch Distributed (`torch.distributed`).
-- **Kernel Optimization:** FlashAttention-2 / FlashDecoding integration and FP8 quantization kernels.
-- **CUDA Graph Capture:** Static CUDA Graph execution capture for the decode step to minimize host-to-device kernel launch overhead.
-- **Speculative Decoding:** Integration of small draft models for accelerated target model token generation.
-- **Disaggregated Serving:** RDMA / InfiniBand fast KV-cache block transfer across separate prefill and decode nodes.
-
 ---
-
-
-
-## Contributing & Testing
-
-
-We welcome contributions to Pravāha! Please follow our submission guidelines:
-
-### Running the Unit & Integration Test Suite
-
-```bash
-# Execute all 128 unit and integration tests
-python -m pytest tests/ -v
-
-# Run stability and reliability tests specifically
-python -m pytest tests/test_phase2_stability.py tests/test_phase3_reliability.py -v
-```
-
----
-
-
-
-## License & Citation
-
-
-Pravāha is open-source software licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
-
-```bibtex
-@software{pravaha2026,
-  author = {Tanishq & Pravāha Engineering Team},
-  title = {Pravāha: Enterprise High-Performance LLM Serving & Swarm Orchestration Engine},
-  year = {2026},
-  url = {https://github.com/Eternalcodertanishq3/pravaha}
-}
-```
-
-<div align="center">
-<br />
-<b>Made with ❤️ for high-performance AI systems engineering.</b>
-<br />
-<i>Copyright (c) 2026 Pravāha Team</i>
-</div>
-
-
 
 ## Empirical Benchmark & Telemetry Dossier
+
 
 
 ### Environment Specification & Reproducibility
@@ -522,9 +410,10 @@ Empirical stress tests were executed using `scripts/generate_evidence_dossier.py
 
 ---
 
-
+---
 
 ## 📚 Documentation
+
 
 The detailed architectural deep-dives, API specifications, and deployment manifests have been moved to the `docs/` folder for readability:
 
@@ -533,4 +422,123 @@ The detailed architectural deep-dives, API specifications, and deployment manife
 - [API, CLI & Operations Guide (Prometheus, Docker)](docs/operations_and_api.md)
 - [Framework Feature Comparison](docs/feature_comparison.md)
 
+---
 
+## Known Limitations & Future Roadmap
+
+
+
+### Known Limitations
+
+1. **Model Scope:** Empirical benchmarks were evaluated on GPT-2 Base (117M parameters) in FP16 precision. High-parameter models (70B+ FP8/INT4) require multi-GPU scaling validation.
+2. **Single-Node Serving:** Current benchmark measurements reflect a single-node GPU configuration (NVIDIA GeForce RTX 4050 Laptop GPU). Multi-node distributed RPC serving is not yet evaluated.
+3. **Soak Duration:** Verification includes synthetic saturation and load-shedding drills up to 50 concurrent streams. A 24–48 hour production soak test on live Kubernetes cluster infrastructure remains recommended before full production traffic cutover.
+4. **Host OS Parity:** Micro-benchmark data was collected on a Windows x86_64 host environment. Production Linux container performance may exhibit slightly reduced syscall overhead.
+
+### Future Architectural Roadmap
+
+- **Distributed Parallelism:** Multi-GPU Tensor Parallelism (TP) and Pipeline Parallelism (PP) via PyTorch Distributed (`torch.distributed`).
+- **Kernel Optimization:** FlashAttention-2 / FlashDecoding integration and FP8 quantization kernels.
+- **CUDA Graph Capture:** Static CUDA Graph execution capture for the decode step to minimize host-to-device kernel launch overhead.
+- **Speculative Decoding:** Integration of small draft models for accelerated target model token generation.
+- **Disaggregated Serving:** RDMA / InfiniBand fast KV-cache block transfer across separate prefill and decode nodes.
+
+---
+
+---
+
+## 💡 Real-World Problem, Original Solution & Success Dossier
+
+
+### 1. The Real-World Production Problem Identified
+
+Deploying Large Language Models (LLMs) and autonomous agents in real-world enterprise environments faces severe infrastructure fragmentation:
+
+- **Problem 1: Memory Waste & KV-Cache Loss Across Agent Turns.** Standard inference servers treat every HTTP request as stateless. When a multi-agent workflow (e.g., ReAct reasoning) makes 5-10 sequential API calls, the server discards the KV-cache after each turn. The system is forced to recompute massive system prompts and context histories over and over, wasting up to **60-80% of GPU Tensor Core compute**.
+- **Problem 2: Unsafe Agent Tool Execution & Host Compromise.** Autonomous agents that execute Python scripts or Bash commands on host OS processes create severe security vulnerabilities (command injection via ; or |, SSRF attacks against internal AWS metadata endpoints 169.254.169.254, and host filesystem leaks).
+- **Problem 3: Absence of Cryptographic Auditability in Regulated Sectors.** Enterprise applications in finance, healthcare, and law require immutable, non-repudiable logs of agent tool executions and decisions for GDPR and EU AI Act compliance. Standard application loggers can be altered, truncated, or lose correlation context across async tasks.
+- **Problem 4: Unbounded Queue Saturation & Memory Leaks.** Under high multi-tenant traffic spikes, unmanaged request queues cause PyTorch CUDA Out-Of-Memory (OOM) crashes and system deadlocks.
+
+---
+
+### 2. The Original Architectural Solution We Designed (Pravāha)
+
+To solve these production bottlenecks, we engineered **Pravāha** as an integrated AI Serving & Swarm Operating System that unifies model serving, agent orchestration, sandboxing, and security into a single runtime:
+
+- **Solution 1: Persistent Session KV-Cache Reuse.** Pravāha introduces a stateful session memory layer backed by a Rust-accelerated PrefixTrie. Physical KV blocks are preserved across multi-turn HTTP agent conversations, eliminating prompt recomputation.
+- **Solution 2: Native Swarm Multi-Agent DAG Engine.** Rather than running agents in separate Python processes, Pravāha integrates a multi-agent DAG engine directly into the serving layer, featuring thread-safe SharedContext state locking, cycle detection, and automatic self-healing code repair.
+- **Solution 3: Dual-Tier AST + Docker Container Sandboxing.** Agent tool execution is protected by a dual-tier boundary: pre-parsing code via Python AST syntax validation to block forbidden imports (os, subprocess, socket), followed by isolated Docker container execution (--network none, --memory 512m, --cpus 1.0).
+- **Solution 4: SHA-256 Hash-Chained Cryptographic Audit Ledger.** Every agent tool invocation, security alert, and administrative action is appended to a tamper-verifiable SHA-256 cryptographic ledger (hash = SHA256(index:timestamp:event:actor:details:prev_hash)).
+
+---
+
+### 3. Originality & Engineering Innovation Assessment
+
+| Architectural Dimension | Naive Enterprise Stack (Glued Component Model) | Pravāha Unified Architecture | Is it Original & Innovative? |
+|---|---|---|:---:|
+| **Component Topology** | vLLM + LangChain + Docker Sidecar + Nginx + PostgreSQL Logger | **Unified Single Engine Runtime** | **Yes** — Eliminates IPC overhead |
+| **Multi-Turn KV Reuse** | Discarded after every HTTP request | **Persistent Session Cache with Rust Trie** | **Yes** — Zero-copy KV reuse |
+| **Tool Execution Safety** | Host OS subprocess.run(shell=True) | **AST Validation + Docker (--network none)** | **Yes** — Hard kernel boundary |
+| **Egress Network Control** | Open outbound HTTP requests | **DNS-Resolved SSRF Egress Filter** | **Yes** — Blocks internal IP ranges |
+| **Audit Ledger Integrity** | Plaintext log files or database rows | **Cryptographic SHA-256 Hash Chain** | **Yes** — Instant tamper detection |
+
+---
+
+### 4. Quantitative Success & Performance Dossier
+
+Empirical benchmark testing verified significant performance, reliability, and security gains:
+
+- **Ultra-Low Latency Baseline:** Achieved single-stream P50 Time-To-First-Token (TTFT) of **25.20 ± 0.24 ms** and Inter-Token Latency (ITL) of **20.37 ms** on laptop GPU hardware (NVIDIA GeForce RTX 4050 6GB).
+- **Throughput & Scaling Success:** Reached a peak system throughput of **190.38 tokens/sec** at 25 concurrent streams.
+- **Low-Level Hardware Acceleration Modules:** 4 low-level acceleration subsystems (cuda_graph_engine.py, p8_quantizer.py, lash_decode.py, http_server.rs) fully implemented, compiled, and verified with **128 passing unit tests**.
+- **Memory Boundedness Success:** Process RAM RSS drift remained locked at **+2.1 MB** across 1,818 generated tokens, confirming zero memory leaks under load.
+- **Adversarial Security Success:** Achieved **100% block rate (7/7 security probes passed)** against prompt injection, role override, null byte obfuscation, SSRF, and AST import bypasses.
+- **Audit Integrity Success:** Achieved **100% tamper detection accuracy** across 500 hash-chained audit ledger records in 25.58 ms.
+
+---
+
+---
+
+---
+
+## Contributing & Testing
+
+
+
+We welcome contributions to Pravāha! Please follow our submission guidelines:
+
+### Running the Unit & Integration Test Suite
+
+```bash
+# Execute all 128 unit and integration tests
+python -m pytest tests/ -v
+
+# Run stability and reliability tests specifically
+python -m pytest tests/test_phase2_stability.py tests/test_phase3_reliability.py -v
+```
+
+---
+
+---
+
+## License & Citation
+
+
+
+Pravāha is open-source software licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+```bibtex
+@software{pravaha2026,
+  author = {Tanishq & Pravāha Engineering Team},
+  title = {Pravāha: Enterprise High-Performance LLM Serving & Swarm Orchestration Engine},
+  year = {2026},
+  url = {https://github.com/Eternalcodertanishq3/pravaha}
+}
+```
+
+<div align="center">
+<br />
+<b>Made with ❤️ for high-performance AI systems engineering.</b>
+<br />
+<i>Copyright (c) 2026 Pravāha Team</i>
+</div>
