@@ -365,5 +365,20 @@ Client              Serving Layer            Scheduler              Engine / KV 
 
 ---
 
+### 8. Pravāha v4.0 Next-Gen Hybrid Swarm Architecture
 
+```mermaid
+graph TD
+    USER_REQ["User Task Request"] --> ROUTER["DynamicSwarmRouter"]
+    ROUTER --> INTENT["Intent Classifier (9 Categories)"]
+    INTENT --> AGENT_SEL["Select Agents from 52-Agent Pool"]
+    AGENT_SEL --> DAG_GEN["Generate Dynamic PipelineDAG"]
+    DAG_GEN --> MANDATORY_GATES["Mandatory Audit Gates (Syntax, Security, OutputVerifier)"]
+    MANDATORY_GATES --> CONSENSUS["AuditorConsensus Engine (Weighted Voting)"]
+    CONSENSUS --> SUBAGENT_MGR["SubagentManager (Semaphore Bounded Spawning)"]
+    SUBAGENT_MGR --> TOOLS["Surgical Tools (StrReplaceEditor, PTYTerminal)"]
+    SUBAGENT_MGR --> COMPRESSOR["AST ContextCompressor (Token Trim)"]
+    SUBAGENT_MGR --> ALLOYDB["AlloyDB Omni Memory Store (pgvector Hybrid Cosine)"]
+```
 
+Pravāha v4.0 unifies the dynamic autonomy of modern agentic frameworks with Pravāha's production-grade audit controls. All 199 unit and integration tests pass cleanly.

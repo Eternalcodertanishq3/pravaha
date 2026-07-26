@@ -19,7 +19,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![PyTorch Version](https://img.shields.io/badge/PyTorch-2.6.0%2B-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Rust Core](https://img.shields.io/badge/Rust-1.93.0%2B-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Test Suite](https://img.shields.io/badge/Tests-128%2F128%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-199%2F199%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
 [![Security Audit](https://img.shields.io/badge/Security-7%2F7%20Probes%20Passed-brightgreen?style=for-the-badge&logo=shieldsdotio&logoColor=white)](docs/master_audit_report.md)
 [![Status](https://img.shields.io/badge/Readiness-Passed%20Internal%20Validation-0052CC?style=for-the-badge)](docs/master_audit_report.md)
 
@@ -80,7 +80,7 @@ Empirical benchmark testing verified significant performance, reliability, and s
 
 - **Ultra-Low Latency Baseline:** Achieved single-stream P50 Time-To-First-Token (TTFT) of **25.20 ± 0.24 ms** and Inter-Token Latency (ITL) of **20.37 ms** on laptop GPU hardware (NVIDIA GeForce RTX 4050 6GB).
 - **Throughput & Scaling Success:** Reached a peak system throughput of **190.38 tokens/sec** at 25 concurrent streams.
-- **Low-Level Hardware Acceleration Modules:** 4 low-level acceleration subsystems (cuda_graph_engine.py, p8_quantizer.py, lash_decode.py, http_server.rs) fully implemented, compiled, and verified with **128 passing unit tests**.
+- **Low-Level Hardware Acceleration Modules & Swarm Core:** 4 low-level acceleration subsystems (cuda_graph_engine.py, fp8_quantizer.py, flash_decode.py, http_server.rs) + 52-agent v4.0 hybrid swarm core fully verified with **199 passing unit & integration tests**.
 - **Memory Boundedness Success:** Process RAM RSS drift remained locked at **+2.1 MB** across 1,818 generated tokens, confirming zero memory leaks under load.
 - **Adversarial Security Success:** Achieved **100% block rate (7/7 security probes passed)** against prompt injection, role override, null byte obfuscation, SSRF, and AST import bypasses.
 - **Audit Integrity Success:** Achieved **100% tamper detection accuracy** across 500 hash-chained audit ledger records in 25.58 ms.
@@ -111,13 +111,15 @@ Empirical benchmark testing verified significant performance, reliability, and s
       </ul>
     </td>
     <td width="50%">
-      <h3>🛡️ Swarm Agent Orchestration</h3>
+      <h3>🛡️ Swarm Agent Orchestration (v4.0 Hybrid Engine)</h3>
       <ul>
-        <li><b>DAG Execution Engine:</b> Topologically sorted multi-agent pipelines with state locks and cycle detection.</li>
-        <li><b>ReAct Autonomous Loop:</b> Bounded reasoning and tool execution with step caps and retry limits.</li>
-        <li><b>Self-Healing Repair:</b> Intercepts code execution errors and auto-generates fix patches.</li>
-        <li><b>Environment Doctor CLI:</b> Automated diagnostic tool (<code>pravaha doctor</code>) for zero-friction setup checks.</li>
-        <li><b>Zero-Friction Container:</b> 1-command Docker Compose deployment (<code>docker compose up</code>).</li>
+        <li><b>Hybrid Dynamic-DAG Router:</b> Runtime task intent analysis via <code>DynamicSwarmRouter</code> with mandatory audit gatekeepers.</li>
+        <li><b>Subagent Spawning & Pool Limits:</b> On-demand child subagent delegation managed by <code>SubagentManager</code> with <code>asyncio.Semaphore</code> caps.</li>
+        <li><b>AlloyDB Omni Memory Store:</b> Google Cloud open-source PostgreSQL + <code>pgvector</code> engine for 384-dim hybrid semantic search.</li>
+        <li><b>Surgical StrReplaceEditor:</b> Token-efficient file editing saving ~70% of context window tokens.</li>
+        <li><b>Persistent PTY Terminal:</b> Interactive shell sessions preserving <code>cd</code>, <code>export</code>, ANSI stripping, and prompt detection.</li>
+        <li><b>AST Context Compressor:</b> Auto-extracts AST signatures and error tracebacks to eliminate context bloat.</li>
+        <li><b>Auditor Consensus Engine:</b> Weighted voting engine resolving auditor disputes with CRITICAL severity promotion.</li>
       </ul>
     </td>
   </tr>

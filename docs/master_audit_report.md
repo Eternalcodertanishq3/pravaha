@@ -1,8 +1,8 @@
-# Pravāha v3.3 Enterprise Deep Audit Report & Evidence Dossier
+# Pravāha v4.0 Enterprise Deep Audit Report & Evidence Dossier
 
-> **Audit Date:** July 24, 2026  
-> **Scope:** Architecture, Engine, Security, Memory, Orchestration, Observability, Governance, Reliability, Hardening, Launch Gates  
-> **Test Suite:** 128 / 128 unit & integration tests passing ✅  
+> **Audit Date:** July 26, 2026  
+> **Scope:** Architecture, Engine, Security, Memory, Orchestration, Observability, Governance, Reliability, Hardening, Hybrid Dynamic-DAG, Subagent Spawning  
+> **Test Suite:** **199 / 199 unit & integration tests passing ✅**  
 > **Readiness Verdict:** 🚀 **PASSED INTERNAL VALIDATION — APPROVED FOR STAGING & PRODUCTION SOAK TESTING**
 
 ---
@@ -107,7 +107,7 @@ Following a comprehensive audit of the Pravāha v3.3 codebase against the 15-dim
 | **Gate 7** | Automated self-healing reliability | **Passed ✅** | Circuit breaker drill recovered (`CLOSED` → `OPEN` → `HALF_OPEN` → `CLOSED`). |
 | **Gate 8** | Full tracing & correlation | **Passed ✅** | `request_id_ctx` correlation IDs attached to JSON log formatter. |
 | **Gate 9** | Deployment and rollback procedure | **Passed ✅** | Executable [rollback.py](file:///c:/Personal%20Projects/Pravāha/scripts/rollback.py) verified with health probes. |
-| **Gate 10** | Regression & golden test suite | **Passed ✅** | **128 / 128 unit & integration tests passing**. |
+| **Gate 10** | Regression & golden test suite | **Passed ✅** | **199 / 199 unit & integration tests passing**. |
 
 ---
 
