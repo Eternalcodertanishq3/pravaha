@@ -21,6 +21,7 @@
 [![Rust Core](https://img.shields.io/badge/Rust-1.93.0%2B-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Test Suite](https://img.shields.io/badge/Tests-199%2F199%20Passing-2ea44f?style=for-the-badge&logo=github-actions&logoColor=white)](tests/)
 [![Security Audit](https://img.shields.io/badge/Security-7%2F7%20Probes%20Passed-brightgreen?style=for-the-badge&logo=shieldsdotio&logoColor=white)](docs/master_audit_report.md)
+[![Evolution Journal](https://img.shields.io/badge/Evolution-v1.0%20%E2%86%92%20v4.0%20Journal-purple?style=for-the-badge&logo=bookstack&logoColor=white)](docs/version_journey_journal.md)
 [![Status](https://img.shields.io/badge/Readiness-Passed%20Internal%20Validation-0052CC?style=for-the-badge)](docs/master_audit_report.md)
 
 </div>
