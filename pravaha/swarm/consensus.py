@@ -62,7 +62,7 @@ class AuditorConsensus:
             for issue in issues:
                 desc = issue.get("description", "")
                 severity = issue.get("severity", "INFO").upper()
-                
+
                 # Match against existing issues
                 matched_idx = -1
                 for idx, existing in enumerate(deduped_issues):
@@ -72,7 +72,7 @@ class AuditorConsensus:
                         if d1 == d2 or d1 in d2 or d2 in d1 or difflib.SequenceMatcher(None, d1, d2).ratio() >= 0.5:
                             matched_idx = idx
                             break
-                
+
                 score_val = self.severity_scores.get(severity, 0) * weight
                 total_possible_score += 10 * weight  # assuming 10 is max score per issue
                 actual_score += score_val
@@ -81,7 +81,7 @@ class AuditorConsensus:
                     issue_counts[matched_idx] += 1
                     if severity == "CRITICAL":
                         critical_counts[matched_idx] = critical_counts.get(matched_idx, 0) + 1
-                    
+
                     # Update severity if needed (keep highest)
                     existing_sev = deduped_issues[matched_idx].get("severity", "INFO").upper()
                     if self.severity_scores.get(severity, 0) > self.severity_scores.get(existing_sev, 0):
@@ -103,7 +103,7 @@ class AuditorConsensus:
                 deduped_issues[idx]["severity"] = "CRITICAL"
 
         critical_count = sum(1 for issue in deduped_issues if issue.get("severity", "INFO").upper() == "CRITICAL")
-        
+
         # Calculate agreement ratio (average number of auditors agreeing on an issue divided by total auditors)
         if not deduped_issues:
             agreement_ratio = 1.0

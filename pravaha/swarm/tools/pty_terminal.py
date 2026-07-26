@@ -26,7 +26,7 @@ class PTYTerminalTool:
 
     # Regex to strip ANSI color codes
     ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\([B0]|\x1b\][0-9]*;[^\x07]*\x07')
-    
+
     # Patterns to detect interactive prompts
     PROMPT_PATTERNS = [
         re.compile(r'\[y/n\]', re.IGNORECASE),
@@ -43,7 +43,7 @@ class PTYTerminalTool:
     def _spawn_shell(self) -> None:
         if self.process and self.process.poll() is None:
             self.process.kill()
-            
+
         shell = "cmd.exe" if sys.platform == "win32" else "/bin/bash"
         self.process = subprocess.Popen(
             [shell],
@@ -61,7 +61,7 @@ class PTYTerminalTool:
 
         output_lines: list[str] = []
         done = threading.Event()
-        
+
         def reader() -> None:
             try:
                 # Read until no more output or interactive prompt
@@ -73,7 +73,7 @@ class PTYTerminalTool:
                     if not line:
                         break
                     output_lines.append(line)
-                    
+
                     # Check for prompt
                     stripped = self.ANSI_ESCAPE.sub('', line)
                     if any(p.search(stripped) for p in self.PROMPT_PATTERNS):
@@ -86,7 +86,7 @@ class PTYTerminalTool:
         t = threading.Thread(target=reader, daemon=True)
         t.start()
         t.join(timeout)
-        
+
         # We don't forcefully kill the thread, it will die with the process or when output ends.
         raw_output = "".join(output_lines)
         return self.ANSI_ESCAPE.sub('', raw_output)
@@ -94,22 +94,22 @@ class PTYTerminalTool:
     def execute(self, **kwargs: Any) -> dict[str, Any]:
         """Execute terminal commands."""
         command = kwargs.get("command", "execute")
-        
+
         if command == "reset":
             self._spawn_shell()
             return {"success": True, "output": "Terminal reset."}
-            
+
         elif command == "get_history":
             return {"success": True, "output": "\n".join(self.history[-100:])}
-            
+
         elif command == "get_cwd":
             return {"success": True, "output": self._cwd}
-            
+
         elif command == "execute":
             cmd_args = kwargs.get("cmd_args")
             if not cmd_args:
                 return {"success": False, "output": "cmd_args required for execute"}
-                
+
             timeout = float(kwargs.get("timeout", 10.0))
             self.history.append(str(cmd_args))
             if len(self.history) > 100:
@@ -127,18 +127,18 @@ class PTYTerminalTool:
                         self._cwd = os.getcwd()
                     except Exception:
                         pass
-                
+
                 self.process.stdin.write(f"{cmd_args}\n") # type: ignore
                 self.process.stdin.flush() # type: ignore
-                
+
                 # Wait for output
                 time.sleep(0.1) # Brief pause to let process write output
                 output = self._read_output_with_timeout(timeout)
-                
+
                 exit_code = self.process.poll()
                 return {
-                    "success": True, 
-                    "output": output, 
+                    "success": True,
+                    "output": output,
                     "exit_code": exit_code
                 }
             except Exception as e:

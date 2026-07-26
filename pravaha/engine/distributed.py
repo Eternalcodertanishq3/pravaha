@@ -14,8 +14,8 @@ from __future__ import annotations
 import logging
 import os
 import socket
-import time
 import threading
+import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any

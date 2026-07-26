@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import torch
-import torch.nn as nn
 import torch.distributed as dist
+import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class ColumnParallelLinear(nn.Module):
         rank: int,
         bias: bool = True,
         gather_output: bool = True,
-        process_group: Optional[dist.ProcessGroup] = None
+        process_group: dist.ProcessGroup | None = None
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -85,7 +85,7 @@ class RowParallelLinear(nn.Module):
         rank: int,
         bias: bool = True,
         input_is_parallel: bool = False,
-        process_group: Optional[dist.ProcessGroup] = None
+        process_group: dist.ProcessGroup | None = None
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -117,22 +117,22 @@ class RowParallelLinear(nn.Module):
         if not self.input_is_parallel and self.world_size > 1:
             # Assumes input_ is gathered; we need to partition it
             input_ = torch.chunk(input_, self.world_size, dim=-1)[self.rank]
-            
+
         output_parallel = torch.nn.functional.linear(input_, self.weight)
-        
+
         if self.world_size > 1 and dist.is_initialized():
             dist.all_reduce(output_parallel, op=dist.ReduceOp.SUM, group=self.process_group)
-            
+
         if getattr(self, 'bias', None) is not None:
             output_parallel = output_parallel + self.bias
-            
+
         return output_parallel
 
 
 class VocabParallelEmbedding(nn.Module):
     """
     Embedding layer partitioned across the vocabulary dimension.
-    
+
     Each rank holds a portion of the embedding table. Tokens outside the local
     vocabulary range are masked before lookup, and results are all-reduced.
     """
@@ -142,7 +142,7 @@ class VocabParallelEmbedding(nn.Module):
         embedding_dim: int,
         world_size: int,
         rank: int,
-        process_group: Optional[dist.ProcessGroup] = None
+        process_group: dist.ProcessGroup | None = None
     ) -> None:
         super().__init__()
         self.num_embeddings = num_embeddings
@@ -153,12 +153,12 @@ class VocabParallelEmbedding(nn.Module):
 
         _ensure_divisibility(num_embeddings, world_size, "num_embeddings")
         self.vocab_size_per_partition = num_embeddings // world_size
-        
+
         self.vocab_start_index = rank * self.vocab_size_per_partition
         self.vocab_end_index = self.vocab_start_index + self.vocab_size_per_partition
 
         self.weight = nn.Parameter(torch.empty(self.vocab_size_per_partition, embedding_dim))
-        
+
         self._reset_parameters()
 
     def _reset_parameters(self) -> None:
@@ -169,10 +169,10 @@ class VocabParallelEmbedding(nn.Module):
             input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
             masked_input = input_.clone() - self.vocab_start_index
             masked_input[input_mask] = 0
-            
+
             output_parallel = torch.nn.functional.embedding(masked_input, self.weight)
             output_parallel[input_mask, :] = 0.0
-            
+
             if dist.is_initialized():
                 dist.all_reduce(output_parallel, op=dist.ReduceOp.SUM, group=self.process_group)
             return output_parallel
@@ -183,7 +183,7 @@ class VocabParallelEmbedding(nn.Module):
 class ParallelAttention(nn.Module):
     """
     Parallel multi-head attention.
-    
+
     Partitions the heads across TP ranks using ColumnParallelLinear for the QKV projection
     and RowParallelLinear for the output projection.
     """
@@ -193,7 +193,7 @@ class ParallelAttention(nn.Module):
         head_dim: int,
         world_size: int,
         rank: int,
-        process_group: Optional[dist.ProcessGroup] = None
+        process_group: dist.ProcessGroup | None = None
     ) -> None:
         super().__init__()
         self.num_heads = num_heads
@@ -201,11 +201,11 @@ class ParallelAttention(nn.Module):
         self.world_size = world_size
         self.rank = rank
         self.process_group = process_group
-        
+
         _ensure_divisibility(num_heads, world_size, "num_heads")
         self.num_heads_per_partition = num_heads // world_size
         self.hidden_size_per_partition = self.num_heads_per_partition * head_dim
-        
+
         # QKV uses column parallelism to split heads across ranks without needing all-reduce immediately
         self.qkv_proj = ColumnParallelLinear(
             in_features=num_heads * head_dim,
@@ -216,7 +216,7 @@ class ParallelAttention(nn.Module):
             gather_output=False,
             process_group=process_group
         )
-        
+
         # Out projection uses row parallelism since the input is parallelized across heads
         self.out_proj = RowParallelLinear(
             in_features=num_heads * head_dim,
@@ -228,20 +228,20 @@ class ParallelAttention(nn.Module):
             process_group=process_group
         )
 
-    def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = None) -> torch.Tensor:
         # qkv projection: [batch, seq_len, 3 * hidden_size_per_partition]
         qkv = self.qkv_proj(hidden_states)
-        
+
         # Split into Q, K, V
         q, k, v = qkv.chunk(3, dim=-1)
-        
+
         # Simplified scaled dot-product attention
         scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(self.head_dim)
         if attention_mask is not None:
             scores = scores + attention_mask
         probs = torch.nn.functional.softmax(scores, dim=-1)
         context = torch.matmul(probs, v)
-        
+
         # Output projection
         output = self.out_proj(context)
         return output
@@ -250,7 +250,7 @@ class ParallelAttention(nn.Module):
 class TensorParallelWrapper(nn.Module):
     """
     Wraps an existing model to use Tensor Parallelism.
-    
+
     Provides utility methods to shard standard model layers into their parallel equivalents.
     """
     def __init__(self, model: nn.Module, tp_config: dict[str, Any]) -> None:
@@ -260,7 +260,7 @@ class TensorParallelWrapper(nn.Module):
         self.world_size = tp_config.get("world_size", 1)
         self.rank = tp_config.get("rank", 0)
         self.process_group = tp_config.get("process_group", None)
-        
+
     def shard_model(self) -> None:
         """
         Recursively replaces standard layers (e.g., nn.Linear, nn.Embedding) with parallel layers.
@@ -269,6 +269,6 @@ class TensorParallelWrapper(nn.Module):
         logger.info(f"Sharding model for rank {self.rank}/{self.world_size}")
         # Note: Actual sharding logic would replace modules dynamically
         pass
-        
+
     def forward(self, *args, **kwargs) -> Any:
         return self.model(*args, **kwargs)

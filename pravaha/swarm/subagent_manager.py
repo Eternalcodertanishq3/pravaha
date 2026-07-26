@@ -5,7 +5,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pravaha.swarm.agents.base_agent import AgentOutput, SharedContext
@@ -24,7 +24,7 @@ class SubagentHandle:
     created_at: float = field(default_factory=time.time)
     completed_at: float | None = None
     _event: asyncio.Event = field(default_factory=asyncio.Event)
-    
+
     async def wait(self, timeout: float | None = None) -> Any | None:
         """Waits for the subagent to complete."""
         try:
@@ -32,10 +32,10 @@ class SubagentHandle:
                 await asyncio.wait_for(self._event.wait(), timeout)
             else:
                 await self._event.wait()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass
         return self.result
-        
+
     def cancel(self) -> None:
         """Cancels the subagent."""
         self.status = "cancelled"
@@ -45,11 +45,11 @@ class SubagentHandle:
 
 class SubagentManager:
     """Manages spawning and lifecycle of subagents."""
-    
+
     def __init__(self, agent_registry: dict[str, Any], tool_registry: Any, max_concurrent: int = 8):
         """
         Initializes the SubagentManager.
-        
+
         Args:
             agent_registry: Registry mapping agent_type to agent classes.
             tool_registry: Registry of tools to provide to agents.
@@ -62,7 +62,7 @@ class SubagentManager:
         self._completed: list[SubagentHandle] = {}
         self._completed_list: list[SubagentHandle] = []
         self._tasks: dict[str, asyncio.Task] = {}
-        
+
     async def spawn(self, parent_role: str, agent_type: str, task: str, context: Any, engine: Any) -> SubagentHandle:
         """Spawns a single subagent."""
         handle = SubagentHandle(
@@ -71,22 +71,22 @@ class SubagentManager:
             task=task
         )
         self._active[handle.id] = handle
-        
+
         agent_cls = self.agent_registry.get(agent_type)
         if not agent_cls:
             handle.status = "failed"
             handle.completed_at = time.time()
             handle._event.set()
             raise ValueError(f"Agent type {agent_type} not found in registry.")
-            
+
         child_context = context.clone() if hasattr(context, "clone") else context
         agent_instance = agent_cls(tools=self.tool_registry, context=child_context)
-        
+
         task_obj = asyncio.create_task(self._run_subagent(handle, agent_instance, child_context, engine))
         self._tasks[handle.id] = task_obj
-        
+
         return handle
-        
+
     async def spawn_batch(self, parent_role: str, tasks: list[tuple[str, str]], context: Any, engine: Any) -> list[SubagentHandle]:
         """Spawns multiple subagents."""
         handles = []
@@ -94,7 +94,7 @@ class SubagentManager:
             handle = await self.spawn(parent_role, agent_type, task, context, engine)
             handles.append(handle)
         return handles
-        
+
     async def gather_results(self, handles: list[SubagentHandle], timeout: float = 300.0) -> list[Any | None]:
         """Waits for all handles to complete with timeout."""
         results = []
@@ -107,7 +107,7 @@ class SubagentManager:
             res = await handle.wait(timeout=remaining)
             results.append(res)
         return results
-        
+
     async def _run_subagent(self, handle: SubagentHandle, agent: Any, context: Any, engine: Any) -> None:
         """Runs the subagent."""
         async with self._semaphore:
@@ -129,11 +129,11 @@ class SubagentManager:
                 handle._event.set()
                 if handle.id in self._active:
                     self._completed_list.append(self._active.pop(handle.id))
-                    
+
     def get_active(self) -> list[SubagentHandle]:
         """Returns list of active subagents."""
         return list(self._active.values())
-        
+
     def get_stats(self) -> dict:
         """Returns stats about subagents."""
         total_spawned = len(self._active) + len(self._completed_list)
@@ -144,7 +144,7 @@ class SubagentManager:
             "completed_count": len(self._completed_list) - failed_count,
             "failed_count": failed_count
         }
-        
+
     def cancel_all(self) -> int:
         """Cancels all active subagents."""
         count = 0

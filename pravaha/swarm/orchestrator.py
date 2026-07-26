@@ -179,16 +179,16 @@ class SwarmOrchestrator:
     def _ensure_router(self) -> Any:
         """Lazy-initialize the DynamicSwarmRouter."""
         if self._router is None:
-            RouterCls = _get_dynamic_router()
-            self._router = RouterCls(self._agents)
+            router_cls = _get_dynamic_router()
+            self._router = router_cls(self._agents)
         return self._router
 
     def _ensure_subagent_manager(self) -> Any:
         """Lazy-initialize the SubagentManager."""
         if self._subagent_manager is None:
             try:
-                ManagerCls = _get_subagent_manager()
-                self._subagent_manager = ManagerCls(
+                manager_cls = _get_subagent_manager()
+                self._subagent_manager = manager_cls(
                     agent_registry=self._agents,
                     tool_registry=self._tools,
                     max_concurrent=self._max_concurrent,

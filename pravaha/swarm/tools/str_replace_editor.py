@@ -42,7 +42,7 @@ class StrReplaceEditorTool:
         """Execute the tool."""
         command = kwargs.get("command")
         path_str = kwargs.get("path")
-        
+
         if not command or not path_str:
             return {"success": False, "output": "command and path are required."}
 
@@ -61,7 +61,7 @@ class StrReplaceEditorTool:
                 start = max(0, int(start_line) - 1) if start_line is not None else 0
                 end = int(end_line) if end_line is not None else len(lines)
                 end = min(end, start + 300)
-                
+
                 output_lines = []
                 for i in range(start, end):
                     if i < len(lines):
@@ -77,7 +77,7 @@ class StrReplaceEditorTool:
                 return {"success": False, "output": "File not found."}
             if old_str is None:
                 return {"success": False, "output": "old_str is required for str_replace."}
-            
+
             try:
                 content = target_path.read_text(encoding="utf-8")
                 count = content.count(old_str)
@@ -85,7 +85,7 @@ class StrReplaceEditorTool:
                     return {"success": False, "output": "old_str not found in file."}
                 elif count > 1:
                     return {"success": False, "output": f"old_str found {count} times. Must be unique."}
-                
+
                 # find line number
                 lines = content.splitlines()
                 line_num = -1
@@ -93,7 +93,7 @@ class StrReplaceEditorTool:
                     if old_str in line:
                         line_num = i + 1
                         break
-                        
+
                 new_content = content.replace(old_str, str(new_str))
                 target_path.write_text(new_content, encoding="utf-8")
                 return {"success": True, "output": f"Replaced successfully on line {line_num}."}
@@ -118,11 +118,11 @@ class StrReplaceEditorTool:
                 return {"success": False, "output": "File not found."}
             if insert_line is None:
                 return {"success": False, "output": "insert_line is required for insert."}
-            
+
             try:
                 lines = target_path.read_text(encoding="utf-8").splitlines()
                 idx = int(insert_line)
-                
+
                 # line 0 means beginning
                 lines.insert(idx, str(text))
                 target_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
