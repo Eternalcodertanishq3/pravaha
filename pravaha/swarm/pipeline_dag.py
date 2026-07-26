@@ -22,8 +22,9 @@ class DAGNode:
     name: str
     agent_role: str
     dependencies: list[str] = field(default_factory=list)
-    status: str = "pending"  # pending, running, done, failed
+    status: str = "pending"  # pending, running, done, failed, skipped
     result: Any = None
+    condition: Any = None  # Optional Callable[[SharedContext], bool]
     duration_ms: float = 0.0
 
 
@@ -51,25 +52,29 @@ class PipelineDAG:
             dependencies=dependencies or [],
         )
 
-    def get_ready_nodes(self) -> list[DAGNode]:
+    def get_ready_nodes(self, context: Any = None) -> list[DAGNode]:
         """Get nodes whose dependencies are all satisfied."""
         ready = []
         for node in self._nodes.values():
             if node.status != "pending":
                 continue
             deps_met = all(
-                self._nodes[dep].status == "done"
+                self._nodes[dep].status in ("done", "skipped")
                 for dep in node.dependencies
                 if dep in self._nodes
             )
             if deps_met:
+                if context is not None and node.condition is not None:
+                    if not node.condition(context):
+                        node.status = "skipped"
+                        continue
                 ready.append(node)
         return ready
 
     def is_complete(self) -> bool:
-        """Check if all nodes are done or failed."""
+        """Check if all nodes are done or failed or skipped."""
         return all(
-            n.status in ("done", "failed") for n in self._nodes.values()
+            n.status in ("done", "failed", "skipped") for n in self._nodes.values()
         )
 
     def has_failed(self) -> bool:
@@ -97,7 +102,7 @@ class PipelineDAG:
 
         while not self.is_complete() and iterations < max_iterations:
             iterations += 1
-            ready = self.get_ready_nodes()
+            ready = self.get_ready_nodes(context)
             if not ready:
                 if not self.is_complete():
                     # Deadlock or all remaining have unmet deps
@@ -144,6 +149,12 @@ class PipelineDAG:
         """Execute a single DAG node."""
         t0 = time.time()
         try:
+            if node.condition is not None and not node.condition(context):
+                node.status = "skipped"
+                node.duration_ms = (time.time() - t0) * 1000
+                logger.debug(f"DAG node '{node.name}' skipped based on condition")
+                return
+
             result = await run_agent(node.agent_role, context)
             node.result = result
             node.status = "done"

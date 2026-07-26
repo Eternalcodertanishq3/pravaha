@@ -12,6 +12,9 @@ ANSWER:  Final response to the task.
 
 This loop is what makes an agent truly autonomous — it separates
 Pravaha from "a swarm of system prompts."
+
+v4.0: ContextCompressor integration for automatic tool output
+compression. SubagentManager attachment for dynamic child spawning.
 """
 
 from __future__ import annotations
@@ -26,8 +29,23 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pravaha.swarm.memory.memory_store import MemoryStore
+    from pravaha.swarm.subagent_manager import SubagentManager
 
 logger = logging.getLogger(__name__)
+
+# Lazy-loaded context compressor singleton
+_compressor = None
+
+def _get_compressor():
+    """Lazy-load the ContextCompressor to avoid circular imports."""
+    global _compressor
+    if _compressor is None:
+        try:
+            from pravaha.swarm.context_compressor import ContextCompressor
+            _compressor = ContextCompressor()
+        except Exception:
+            _compressor = None
+    return _compressor
 
 
 # ── Data Classes ──────────────────────────────────────────────────────
@@ -224,12 +242,23 @@ class BaseAgent(ABC):
 
                 parsed.observation = observation
 
-                # Append observation to prompt using XML delimiters
+                # v4.0: Compress observation before appending to prompt
+                compressed_observation = observation
+                compressor = _get_compressor()
+                if compressor is not None:
+                    try:
+                        compressed_observation = compressor.compress(observation)
+                    except Exception:
+                        compressed_observation = observation[:2000]
+                else:
+                    compressed_observation = observation[:2000]
+
+                # Append compressed observation to prompt
                 react_prompt += (
                     f"\n<thought>{parsed.thought}</thought>\n"
                     f"<action>{parsed.action.tool_name}</action>\n"
                     f"<args>{json.dumps(parsed.action.args, ensure_ascii=False)}</args>\n"
-                    f"<observation>{observation[:500]}</observation>\n\n"
+                    f"<observation>{compressed_observation}</observation>\n\n"
                     f"<thought>"
                 )
             else:

@@ -7,6 +7,7 @@ v3.3: Expanded from 5 to 12 tools:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -51,7 +52,7 @@ class ToolRegistry:
             return json.dumps({"error": f"Tool '{tool_name}' not available", "success": False})
 
         try:
-            result = tool.execute(**args)
+            result = await asyncio.to_thread(tool.execute, **args)
             return json.dumps(result, default=str)
         except TypeError as e:
             return json.dumps({"error": f"Invalid args for {tool_name}: {e}", "success": False})
@@ -71,9 +72,11 @@ class ToolRegistry:
         from pravaha.swarm.tools.git_tool import GitTool
         from pravaha.swarm.tools.http_client import HttpClient
         from pravaha.swarm.tools.json_tool import JsonTool
+        from pravaha.swarm.tools.pty_terminal import PTYTerminalTool
         from pravaha.swarm.tools.python_repl import PythonRepl
         from pravaha.swarm.tools.search_tool import SearchTool
         from pravaha.swarm.tools.shell_runner import ShellRunner
+        from pravaha.swarm.tools.str_replace_editor import StrReplaceEditorTool
         from pravaha.swarm.tools.web_fetcher import WebFetcher
 
         registry = cls()
@@ -93,6 +96,8 @@ class ToolRegistry:
         registry.register(FileWriter())
         registry.register(GitTool())
         registry.register(Calculator())
+        registry.register(StrReplaceEditorTool())
+        registry.register(PTYTerminalTool())
 
         # v4.0: Dynamic Custom Tools Auto-Discovery
         try:
